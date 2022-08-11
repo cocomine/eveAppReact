@@ -7,7 +7,7 @@ import {Home} from "./page/Home";
 import {AddRecord} from "./page/AddRecord";
 import FWIcon from "react-native-vector-icons/FontAwesome";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {TouchableOpacity} from "react-native";
+import {TouchableOpacity, useColorScheme} from "react-native";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -23,7 +23,7 @@ function App(){
                 <Stack.Navigator screenOptions={{
                     headerStyle: {
                         backgroundColor: Color.primaryColor,
-                        height: 44
+                        height: 44,
                     },
                     headerTintColor: '#fff',
                     headerTitleStyle: {
@@ -33,7 +33,7 @@ function App(){
                         marginBottom: 8
                     },
                     tabBarStyle:{
-                        height: 52
+                        height: 52,
                     },
                     tabBarIconStyle:{
                         marginBottom: -9
@@ -59,6 +59,8 @@ function App(){
 
 /* 主要介面 */
 const MainScreen = () => {
+    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+
     return (
         <Tab.Navigator screenOptions={({ route }) => ({
             headerStyle: {
@@ -73,12 +75,13 @@ const MainScreen = () => {
                 marginBottom: 8
             },
             tabBarStyle:{
-                height: 52
+                height: 52,
+                backgroundColor: isDarkMode ? Color.darkColor : Color.white
             },
             tabBarIconStyle:{
                 marginBottom: -9
             },
-            tabBarButton: props => <TouchableOpacity {...props} />,
+            tabBarButton: props => <TouchableOpacity activeOpacity={0.8} {...props} />,
             tabBarIcon: ({focused, color, size}) => {
                 let iconName;
 

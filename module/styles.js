@@ -29,5 +29,9 @@ export const TouchableNativeFeedbackPresets = {
     default:{
         useForeground: true,
         background: TouchableNativeFeedback.Ripple(Color.darkColorLight, false),
+    },
+    borderless:{
+        useForeground: true,
+        background: TouchableNativeFeedback.Ripple(Color.darkColorLight, true),
     }
 }

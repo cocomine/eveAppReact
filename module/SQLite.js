@@ -1,31 +1,37 @@
 import SQLite from "react-native-sqlite-storage";
+import {ToastAndroid} from "react-native";
+import RNRestart from 'react-native-restart';
 
 /* 連接sql */
 export const DB = SQLite.openDatabase({name: 'my.DB', location: 'default'});
 
 console.log('DatabaseVer_Helper loaded!')
 const DatabaseVer_Helper = {
+    restartApp: () => {
+        ToastAndroid.show('資料庫更新完成, 正在重新啟動')
+        RNRestart.Restart();
+    },
     checkUpdate: function(){
         DB.transaction(function(tr){
             tr.executeSql("SELECT value FROM Setting WHERE Target = 'database_version'", [], function(tx, rs){
                 switch(rs.rows.item(0).value){
                     case '1.0':
-                        DatabaseVer_Helper.doUpdate.To_1_2();
+                        this.doUpdate.To_1_2();
                         break;
                     case '1.2':
-                        DatabaseVer_Helper.doUpdate.To_1_3();
+                        this.doUpdate.To_1_3();
                         break;
                     case '1.3':
-                        DatabaseVer_Helper.doUpdate.To_1_3_1();
+                        this.doUpdate.To_1_3_1();
                         break;
                     case '1.3.1':
-                        DatabaseVer_Helper.doUpdate.To_1_4();
+                        this.doUpdate.To_1_4();
                         break;
                     case '1.4':
-                        DatabaseVer_Helper.doUpdate.To_1_4_1();
+                        this.doUpdate.To_1_4_1();
                         break;
                     case '1.4.1':
-                        DatabaseVer_Helper.doUpdate.To_1_5();
+                        this.doUpdate.To_1_5();
                         break;
                     default:
                         console.log('DatabaseVer_Helper:', '已是最新')
@@ -33,7 +39,7 @@ const DatabaseVer_Helper = {
                 }
             }, function(e){
                 console.log('DatabaseVer_Helper:', '檢查資料庫發現錯誤', e.message);
-                DatabaseVer_Helper.startUp();//初始化資料庫
+                this.startUp();//初始化資料庫
             }, function(){
                 console.log('DatabaseVer_Helper:', '檢查資料庫完成');
             });
@@ -49,7 +55,7 @@ const DatabaseVer_Helper = {
                 console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
             }, function(){
                 console.log('DatabaseVer_Helper:', '資料庫已更新至1.2');
-                location.reload();
+                this.restartApp();
             });
         },
         To_1_3: function(){
@@ -62,7 +68,7 @@ const DatabaseVer_Helper = {
                 console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
             }, function(){
                 console.log('DatabaseVer_Helper:', '資料庫已更新至1.3');
-                location.reload();
+                this.restartApp();
             });
         },
         To_1_3_1: function(){
@@ -77,7 +83,7 @@ const DatabaseVer_Helper = {
                 console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
             }, function(){
                 console.log('DatabaseVer_Helper:', '資料庫已更新至1.3.1');
-                location.reload();
+                this.restartApp();
             });
         },
         To_1_4: function(){
@@ -89,7 +95,7 @@ const DatabaseVer_Helper = {
                 console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
             }, function(){
                 console.log('DatabaseVer_Helper:', '資料庫已更新至1.4');
-                location.reload();
+                this.restartApp();
             });
         },
         To_1_4_1: function(){
@@ -100,7 +106,7 @@ const DatabaseVer_Helper = {
                 console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
             }, function(){
                 console.log('DatabaseVer_Helper:', '資料庫已更新至1.4');
-                location.reload();
+                this.restartApp();
             });
         },
         To_1_5: function(){
@@ -112,7 +118,7 @@ const DatabaseVer_Helper = {
                 console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
             }, function(){
                 console.log('DatabaseVer_Helper:', '資料庫已更新至1.5');
-                location.reload();
+                this.restartApp();
             });
         }
     },
@@ -144,7 +150,7 @@ const DatabaseVer_Helper = {
             console.log('傳輸錯誤: ' + error.message);
         }, function(){
             console.log('已初始化資料庫');
-            location.reload();
+            this.restartApp();
         });
     }
 }

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
     FlatList,
     SafeAreaView,
@@ -8,7 +8,7 @@ import {
     StyleSheet,
     Animated,
     useColorScheme,
-    TouchableOpacity, TouchableNativeFeedback
+    TouchableOpacity, TouchableNativeFeedback, PixelRatio
 } from "react-native";
 import {Color} from "../module/Color";
 import {ToolBar, ToolBarView} from "../module/Toolbar";
@@ -23,9 +23,13 @@ import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import {useNavigation} from "@react-navigation/native";
 
+let Rates = 0.86; //匯率變數
+
 /* "紀錄"介面 */
 const Home = () => {
     const navigation = useNavigation(); //導航
+    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+
     //debug
     let Total = {Total: 555, RMB: 10.5, HKD: 55.2, Add: 12.3, Shipping: 44.5};
     let record = [
@@ -123,7 +127,7 @@ const Home = () => {
 
     return (
         /* 頂部toolbar */
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? Color.darkColor : Color.light}}>
             <StatusBar backgroundColor={Color.primaryColor}/>
             <ToolBar>
                 <ToolBarView>
@@ -218,7 +222,7 @@ const DataPart = ({data}) => {
 
     /* 數據內容 */
     const DataPartBody = ({item}) => {
-        const [isRMBShow, setRMBShow] = useState(false) //人民幣顯示
+        let isRMBShow = false //人民幣顯示
         let canHaptic = true;
 
         /* 向左滑動 */
@@ -292,21 +296,42 @@ const DataPart = ({data}) => {
         }
 
         /* 切換人民幣顯示 */
+        const translateY = useRef(new Animated.Value(0)).current;
         function switchRMBShow(){
-            isRMBShow ? setRMBShow(false) : setRMBShow(true)
+            if(isRMBShow){
+                //關閉
+                Animated.timing(translateY, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true
+                }).start();
+                isRMBShow = false;
+            }else{
+                //打開
+                Animated.timing(translateY, {
+                    toValue: -21 * PixelRatio.getFontScale(),
+                    duration: 500,
+                    useNativeDriver: true
+                }).start();
+                isRMBShow = true;
+            }
         }
 
         /* 確認動作*/
         const swipeOpen = (direction) => {
             console.log(direction);
-            //Vibration.vibrate();
+            if(direction === 'left'){
 
+            }
+            if(direction === 'right'){
+
+            }
         }
 
         return (
             <Swipeable renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} leftThreshold={120} rightThreshold={120} renderLeftActions={swipeLeft} overshootFriction={8}>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={switchRMBShow}>
-                    <Animated.View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkColor : Color.light}]}>
+                    <Animated.View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
 
                         <View style={[style.row, {justifyContent: 'flex-start'}]}>
                             <View style={{marginRight: 10}}>
@@ -330,12 +355,15 @@ const DataPart = ({data}) => {
                             </View>
                             <View style={{flex: 1}}>
                                 <Text>
-                                    <SmailText color={Color.textGary}>折算</SmailText>$ {(item.RMB / 0.86).toFixed(2)}
+                                    <SmailText color={Color.textGary}>折算</SmailText>$ {(item.RMB / Rates).toFixed(2)}
                                 </Text>
-                                <Text style={{display: isRMBShow ? undefined : 'none'}}><SmailText>人民幣</SmailText>$ {item.RMB}
-                                </Text>
-                                <Text style={{display: isRMBShow ? 'none' : undefined}}><SmailText color={Color.textGary}>港幣</SmailText>$ {item.HKD}
-                                </Text>
+                                <View style={{overflow: 'hidden', height: 22 * PixelRatio.getFontScale()}}>
+                                    <Animated.View style={{flex: 1, transform: [{translateY}]}}>
+                                        <Text style={{}}><SmailText color={Color.textGary}>港幣</SmailText>$ {item.HKD}
+                                        </Text>
+                                        <Text style={{}}><SmailText>人民幣</SmailText>$ {item.RMB}</Text>
+                                    </Animated.View>
+                                </View>
                             </View>
                             <View style={style.dataPartShipping}>
                                 <Text><SmailText color={Color.textGary}>加收</SmailText>$ {item.Add}</Text>
@@ -358,7 +386,7 @@ const DataPart = ({data}) => {
     const DataPartMark = ({item}) => {
         return (
             <View style={{paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center', marginVertical: -7}}>
-                {item.color === 'none' ? <Text style={{color: Color.primaryColor, fontSize: 20}}>{'\u25e6'}</Text> :
+                {item.color === 'none' ? <Text style={{color: Color.primaryColor, fontSize: 24}}>{' \u25e6 '}</Text> :
                     <Text style={{color: item.color, fontSize: 24}}>{' \u2022 '}</Text>}
                 <Text style={{fontSize: 10}}>{item.title}</Text>
             </View>
@@ -367,7 +395,7 @@ const DataPart = ({data}) => {
 
     return (
         /* 內容包裝 */
-        <View style={[style.dataPart, {backgroundColor: isDarkMode ? Color.darkColor : Color.light}]} key={data.DataTime}>
+        <View style={[style.dataPart, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]} key={data.DataTime}>
             <View style={[style.row, style.dataPartHeard]}>
                 <View style={style.row}>
                     <Text style={{fontSize: 20, marginRight: 10}}>{date.format('D')}</Text>
@@ -379,19 +407,21 @@ const DataPart = ({data}) => {
                 </View>
             </View>
 
-            {/* 備忘錄 */}
-            <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default}>
-                <View style={style.dataPartMark}>
-                    {data.Mark.map((item) => (
-                        <DataPartMark item={item}/>
-                    ))}
-                </View>
-            </TouchableNativeFeedback>
+            {/* 備忘錄 */
+                data.Mark.length > 0 ?
+                    <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default}>
+                        <View style={style.dataPartMark}>
+                            {data.Mark.map((item) => (
+                                <DataPartMark key={item.MarkID} item={item}/>
+                            ))}
+                        </View>
+                    </TouchableNativeFeedback> : null
+            }
 
             {/* 數據內容 */
-            data.Record.map((item) => (
-                <DataPartBody key={item.RecordID} item={item}/>
-            ))}
+                data.Record.map((item) => (
+                    <DataPartBody key={item.RecordID} item={item}/>
+                ))}
         </View>
     );
 };

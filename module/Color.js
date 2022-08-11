@@ -2,6 +2,7 @@
 export const Color = {
     primaryColor: '#127dff',
     darkColor: '#232323',
+    darkBlock: '#2a2a2a',
     lightColorBG: '#efefef',
     darkColorLight: '#6c6c6c',
     textGary: '#a0a0a0',
