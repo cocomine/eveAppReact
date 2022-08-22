@@ -1,112 +1,100 @@
 import React from 'react';
-import {NavigationContainer} from "@react-navigation/native";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import {createBottomTabNavigator} from "@react-navigation/bottom-tabs";
-import {Color} from "./module/Color";
-import {Home} from "./page/Home";
 import {AddRecord} from "./page/AddRecord";
-import FWIcon from "react-native-vector-icons/FontAwesome";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {TouchableOpacity, useColorScheme} from "react-native";
+import {useColorScheme} from "react-native";
+import {
+    DarkTheme as NavigationDarkTheme,
+    DefaultTheme as NavigationDefaultTheme,
+    NavigationContainer,
+} from '@react-navigation/native';
+import {
+    Appbar,
+    BottomNavigation,
+    MD2DarkTheme as PaperDarkTheme,
+    MD2LightTheme as PaperDefaultTheme,
+    Provider as PaperProvider
+} from 'react-native-paper';
+import merge from 'deepmerge';
+import {Home} from "./page/Home";
+import {Color} from "./module/Color";
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+
+const CombinedDefaultTheme = merge(PaperDefaultTheme, NavigationDefaultTheme);
+const CombinedDarkTheme = merge(PaperDarkTheme, NavigationDarkTheme);
 
 /* 進入介面 */
 function App(){
     /* DarkMode */
-    //const isDarkMode = useColorScheme() === 'dark';
+    const isDarkMode = useColorScheme() === 'dark';
+    let theme = isDarkMode ? CombinedDarkTheme : CombinedDefaultTheme;
+    theme = {
+        ...theme,
+        dark: false,
+        colors: {
+            ...theme.colors,
+            primary: Color.primaryColor,
+            secondary: Color.darkColorLight
+        }
+    }
+
+    function CustomNavigationBar({navigation, back, options}){
+        return (
+            <Appbar.Header>
+                {back ? <Appbar.BackAction onPress={navigation.goBack}/> : null}
+                <Appbar.Content title={options.title}/>
+            </Appbar.Header>
+        );
+    }
 
     return (
         <GestureHandlerRootView style={{flex: 1}}>
-            <NavigationContainer>
-                <Stack.Navigator screenOptions={{
-                    headerStyle: {
-                        backgroundColor: Color.primaryColor,
-                        height: 44,
-                    },
-                    headerTintColor: '#fff',
-                    headerTitleStyle: {
-                        fontSize: 14
-                    },
-                    tabBarLabelStyle:{
-                        marginBottom: 8
-                    },
-                    tabBarStyle:{
-                        height: 52,
-                    },
-                    tabBarIconStyle:{
-                        marginBottom: -9
-                    },
-                }}>
-                    <Stack.Screen //主要介面
-                        name="Main"
-                        component={MainScreen}
-                        options={{
-                            headerShown: false,
-                        }}
-                    />
-                    <Stack.Screen //增加紀錄
-                        name="AddRecord"
-                        component={AddRecord}
-                        options={{title: '增加紀錄'}}
-                    />
-                </Stack.Navigator>
-            </NavigationContainer>
+            <PaperProvider theme={theme}>
+                <NavigationContainer theme={theme}>
+                    <Stack.Navigator screenOptions={{header: (props) => <CustomNavigationBar {...props} />}}>
+                        <Stack.Screen //主要介面
+                            name="Main"
+                            component={MainScreen}
+                            options={{
+                                headerShown: false,
+                            }}
+                        />
+                        <Stack.Screen //增加紀錄
+                            name="AddRecord"
+                            component={AddRecord}
+                            options={{title: '增加紀錄'}}
+                        />
+                    </Stack.Navigator>
+                </NavigationContainer>
+            </PaperProvider>
         </GestureHandlerRootView>
     );
 }
 
 /* 主要介面 */
-const MainScreen = () => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+const MainScreen = ({theme}) => {
+    const [index, setIndex] = React.useState(0);
+    const [routes] = React.useState([
+        {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
+        {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
+        {key: 'Backup', title: '備份', focusedIcon: 'cloud-upload', color: Color.success},
+        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo},
+    ]);
+
+    const renderScene = BottomNavigation.SceneMap({
+        Home: Home,
+        Export: Home,
+        Backup: Home,
+        Setting: Home,
+    });
 
     return (
-        <Tab.Navigator screenOptions={({ route }) => ({
-            headerStyle: {
-                backgroundColor: Color.primaryColor,
-                height: 44
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-                fontSize: 14
-            },
-            tabBarLabelStyle:{
-                marginBottom: 8
-            },
-            tabBarStyle:{
-                height: 52,
-                backgroundColor: isDarkMode ? Color.darkColor : Color.white
-            },
-            tabBarIconStyle:{
-                marginBottom: -9
-            },
-            tabBarButton: props => <TouchableOpacity activeOpacity={0.8} {...props} />,
-            tabBarIcon: ({focused, color, size}) => {
-                let iconName;
-
-                if (route.name === 'Home') {
-                    iconName = 'book';
-                } else if (route.name === 'Export') {
-                    iconName = 'file-pdf-o';
-                } else if (route.name === 'Backup') {
-                    iconName = 'cloud-upload';
-                } else if (route.name === 'Setting') {
-                    iconName = 'gear';
-                }
-
-                // You can return any component that you like here!
-                return <FWIcon name={iconName} size={(size-6)} color={color} />;
-            }
-        })}>
-            <Tab.Screen name="Home" component={Home} options={{ //"紀錄"介面
-                headerShown: false,
-                title: '紀錄'
-            }}/>
-            <Tab.Screen name="Export" component={Home} options={{title: '匯出'}}/>
-            <Tab.Screen name="Backup" component={Home} options={{title: '備份'}}/>
-            <Tab.Screen name="Setting" component={Home} options={{title: '設定'}}/>
-        </Tab.Navigator>
+        <BottomNavigation
+            navigationState={{index, routes}}
+            onIndexChange={setIndex}
+            renderScene={renderScene}
+        />
     );
 }
 

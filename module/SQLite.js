@@ -3,7 +3,7 @@ import {ToastAndroid} from "react-native";
 import RNRestart from 'react-native-restart';
 
 /* 連接sql */
-export const DB = SQLite.openDatabase({name: 'my.DB', location: 'default'});
+const DB = SQLite.openDatabase({name: 'my.DB', location: 'default'});
 
 console.log('DatabaseVer_Helper loaded!')
 const DatabaseVer_Helper = {
@@ -155,3 +155,5 @@ const DatabaseVer_Helper = {
     }
 }
 DatabaseVer_Helper.checkUpdate();
+
+export default DB;

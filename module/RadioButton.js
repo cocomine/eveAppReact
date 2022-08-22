@@ -1,5 +1,5 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {StyleSheet, TouchableNativeFeedback, View, Animated, useColorScheme, Text, Pressable} from "react-native";
+import {Animated, StyleSheet, Text, TouchableNativeFeedback, useColorScheme, View} from "react-native";
 import {TouchableNativeFeedbackPresets} from "./styles";
 import {Color} from "./Color";
 
@@ -22,8 +22,11 @@ const RadioButton = forwardRef(({
 
     /* 轉換點擊狀態 */
     const onPress = () => {
-         //點擊callback
-        setIsSelected((prev) => {onCheck(!prev); return !prev});
+        //點擊callback
+        setIsSelected((prev) => {
+            onCheck(!prev);
+            return !prev;
+        });
     }
 
     /* 轉換動畫 */
@@ -33,7 +36,9 @@ const RadioButton = forwardRef(({
     let b_color = borderColor.interpolate({
         inputRange: [0, 1],
         outputRange: [Color.darkColorLight, color]
-    })
+    }) //顏色 mapping
+
+    /* 執行動畫 */
     useEffect(() => {
         if(isSelected){
             //選取
@@ -112,7 +117,7 @@ const RadioGroup = ({onPress = () => {}, containerStyle, layout = 'row', childre
     })
 
     /* 複製element, 設置props */
-    const [radioButtons, setRadioButtons] = useState(children.map((child, index) => {
+    const radioButtons = children.map((child, index) => {
         return React.cloneElement(child, {
             onCheck: (status) => status && press(child.props.value),
             selected: !!child.props.selected,
@@ -120,21 +125,21 @@ const RadioGroup = ({onPress = () => {}, containerStyle, layout = 'row', childre
             key: child.props.value,
             ref: radioButtonsRef[child.props.value] //set ref
         })
-    }))
+    });
 
     /* 點擊 */
     const press = (value) => {
-        onPress(value) //點擊callback
         //切換單選按鈕狀態
-        for (const [key, ref] of Object.entries(radioButtonsRef)) {
+        for(const [key, ref] of Object.entries(radioButtonsRef)){
             ref.current.setSelected(key === value);
         }
+        onPress(value) //點擊callback
     }
 
     return (
-            <View style={[{flexDirection: layout}, style.container, containerStyle]}>
-                {radioButtons}
-            </View>
+        <View style={[{flexDirection: layout}, style.container, containerStyle]}>
+            {radioButtons}
+        </View>
     )
 }
 

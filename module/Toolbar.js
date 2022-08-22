@@ -1,7 +1,6 @@
 import React from 'react';
 import {StyleSheet, View} from "react-native";
 import {Color} from "./Color";
-import {styles} from "./styles";
 
 /* 頂部toolbar */
 const ToolBar = ({children}) => {

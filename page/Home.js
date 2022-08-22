@@ -1,32 +1,32 @@
-import React, {useRef, useState} from 'react';
+import React, {useRef} from 'react';
 import {
-    FlatList,
-    SafeAreaView,
-    StatusBar,
-    Text,
-    View,
-    StyleSheet,
     Animated,
+    FlatList,
+    PixelRatio,
+    SafeAreaView,
+    StyleSheet,
+    TouchableNativeFeedback,
+    TouchableOpacity,
     useColorScheme,
-    TouchableOpacity, TouchableNativeFeedback, PixelRatio
+    View
 } from "react-native";
 import {Color} from "../module/Color";
 import {ToolBar, ToolBarView} from "../module/Toolbar";
 import ADIcon from "react-native-vector-icons/AntDesign";
 import FW5Icon from "react-native-vector-icons/FontAwesome5";
-import {ShadowPresets, SmailText, styles, TouchableNativeFeedbackPresets} from "../module/styles";
+import {SmailText, styles, TouchableNativeFeedbackPresets} from "../module/styles";
 import moment from "moment";
 import 'moment/min/locales'
 import {Swipeable} from "react-native-gesture-handler";
-import {Shadow} from "react-native-shadow-2";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import {useNavigation} from "@react-navigation/native";
+import {Text} from "react-native-paper";
 
 let Rates = 0.86; //匯率變數
 
 /* "紀錄"介面 */
-const Home = () => {
+const Home = ({}) => {
     const navigation = useNavigation(); //導航
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
 
@@ -128,7 +128,6 @@ const Home = () => {
     return (
         /* 頂部toolbar */
         <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? Color.darkColor : Color.light}}>
-            <StatusBar backgroundColor={Color.primaryColor}/>
             <ToolBar>
                 <ToolBarView>
                     <TouchableOpacity activeOpacity={0.7}>
@@ -153,7 +152,6 @@ const Home = () => {
                     <Text style={{color: Color.white}}>$ {Total.Total}</Text>
                 </ToolBarView>
             </ToolBar>
-            <Shadow viewStyle={{alignSelf: 'stretch'}} sides={['bottom']} {...ShadowPresets.default}>
                 <ToolBar>
                     <View style={{flex: 1}}>
                         <Text style={{
@@ -184,7 +182,6 @@ const Home = () => {
                         }}>{'運費\n¥ ' + Total.Shipping}</Text>
                     </View>
                 </ToolBar>
-            </Shadow>
 
             {/* 增加紀錄 */}
             <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
