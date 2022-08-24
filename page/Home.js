@@ -127,7 +127,7 @@ const Home = ({}) => {
 
     return (
         /* 頂部toolbar */
-        <SafeAreaView style={{flex: 1, backgroundColor: isDarkMode ? Color.darkColor : Color.light}}>
+        <SafeAreaView style={{flex: 1}}>
             <ToolBar>
                 <ToolBarView>
                     <TouchableOpacity activeOpacity={0.7}>
@@ -337,8 +337,11 @@ const DataPart = ({data}) => {
                             </View>
                             <View>
                                 <Text>{item.Local}</Text>
-                                <Text style={{color: Color.textGary}}>
-                                    <Text style={{fontWeight: 'bold'}}>{item.CargoNum.slice(0, 4)}</Text>
+                                <Text style={{color: Color.textGary, fontSize: 13}}>
+                                    <Text style={{
+                                        fontWeight: 'bold',
+                                        color: Color.textGary
+                                    }}>{item.CargoNum.slice(0, 4)}</Text>
                                     {item.CargoNum.slice(4, 10) + '(' + item.CargoNum.slice(10) + ')'}
                                 </Text>
                             </View>

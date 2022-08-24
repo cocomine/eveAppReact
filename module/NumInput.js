@@ -1,11 +1,8 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {Animated, StyleSheet, TouchableNativeFeedback, useColorScheme, View,} from "react-native";
-import Feather from "react-native-vector-icons/Feather";
 import {Color} from "./Color";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import {TouchableNativeFeedbackPresets} from "./styles";
-import {Text, TextInput, useTheme} from "react-native-paper";
+import {IconButton, Text, TextInput, useTheme} from "react-native-paper";
 
 
 /* 小數輸入 */
@@ -27,7 +24,6 @@ const DecimalInput = forwardRef(({
 
     /* 文字更改 */
     const onChange = (value) => {
-        if(value.toString().length <= 0) return;
         //過濾文字
         let text = value.toString().split('');
         text = text.filter((char) => /[0-9]|-|\./.test(char));
@@ -53,8 +49,7 @@ const DecimalInput = forwardRef(({
 
         if(isNegative) value = '-' + value; //前面加負數符號
 
-        const real_value = value.replaceAll(',', ''); //轉換為浮點數類型
-        inputRef.current.setNativeProps({text: real_value}); //覆寫真正的輸入欄
+        const real_value = value.replace(',', ''); //移除所有逗號, 另外儲存
         if(value.length > 0) value = symbol + value; //加上符號
 
         setDisplayValue(value);
@@ -64,6 +59,93 @@ const DecimalInput = forwardRef(({
 
     const focus = () => {
         setFocus(true);
+        setReal_value('')
+        onFocus();
+    };
+    const blur = () => {
+        setFocus(false);
+        onBlur();
+    };
+
+    /* 套用預設文字 */
+    useEffect(() => {
+        onChange(value);
+    }, [])
+
+    /* ref function */
+    useImperativeHandle(ref, () => ({
+        //輸入文字
+        setText: (text) => {
+            onChange(text);
+        },
+        //取得文字
+        getText: () => {
+            return real_value;
+        },
+        focus: () => {
+            inputRef.current.focus();
+            focus();
+        },
+        blur: () => {
+            inputRef.current.blur();
+            blur();
+        }
+    }));
+
+    return (
+        <View style={[containerStyle, {position: 'relative'}]}>
+            <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined}/>
+            <TextInput {...inputProps} ref={inputRef} style={style.coverInput} keyboardType='numeric' value={real_value} onChangeText={onChange} dense={true} onFocus={focus} onBlur={blur} selectTextOnFocus={true}/>
+        </View>
+    );
+});
+
+/* 整數輸入 */
+const NumberInput = ({
+                         symbol = '',
+                         value = '',
+                         inputStyle,
+                         containerStyle,
+                         inputProps = {},
+                         placeholder = '',
+                         onValueChange = () => {},
+                         onFocus = () => null,
+                         onBlur = () => null
+                     }, ref) => {
+    const inputRef = useRef();
+    const [displayValue, setDisplayValue] = useState('');
+    const [real_value, setReal_value] = useState('');
+    const [isFocus, setFocus] = useState(false);
+
+    /* 文字更改 */
+    const onChange = (value) => {
+        //過濾文字
+        let text = value.toString().split('');
+        text = text.filter((char) => /[0-9]|-/.test(char));
+
+        //處理負數
+        const isNegative = text.includes('-');
+        text = text.filter((char) => !/-/.test(char)); //移除所有負數符號
+
+        //分隔銀碼
+        const groupDigits = [];
+        while(text.length > 3) groupDigits.unshift(text.splice(text.length - 3, 3).join(''));// 當數字足夠，從後面取出三個位數，轉成字串塞回 groupDigits
+        groupDigits.unshift(text.join('')); //將剩餘嘅放回前面
+        text = groupDigits.join(','); //合併
+
+        if(isNegative) value = '-' + value; //前面加負數符號
+
+        const real_value = value.replace(',', ''); //移除所有逗號, 另外儲存
+        if(value.length > 0) value = symbol + value; //加上符號
+
+        setDisplayValue(value);
+        setReal_value(real_value);
+        onValueChange(parseInt(real_value) || 0);
+    }
+
+    const focus = () => {
+        setFocus(true);
+        setReal_value('')
         onFocus();
     };
     const blur = () => {
@@ -98,53 +180,7 @@ const DecimalInput = forwardRef(({
     return (
         <View style={[containerStyle, {position: 'relative'}]}>
             <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined}/>
-            <TextInput {...inputProps} ref={inputRef} style={style.coverInput} keyboardType='numeric' defaultValue={value} onChangeText={onChange} dense={true} onFocus={focus} onBlur={blur}/>
-        </View>
-    );
-});
-
-/* 整數輸入 */
-const NumberInput = ({
-                         symbol = '',
-                         value = '',
-                         inputStyle,
-                         containerStyle,
-                         inputProps = {},
-                         placeholder = '',
-                         onValueChange = () => {}
-                     }) => {
-    const inputRef = useRef();
-    const [displayValue, setDisplayValue] = useState(value);
-
-    const onChange = (value) => {
-        //過濾文字
-        let text = value.split('');
-        text = text.filter((char) => /[0-9]|-/.test(char));
-
-        //處理負數
-        const isNegative = text.includes('-');
-        text = text.filter((char) => !/-/.test(char)); //移除所有負數符號
-
-        //分隔銀碼
-        const groupDigits = [];
-        while(text.length > 3) groupDigits.unshift(text.splice(text.length - 3, 3).join(''));// 當數字足夠，從後面取出三個位數，轉成字串塞回 groupDigits
-        groupDigits.unshift(text.join('')); //將剩餘嘅放回前面
-        text = groupDigits.join(','); //合併回完整字串
-
-        if(isNegative) text = '-' + text; //前面加負數符號
-
-        const real_value = parseInt(text.replaceAll(',', '')); //轉換為浮點數類型
-        inputRef.current.setNativeProps({text: text.replaceAll(',', '')}); //覆寫真正的輸入欄
-        if(text.length > 0) text = symbol + " " + text; //加上符號
-
-        setDisplayValue(text);
-        onValueChange(real_value || 0);
-    }
-
-    return (
-        <View style={[containerStyle, {position: 'relative'}]}>
-            <TextInput style={inputStyle} value={displayValue} placeholder={placeholder}/>
-            <TextInput {...inputProps} ref={inputRef} style={style.coverInput} keyboardType='numeric' defaultValue={value} onChangeText={onChange} selectTextOnFocus={true}/>
+            <TextInput {...inputProps} ref={inputRef} style={style.coverInput} keyboardType='numeric' value={real_value} onChangeText={onChange} dense={true} onFocus={focus} onBlur={blur} selectTextOnFocus={true}/>
         </View>
     );
 }
@@ -154,6 +190,8 @@ const NumKeyboard = forwardRef(({onKeyPress = () => {}}, ref) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const {colors} = useTheme();
     let isOpen = false;
+    const height = useRef(new Animated.Value(0)).current;
+    const [display, setDisplay] = useState('none');
 
     /* 鍵盤點擊 */
     const onPress = (value) => {
@@ -165,22 +203,33 @@ const NumKeyboard = forwardRef(({onKeyPress = () => {}}, ref) => {
         //打開鍵盤
         openKeyBoard: () => {
             isOpen = true;
-            //todo
+            setDisplay(undefined);
+            Animated.timing(height, {
+                toValue: 220,
+                duration: 300,
+                useNativeDriver: false
+            }).start();
         },
         //關閉鍵盤
         closeKeyBoard: () => {
             isOpen = false;
-            //todo
-        }
+            Animated.timing(height, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false
+            }).start(() => setDisplay('none'));
+        },
+        //鍵盤是否打開
+        isOpen: () => isOpen
     }));
 
     return (
-        <Animated.View style={{height: 220}}>
+        <Animated.View style={{height, display}}>
             <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('1')}><View style={style.button}><Text style={style.text}>1</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('2')}><View style={style.button}><Text style={style.text}>2</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('3')}><View style={style.button}><Text style={style.text}>3</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('back')}><View style={style.button}><Feather name={'delete'} style={style.text} color={colors.text}/></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('back')}><View style={style.button}><IconButton icon={'backspace-outline'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
             <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('4')}><View style={style.button}><Text style={style.text}>4</Text></View></TouchableNativeFeedback>
@@ -192,13 +241,13 @@ const NumKeyboard = forwardRef(({onKeyPress = () => {}}, ref) => {
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('7')}><View style={style.button}><Text style={style.text}>7</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('8')}><View style={style.button}><Text style={style.text}>8</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('9')}><View style={style.button}><Text style={style.text}>9</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => {}}><View style={style.button}><Ionicons name={'ios-calculator'} style={style.text} color={colors.text}/></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => {}}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
             <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('00')}><View style={style.button}><Text style={style.text}>00</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('0')}><View style={style.button}><Text style={style.text}>0</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('.')}><View style={style.button}><Text style={style.text}>.</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('done')}><View style={style.button}><MaterialIcons name={'done'} style={style.text} colors={colors.text}/></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('done')}><View style={style.button}><IconButton icon={'check'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
         </Animated.View>
     )
@@ -230,7 +279,9 @@ const style = StyleSheet.create({
         flex: 1,
         borderRightWidth: .7,
         borderColor: Color.darkColorLight,
+        flexDirection: "row",
         justifyContent: 'center',
+        alignItems: 'center'
     },
     text: {
         textAlign: 'center',

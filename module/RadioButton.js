@@ -1,22 +1,23 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {Animated, StyleSheet, Text, TouchableNativeFeedback, useColorScheme, View} from "react-native";
+import {Animated, StyleSheet, TouchableNativeFeedback, useColorScheme, View} from "react-native";
 import {TouchableNativeFeedbackPresets} from "./styles";
 import {Color} from "./Color";
+import {Text} from "react-native-paper";
 
 const ANIME_TIME = 300; //動畫時間
 
 /* 單選按鈕 */
 const RadioButton = forwardRef(({
-        size = 24,
-        color,
-        onCheck = () => {},
-        label = '',
-        selected = false,
-        value = '',
-        labelStyle,
-        containerStyle,
-        layout = 'row',
-    }, ref) => {
+                                    size = 24,
+                                    color,
+                                    onCheck = () => {},
+                                    label = '',
+                                    selected = false,
+                                    value = '',
+                                    labelStyle,
+                                    containerStyle,
+                                    layout = 'row',
+                                }, ref) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [isSelected, setIsSelected] = useState(selected);
 

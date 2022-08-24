@@ -35,7 +35,6 @@ function App(){
         colors: {
             ...theme.colors,
             primary: Color.primaryColor,
-            secondary: Color.darkColorLight
         }
     }
 

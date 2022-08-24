@@ -8,7 +8,7 @@ const SmailText = ({color, children}) => {
     const {colors} = useTheme();
 
     return (
-        <Text style={{fontSize: 10, color: colors.text, marginTop: 3}}>{children}</Text>
+        <Text style={{fontSize: 10, color: color || colors.text, marginTop: 3}}>{children}</Text>
     );
 }
 
