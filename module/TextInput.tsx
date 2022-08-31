@@ -9,6 +9,7 @@ interface Props {
     onChangeText?: (text: string) => void,
     maxLength?: number,
     onSubmitEditing?: (event: nativeEvent) => void,
+    onBlur?: (text: string) => void
 }
 
 /* 參考方法 */
@@ -45,6 +46,7 @@ const Input = forwardRef<Ref, Props>(({
                                           onChangeText = () => null,
                                           maxLength,
                                           onSubmitEditing = () => null,
+                                          onBlur = () => null,
                                           ...props
                                       }, ref) => {
     const [val, setVal] = useState(value.toString());
@@ -59,6 +61,11 @@ const Input = forwardRef<Ref, Props>(({
         }
     }
 
+    /* 失去焦點 */
+    const blur = () => {
+        onBlur(val);
+    }
+
     /* 完成輸入 */
     const submitEditing = ({nativeEvent}: any) => {
         onSubmitEditing(nativeEvent)
@@ -70,12 +77,12 @@ const Input = forwardRef<Ref, Props>(({
         clear: () => inputRef.current?.clear(),
         isFocused: () => inputRef.current?.isFocused(),
         setValue: (value) => setVal(value), //設置文字
-        getValue: () => val, //@ts-ignore //取得文字 
+        getValue: () => val, //取得文字
         setNativeProps: (props) => inputRef.current?.setNativeProps(props)
     }));
 
     return (
-        <TextInput {...props} ref={inputRef} style={[style, styles.formInput]} maxLength={maxLength} onSubmitEditing={submitEditing} value={val} onChangeText={update} dense={true}/>
+        <TextInput {...props} ref={inputRef} style={[style, styles.formInput]} value={value.toString()} maxLength={maxLength} onSubmitEditing={submitEditing} onChangeText={update} onBlur={blur} dense={true}/>
     )
 }) as InputComponent;
 
