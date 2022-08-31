@@ -3,13 +3,13 @@ import {StyleSheet, View} from "react-native";
 import {Color} from "./Color";
 
 /* 頂部toolbar */
-const ToolBar = ({children}) => {
+const Toolbar: React.FC<{ children?: React.ReactNode | React.ReactNode[] }> = ({children}) => {
     return (<View style={[style.toolBar]}>
         {children}
     </View>);
 }
 /* toolbar 內部 View */
-const ToolBarView = ({children}) => {
+const ToolBarView: React.FC<{ children?: React.ReactNode | React.ReactNode[] }> = ({children}) => {
     return (<View style={[{flexDirection: "row", alignItems: 'center'}]}>
         {children}
     </View>);
@@ -29,4 +29,4 @@ const style = StyleSheet.create({
     },
 });
 
-export {ToolBar, ToolBarView};
+export {Toolbar, ToolBarView};

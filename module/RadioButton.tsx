@@ -1,23 +1,57 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {Animated, StyleSheet, TouchableNativeFeedback, useColorScheme, View} from "react-native";
+import {
+    Animated,
+    StyleProp,
+    StyleSheet,
+    TextStyle,
+    TouchableNativeFeedback,
+    useColorScheme,
+    View,
+    ViewStyle
+} from "react-native";
 import {TouchableNativeFeedbackPresets} from "./styles";
 import {Color} from "./Color";
 import {Text} from "react-native-paper";
 
 const ANIME_TIME = 300; //動畫時間
 
+/* 單選按鈕 輸入參數 */
+interface Props {
+    size?: number,
+    color: string | number,
+    onCheck?: (check: boolean) => void,
+    label?: string,
+    selected?: boolean,
+    value: string,
+    labelStyle?: StyleProp<TextStyle>,
+    containerStyle?: StyleProp<ViewStyle>,
+    layout?: 'row' | 'column',
+}
+
+/* 單選按鈕 參考方法 */
+type Ref = {
+    setSelected: (status: boolean) => void
+}
+
+/* 單選按鈕 介面 */
+interface RadioButtonComponent extends React.ForwardRefExoticComponent<Props & React.RefAttributes<Ref>> {
+    setSelected: (status: boolean) => void
+}
+
+
 /* 單選按鈕 */
-const RadioButton = forwardRef(({
-                                    size = 24,
-                                    color,
-                                    onCheck = () => {},
-                                    label = '',
-                                    selected = false,
-                                    value = '',
-                                    labelStyle,
-                                    containerStyle,
-                                    layout = 'row',
-                                }, ref) => {
+const RadioButton = forwardRef<Ref, Props>(({
+                                                size = 24,
+                                                color,
+                                                onCheck = () => {
+                                                },
+                                                label = '',
+                                                selected = false,
+                                                value,
+                                                labelStyle,
+                                                containerStyle,
+                                                layout = 'row',
+                                            }, ref) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [isSelected, setIsSelected] = useState(selected);
 
@@ -37,11 +71,11 @@ const RadioButton = forwardRef(({
     let b_color = borderColor.interpolate({
         inputRange: [0, 1],
         outputRange: [Color.darkColorLight, color]
-    }) //顏色 mapping
+    } as Animated.InterpolationConfigType) //顏色 mapping
 
     /* 執行動畫 */
     useEffect(() => {
-        if(isSelected){
+        if (isSelected) {
             //選取
             Animated.timing(border, {
                 toValue: size / 2,
@@ -106,35 +140,45 @@ const RadioButton = forwardRef(({
             <Text style={[labelStyle, {marginLeft: layout === 'row' ? 4 : 0}]} onPress={onPress}>{label}</Text>
         </View>
     )
-});
+}) as RadioButtonComponent;
+
+/* 單選按鈕組合 輸入參數 */
+interface GroupProps {
+    onPress?: (value: string | number) => void,
+    containerStyle?: StyleProp<ViewStyle>,
+    layout?: 'row' | 'column',
+    children: React.ReactElement<Props, typeof RadioButton>[]
+}
 
 /* 單選按鈕組合 */
-const RadioGroup = ({onPress = () => {}, containerStyle, layout = 'row', children}) => {
+const RadioGroup: React.FC<GroupProps> = ({
+                                              onPress = () => {
+                                              }, containerStyle, layout = 'row', children
+                                          }) => {
 
     /* radioButtons ref */
-    let radioButtonsRef = {}
-    children.forEach((child) => {
-        radioButtonsRef[child.props.value] = useRef(null)
-    })
+    const radioButtonsRef: Ref[] = [];
 
     /* 複製element, 設置props */
     const radioButtons = children.map((child, index) => {
         return React.cloneElement(child, {
-            onCheck: (status) => status && press(child.props.value),
-            selected: !!child.props.selected,
+            onCheck: (status: boolean) => status && press(index),
+            selected: child.props.selected,
             containerStyle: [child.props.containerStyle, {marginLeft: layout === 'row' && index !== 0 ? 10 : 0}],
-            key: child.props.value,
-            ref: radioButtonsRef[child.props.value] //set ref
+            key: index,
+            ref: (ref: Ref) => {
+                radioButtonsRef[index] = ref
+            }, //set ref
         })
     });
 
     /* 點擊 */
-    const press = (value) => {
+    const press = (index: number) => {
         //切換單選按鈕狀態
-        for(const [key, ref] of Object.entries(radioButtonsRef)){
-            ref.current.setSelected(key === value);
-        }
-        onPress(value) //點擊callback
+        radioButtonsRef.forEach((ref, key) => {
+            ref.setSelected(key === index)
+        })
+        onPress(radioButtons[index].props.value) //點擊callback
     }
 
     return (

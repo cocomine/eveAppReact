@@ -11,7 +11,7 @@ import {
     View
 } from "react-native";
 import {Color} from "../module/Color";
-import {ToolBar, ToolBarView} from "../module/Toolbar";
+import {Toolbar, ToolBarView} from "../module/Toolbar";
 import ADIcon from "react-native-vector-icons/AntDesign";
 import FW5Icon from "react-native-vector-icons/FontAwesome5";
 import {SmailText, styles, TouchableNativeFeedbackPresets} from "../module/styles";
@@ -24,111 +24,109 @@ import {useNavigation} from "@react-navigation/native";
 import {Text} from "react-native-paper";
 
 let Rates = 0.86; //匯率變數
+//debug
+let Total = {Total: 555, RMB: 10.5, HKD: 55.2, Add: 12.3, Shipping: 44.5};
+let record = [
+    {
+        DataTime: '2022-08-05',
+        Mark: [{
+            MarkID: 1,
+            color: Color.yellow,
+            title: 'YELLOW'
+        }, {
+            MarkID: 2,
+            color: 'none',
+            title: 'NONE'
+        }],
+        Record: [{
+            RecordID: 1,
+            OrderNum: '05/04/013',
+            Type: '40',
+            Local: 'ABC',
+            CargoNum: 'BMOU3148478',
+            Remark: 'abc',
+            RMB: 12.5,
+            HKD: 15.2,
+            Add: 44.2,
+            Shipping: 44.2,
+            Total: 12.5
+        }, {
+            RecordID: 2,
+            OrderNum: '05/04/013',
+            Type: '40',
+            Local: 'ABC',
+            CargoNum: 'BMOU3148478',
+            Remark: 'abc',
+            RMB: 12.5,
+            HKD: 15.2,
+            Add: 44.2,
+            Shipping: 44.2,
+            Total: 12.5
+        }]
+    },
+    {
+        DataTime: '2022-08-06',
+        Mark: [],
+        Record: [{
+            RecordID: 3,
+            OrderNum: '05/04/013',
+            Type: '40',
+            Local: 'ABC',
+            CargoNum: 'BMOU3148478',
+            Remark: 'abc',
+            RMB: 12.5,
+            HKD: 15.2,
+            Add: 44.2,
+            Shipping: 44.2,
+            Total: 12.5
+        }, {
+            RecordID: 4,
+            OrderNum: '05/04/013',
+            Type: '40',
+            Local: 'ABC',
+            CargoNum: 'BMOU3148478',
+            Remark: 'abc',
+            RMB: 12.5,
+            HKD: 15.2,
+            Add: 44.2,
+            Shipping: 44.2,
+            Total: 12.5
+        }, {
+            RecordID: 5,
+            OrderNum: '05/04/013',
+            Type: '40',
+            Local: 'ABC',
+            CargoNum: 'BMOU3148478',
+            Remark: 'abc',
+            RMB: 12.5,
+            HKD: 15.2,
+            Add: 44.2,
+            Shipping: 44.2,
+            Total: 12.5
+        }, {
+            RecordID: 6,
+            OrderNum: '05/04/013',
+            Type: '40',
+            Local: 'ABC',
+            CargoNum: 'BMOU3148478',
+            Remark: 'abc',
+            RMB: 12.5,
+            HKD: 15.2,
+            Add: 44.2,
+            Shipping: 44.2,
+            Total: 12.5
+        }]
+    }
+];
 
 /* "紀錄"介面 */
 const Home = ({}) => {
     const navigation = useNavigation(); //導航
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-
-    //debug
-    let Total = {Total: 555, RMB: 10.5, HKD: 55.2, Add: 12.3, Shipping: 44.5};
-    let record = [
-        {
-            DataTime: '2022-08-05',
-            Mark: [{
-                MarkID: 1,
-                color: Color.yellow,
-                title: 'YELLOW'
-            }, {
-                MarkID: 2,
-                color: 'none',
-                title: 'NONE'
-            }],
-            Record: [{
-                RecordID: 1,
-                OrderNum: '05/04/013',
-                Type: '40',
-                Local: 'ABC',
-                CargoNum: 'BMOU3148478',
-                Remark: 'abc',
-                RMB: 12.5,
-                HKD: 15.2,
-                Add: 44.2,
-                Shipping: 44.2,
-                Total: 12.5
-            }, {
-                RecordID: 2,
-                OrderNum: '05/04/013',
-                Type: '40',
-                Local: 'ABC',
-                CargoNum: 'BMOU3148478',
-                Remark: 'abc',
-                RMB: 12.5,
-                HKD: 15.2,
-                Add: 44.2,
-                Shipping: 44.2,
-                Total: 12.5
-            }]
-        },
-        {
-            DataTime: '2022-08-06',
-            Mark: [],
-            Record: [{
-                RecordID: 3,
-                OrderNum: '05/04/013',
-                Type: '40',
-                Local: 'ABC',
-                CargoNum: 'BMOU3148478',
-                Remark: 'abc',
-                RMB: 12.5,
-                HKD: 15.2,
-                Add: 44.2,
-                Shipping: 44.2,
-                Total: 12.5
-            }, {
-                RecordID: 4,
-                OrderNum: '05/04/013',
-                Type: '40',
-                Local: 'ABC',
-                CargoNum: 'BMOU3148478',
-                Remark: 'abc',
-                RMB: 12.5,
-                HKD: 15.2,
-                Add: 44.2,
-                Shipping: 44.2,
-                Total: 12.5
-            }, {
-                RecordID: 5,
-                OrderNum: '05/04/013',
-                Type: '40',
-                Local: 'ABC',
-                CargoNum: 'BMOU3148478',
-                Remark: 'abc',
-                RMB: 12.5,
-                HKD: 15.2,
-                Add: 44.2,
-                Shipping: 44.2,
-                Total: 12.5
-            }, {
-                RecordID: 6,
-                OrderNum: '05/04/013',
-                Type: '40',
-                Local: 'ABC',
-                CargoNum: 'BMOU3148478',
-                Remark: 'abc',
-                RMB: 12.5,
-                HKD: 15.2,
-                Add: 44.2,
-                Shipping: 44.2,
-                Total: 12.5
-            }]
-        }
-    ];
 
     return (
         /* 頂部toolbar */
         <SafeAreaView style={{flex: 1}}>
-            <ToolBar>
+            <Toolbar>
                 <ToolBarView>
                     <TouchableOpacity activeOpacity={0.7}>
                         <ADIcon name={'left'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
@@ -151,37 +149,37 @@ const Home = ({}) => {
                     <SmailText color={Color.white}>本月總計</SmailText>
                     <Text style={{color: Color.white}}>$ {Total.Total}</Text>
                 </ToolBarView>
-            </ToolBar>
-                <ToolBar>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'人民幣\n¥ ' + Total.RMB}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'港幣\n$ ' + Total.HKD}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'加收\n¥ ' + Total.Add}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'運費\n¥ ' + Total.Shipping}</Text>
-                    </View>
-                </ToolBar>
+            </Toolbar>
+            <Toolbar>
+                <View style={{flex: 1}}>
+                    <Text style={{
+                        color: Color.white,
+                        fontSize: 12,
+                        textAlign: 'center'
+                    }}>{'人民幣\n¥ ' + Total.RMB}</Text>
+                </View>
+                <View style={{flex: 1}}>
+                    <Text style={{
+                        color: Color.white,
+                        fontSize: 12,
+                        textAlign: 'center'
+                    }}>{'港幣\n$ ' + Total.HKD}</Text>
+                </View>
+                <View style={{flex: 1}}>
+                    <Text style={{
+                        color: Color.white,
+                        fontSize: 12,
+                        textAlign: 'center'
+                    }}>{'加收\n¥ ' + Total.Add}</Text>
+                </View>
+                <View style={{flex: 1}}>
+                    <Text style={{
+                        color: Color.white,
+                        fontSize: 12,
+                        textAlign: 'center'
+                    }}>{'運費\n¥ ' + Total.Shipping}</Text>
+                </View>
+            </Toolbar>
 
             {/* 增加紀錄 */}
             <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>

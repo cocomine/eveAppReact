@@ -4,7 +4,7 @@ import {Color} from "./Color";
 import {Text, useTheme} from "react-native-paper";
 
 /* 細小文字 */
-const SmailText = ({color, children}) => {
+const SmailText: React.FC<{ color?: string | number, children: React.ReactNode }> = ({color, children}) => {
     const {colors} = useTheme();
 
     return (

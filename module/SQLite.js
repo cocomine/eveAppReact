@@ -13,7 +13,7 @@ const DatabaseVer_Helper = {
     },
     checkUpdate: function(){
         DB.transaction(function(tr){
-            tr.executeSql("SELECT value FROM Setting WHERE Target = 'database_version'", [], function(tx, rs){
+            tr.executeSql("SELECT value FROM Setting WHERE Target = 'database_version'", [], (tx, rs) => {
                 switch(rs.rows.item(0).value){
                     case '1.0':
                         this.doUpdate.To_1_2();
