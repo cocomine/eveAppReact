@@ -9,7 +9,7 @@ interface Props {
     onChangeText?: (text: string) => void,
     maxLength?: number,
     onSubmitEditing?: (event: nativeEvent) => void,
-    onBlur?: (text: string) => void
+    onBlur?: (text: string) => void,
 }
 
 /* 參考方法 */

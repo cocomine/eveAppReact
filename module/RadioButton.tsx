@@ -1,14 +1,5 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {
-    Animated,
-    StyleProp,
-    StyleSheet,
-    TextStyle,
-    TouchableNativeFeedback,
-    useColorScheme,
-    View,
-    ViewStyle
-} from "react-native";
+import {Animated, StyleProp, StyleSheet, TextStyle, TouchableNativeFeedback, useColorScheme, View, ViewStyle} from "react-native";
 import {TouchableNativeFeedbackPresets} from "./styles";
 import {Color} from "./Color";
 import {Text} from "react-native-paper";
@@ -30,7 +21,8 @@ interface Props {
 
 /* 單選按鈕 參考方法 */
 type Ref = {
-    setSelected: (status: boolean) => void
+    setSelected: (status: boolean) => void,
+    getValue: () => string | number
 }
 
 /* 單選按鈕 介面 */
@@ -53,7 +45,7 @@ const RadioButton = forwardRef<Ref, Props>(({
                                                 layout = 'row',
                                             }, ref) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [isSelected, setIsSelected] = useState(selected);
+    const [isSelected, setIsSelected] = useState(false);
 
     /* 轉換點擊狀態 */
     const onPress = () => {
@@ -118,12 +110,18 @@ const RadioButton = forwardRef<Ref, Props>(({
         }
     }, [isSelected]);
 
+    /* 放入預設文字 */
+    useEffect(() => {
+        setIsSelected(selected)
+    }, [selected])
+
     /* ref function */
     useImperativeHandle(ref, () => ({
         //設置選取
         setSelected: (status) => {
             setIsSelected(status)
         },
+        getValue: () => value
     }));
 
     return (
@@ -140,37 +138,46 @@ const RadioButton = forwardRef<Ref, Props>(({
             <Text style={[labelStyle, {marginLeft: layout === 'row' ? 4 : 0}]} onPress={onPress}>{label}</Text>
         </View>
     )
-}) as RadioButtonComponent;
+});
 
 /* 單選按鈕組合 輸入參數 */
 interface GroupProps {
     onPress?: (value: string | number) => void,
     containerStyle?: StyleProp<ViewStyle>,
     layout?: 'row' | 'column',
+    selectValue: string | number,
     children: React.ReactElement<Props, typeof RadioButton>[]
 }
 
 /* 單選按鈕組合 */
 const RadioGroup: React.FC<GroupProps> = ({
                                               onPress = () => {
-                                              }, containerStyle, layout = 'row', children
+                                              },
+                                              containerStyle,
+                                              layout = 'row',
+                                              selectValue,
+                                              children
                                           }) => {
 
     /* radioButtons ref */
     const radioButtonsRef: Ref[] = [];
+    const [radioButtons, setRadioButtons] = useState<React.ReactElement[]>([]);
 
     /* 複製element, 設置props */
-    const radioButtons = children.map((child, index) => {
-        return React.cloneElement(child, {
-            onCheck: (status: boolean) => status && press(index),
-            selected: child.props.selected,
-            containerStyle: [child.props.containerStyle, {marginLeft: layout === 'row' && index !== 0 ? 10 : 0}],
-            key: index,
-            ref: (ref: Ref) => {
-                radioButtonsRef[index] = ref
-            }, //set ref
-        })
-    });
+    useEffect(() => {
+        const radioButtons = children.map((child, index) => {
+            return React.cloneElement(child, {
+                onCheck: (status: boolean) => press(index),
+                selected: selectValue === child.props.value,
+                containerStyle: [child.props.containerStyle, {marginLeft: layout === 'row' && index !== 0 ? 10 : 0}],
+                key: index,
+                ref: (ref: Ref) => {
+                    radioButtonsRef[index] = ref
+                }, //set ref
+            })
+        });
+        setRadioButtons(radioButtons);
+    }, [selectValue]);
 
     /* 點擊 */
     const press = (index: number) => {
@@ -178,7 +185,8 @@ const RadioGroup: React.FC<GroupProps> = ({
         radioButtonsRef.forEach((ref, key) => {
             ref.setSelected(key === index)
         })
-        onPress(radioButtons[index].props.value) //點擊callback
+        const correct = radioButtonsRef.find((ref, key) => key === index)
+        correct && onPress(correct.getValue()) //點擊callback
     }
 
     return (

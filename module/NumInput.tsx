@@ -63,6 +63,9 @@ const DecimalInput = forwardRef<InputRef, InputProps>(({
 
     /* 文字更改 */
     const onChange = (value: string | number) => {
+        //檢查是否是零
+        if (typeof value === "number" && value === 0) return;
+
         //過濾文字
         let text = value.toString().split('');
         text = text.filter((char) => /[0-9]|-|\./.test(char));
@@ -109,7 +112,7 @@ const DecimalInput = forwardRef<InputRef, InputProps>(({
     /* 套用預設文字 */
     useEffect(() => {
         onChange(value);
-    }, [])
+    }, [value])
 
     /* ref function */
     useImperativeHandle(ref, () => ({
@@ -159,6 +162,9 @@ const NumberInput = forwardRef<InputRef, InputProps>(({
 
     /* 文字更改 */
     const onChange = (value: string | number) => {
+        //檢查是否是零
+        if (typeof value === "number" && value === 0) return;
+
         //過濾文字
         let text = value.toString().split('');
         text = text.filter((char) => /[0-9]|-/.test(char));
@@ -196,7 +202,7 @@ const NumberInput = forwardRef<InputRef, InputProps>(({
     /* 套用預設文字 */
     useEffect(() => {
         onChange(value);
-    }, [])
+    }, [value])
 
     /* ref function */
     useImperativeHandle(ref, () => ({
@@ -214,7 +220,8 @@ const NumberInput = forwardRef<InputRef, InputProps>(({
         blur: () => {
             inputRef.current?.blur();
             blur();
-        }
+        },
+        isFocused: () => inputRef.current?.isFocused()
     }));
 
     return (

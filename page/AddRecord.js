@@ -1,5 +1,5 @@
-import React, {useEffect, useReducer, useRef, useState} from 'react';
-import {Animated, PixelRatio, SafeAreaView, ScrollView, StyleSheet, useColorScheme, View} from 'react-native';
+import React, {forwardRef, useEffect, useReducer, useRef, useState} from 'react';
+import {Animated, BackHandler, SafeAreaView, ScrollView, StyleSheet, useColorScheme, View} from 'react-native';
 import moment from 'moment';
 import {Color} from '../module/Color';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
@@ -11,9 +11,12 @@ import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {hideKeyboard} from 'react-native-hide-keyboard/src';
 import CargoNumCheck from '../module/CargoNumCheck';
 import DB from '../module/SQLite';
+import ErrorHelperText from '../module/ErrorHelperText';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let Rates = 0.86; //匯率變數
-const initialState = { //預設狀態
+//預設狀態
+const initialState = {
     date: new Date,
     orderID: '',
     type: '40',
@@ -25,12 +28,18 @@ const initialState = { //預設狀態
     HKD: 0,
     ADD: 0,
     shipping: 0,
-    remark: ''
+    remark: '',
+    error: {
+        cargo: null,
+        location: null,
+        orderID: null
+    }
 };
 //更新類型
 const [UPDATE_DATE, UPDATE_ORDER_ID, UPDATE_TYPE, UPDATE_CARGO_LETTER,
     UPDATE_CARGO_NUM, UPDATE_CARGO_CHECK_NUM, UPDATE_LOCATION, UPDATE_RMB,
-    UPDATE_HKD, UPDATE_ADD, UPDATE_SHIPPING, UPDATE_REMARK] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    UPDATE_HKD, UPDATE_ADD, UPDATE_SHIPPING, UPDATE_REMARK,
+    SET_ERROR] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /* 更新處理器 */
 const reducer = (state, action) => {
@@ -95,6 +104,13 @@ const reducer = (state, action) => {
                 ...state,
                 remark: action.payload.remark
             };
+        case SET_ERROR:
+            return {
+                ...state,
+                error: {
+                    ...action.payload.error
+                }
+            };
         default:
             return {
                 ...state,
@@ -104,323 +120,282 @@ const reducer = (state, action) => {
 };
 
 /* 增加紀錄 */
-const AddRecord = () => {
+const AddRecord = ({navigation}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [state, dispatch] = useReducer(reducer, initialState);
-    console.log(state);
     const [focusingDecInput, setFocusingDecInput] = useState(null);
 
-    let inputs = {};
+    let inputs = {}; //textInput refs
     let NumKeyboard_refs = useRef(null);
 
     /* 對焦到下一個輸入欄 */
     const focusNextField = (id) => {
-        console.log('Focus to', id);
+        console.log('Focus to', id); ///debug
         inputs[id].focus();
     };
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = (id) => {
-        console.log('Focus', id)
         hideKeyboard().then(r => null);
         setFocusingDecInput(id);
         NumKeyboard_refs.current.openKeyBoard();
-    }
+    };
 
     /* 失焦金錢輸入欄 => 關閉虛擬鍵盤 */
     const DecimalInput_Blur = () => {
-        console.log('Blur')
         setFocusingDecInput(null);
         NumKeyboard_refs.current.closeKeyBoard();
-    }
+    };
 
     /* 虛擬鍵盤點擊 */
     const onKeyPress = (value) => {
-        console.log('input', value)
         if(focusingDecInput){
             if(value === 'back') inputs[focusingDecInput].setText(inputs[focusingDecInput].getText().slice(0, -1)); //刪除最後一個文字
             else if(value === 'done') focusNextField(Object.keys(inputs)[Object.keys(inputs).indexOf(focusingDecInput) + 1]); //完成輸入
             else inputs[focusingDecInput].setText(inputs[focusingDecInput].getText() + value); //輸入文字
         }
-    }
+    };
 
     /* 遞交 */
     const submit = () => {
-        //todo: check request
+        let initialError = {
+            cargo: null,
+            location: null,
+            orderID: null
+        };
+        let error = structuredClone(initialError);
 
-        const CargoNum = state.CargoLetter + state.CargoNum + state.CargoCheckNum;
-
-        //check Cargo Num
-        if(CargoNumCheck(inputs['CargoLetter']?.getValue(), inputs['CargoNum']?.getValue(), parseInt(inputs['CargoCheckNum']?.getValue()))){ //檢查櫃號
-            //通過放入資料庫
-            DB.transaction(function(tr){
-                tr.executeSql(
-                    'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [moment(state.date).format('yyyy-MM-DD'), state.orderID, state.type, CargoNum, state.local, state.RMB, state.HKD, state.ADD,
-                     state.shipping, state.remark]
-                );
-            }, function(error){
-                console.log('傳輸錯誤: ' + error.message); //debug
-            }, function(){
-                //todo: 紀錄已儲存
-            });
-        }else{
-            //todo: 不通過彈出提醒
-
+        //檢查條件
+        if(state.orderID.length > 0 && state.orderID.length < 9){
+            error.orderID = '未完成填寫';
         }
-    }
+        if(state.cargoLetter.length <= 0 || state.cargoNum.length <= 0 || state.cargoCheckNum.length <= 0){
+            error.cargo = '必須填寫';
+        }else if(state.cargoLetter.length < 4 || state.cargoNum.length < 6 || state.cargoCheckNum.length < 1){
+            error.cargo = '未完成填寫';
+        }else if(!CargoNumCheck(state.cargoLetter, state.cargoNum, parseInt(state.cargoCheckNum))){
+            error.cargo = '填寫錯誤';
+        }
+        if(state.location.length <= 0){
+            error.location = '必須填寫';
+        }
+
+        dispatch({type: SET_ERROR, payload: {error: {...error}}});
+        if(Object.values(error).findIndex((value) => value !== null) >= 0) return; //是否全部已通過
+
+        //通過放入資料庫
+        const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
+        DB.transaction(function(tr){
+            tr.executeSql(
+                'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [moment(state.date).format('yyyy-MM-DD'), state.orderID, state.type,
+                 CargoNum, state.location, state.RMB, state.HKD, state.ADD, state.shipping, state.remark]
+            );
+        }, function(error){
+            console.log('傳輸錯誤: ' + error.message); //debug
+        }, function(){
+            console.log('ok'); //debug
+            //todo
+        });
+    };
 
     //debug
     useEffect(() => {
         console.log(state);
-    })
+    });
 
-    /* 地點input */
-    const LocalInput = () => {
-        const data = ['abcdefg', 'higklmn', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst', 'opqrst']; //debug
-
-        const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-        const [autoComplete, setAutoComplete] = useState(data); //自動完成
-        const [inputText, setInputText] = useState(state.location);
-        const [showList, setShowList] = useState(false);
-
-        /* 文字被更改 */
-        const onChange = (text) => {
-            setInputText(text);
-            setAutoComplete(data); //todo:sql
-            //向數據庫取數據
-            /*DB.transaction(function(tr){
-             tr.executeSql("SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10", ["%" + text + "%"], function(tx, rs){
-             if(rs.rows.length <= 0) return;
-             for(let i = 0 ; i < rs.rows.length ; i++){
-             let val = rs.rows.item().Local
-
-             //插入
-             console.log(rs.rows)
-             }
-             })
-             }, function(error){
-             console.log('傳輸錯誤: ' + error.message); //debug
-             })*/
+    /* 儲存草稿 */
+    const storeDraft = async() => {
+        try{
+            let draft = JSON.stringify(state);
+            await AsyncStorage.setItem('Draft', draft);
+        }catch(e){
+            console.log('Save Daft error: ', e);
         }
-
-        /* 完成輸入 */
-        const submitEditing = () => {
-            dispatch({type: UPDATE_LOCATION, payload: {location: inputText}});
-            focusNextField('RMB');
-        }
-
-        /* 失去焦點 */
-        const blur = () => {
-            switchShowList(false);
-            dispatch({type: UPDATE_LOCATION, payload: {location: inputText}});
-        }
-
-        /* 自動完成 表列文字 */
-        const ListText = ({item}) => {
-            let wordIndex = item.search(new RegExp(inputText, 'i'));
-
-            let first = item.substring(0, wordIndex);
-            let correct = item.substring(wordIndex, wordIndex + inputText.length); //符合文字
-            let last = item.substring(wordIndex + inputText.length);
-
-            return (
-                <Text>
-                    <Text>{first}</Text>
-                    <Text style={{color: Color.primaryColor}}>{correct}</Text>
-                    <Text>{last}</Text>
-                </Text>
-            )
-        }
-
-        /* 開啟動畫 */
-        const fade = useRef(new Animated.Value(0)).current;
-        const scale = useRef(new Animated.Value(0.8)).current;
-
-        function switchShowList(setShow){
-            if(setShow){
-                //開啟
-                setShowList(true);
-                Animated.timing(fade, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true
-                }).start();
-                Animated.timing(scale, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true
-                }).start();
-            }else{
-                //關閉
-                Animated.timing(fade, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true
-                }).start();
-                Animated.timing(scale, {
-                    toValue: 0.8,
-                    duration: 200,
-                    useNativeDriver: true
-                }).start(() => setShowList(false));
-            }
-        }
-
-        return (
-            <View style={{position: 'relative', flex: 1, height: 38 * PixelRatio.getFontScale()}}>
-                <TextInput onChangeText={onChange} value={inputText} autoComplete={'off'} onSubmitEditing={submitEditing} selectTextOnFocus={true} returnKeyType={'next'} onFocus={() => switchShowList(true)} onBlur={blur} ref={(ref) => inputs['local'] = ref}/>
-                <Animated.View style={[style.autoComplete, {
-                    backgroundColor: isDarkMode ? Color.darkColor : Color.white,
-                    opacity: fade,
-                    display: showList ? undefined : 'none',
-                    transform: [{
-                        scale,
-                    }]
-                }]}>
-                    <ScrollView nestedScrollEnabled={true}>
-                        {autoComplete.map((data, index) =>
-                            <View key={index} style={{flex: 1, marginVertical: 4}}>
-                                <ListText item={data}/>
-                            </View>
-                        )}
-                    </ScrollView>
-                </Animated.View>
-            </View>
-        )
-    }
-
-
-    /* Cargo1輸入 */
-    const CargoLetterInput = () => {
-        return (
-            <TextInput style={{
-                flex: 1 / 3,
-                marginRight: 4
-            }} value={state.cargoLetter} placeholder={'AAAA'} returnKeyType={'next'} maxLength={4} onSubmitEditing={(event) => {
-                focusNextField('CargoNum');
-                dispatch({type: UPDATE_CARGO_LETTER, payload: {cargoLetter: event.text}});
-            }} ref={(ref) =>
-                inputs['CargoLetter'] = ref
-            } render={props =>
-                <TextInputMask {...props} selectTextOnFocus={true} mask={'[AAAA]'}/>
-            }/>
-        );
-    }
-
-    /* 日期輸入 */
-    const DateSelect = () => {
-        return (
-            <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
-                hideKeyboard().then(r => null);
-                DateTimePickerAndroid.open({
-                                               value: state.date, onChange: (event, newDate) => {
-                        focusNextField('orderID');
-                        dispatch({type: UPDATE_DATE, payload: {date: newDate}});
-                    }
-                                           });
-            }} value={moment(state.date).format('D/M/yyyy')}/>
-        );
     };
+
+    /* 讀取草稿 */
+    useEffect(() => {
+        //讀取
+        const getDraft = async() => {
+            try{
+                const draft = await AsyncStorage.getItem('Draft');
+                await AsyncStorage.removeItem('Draft');
+                return draft != null ? JSON.parse(draft) : null;
+            }catch(e){
+                console.log('Read Daft error: ', e);
+            }
+        };
+
+        //處理
+        getDraft().then((draft) => {
+            if(draft != null){
+                draft.date = new Date(draft.date);
+                dispatch({payload: {...draft}});
+            }
+        });
+    }, []);
+
+    /* 處理返回按鈕 */
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            if(focusingDecInput !== null){ //打開了自定義數字鍵盤行為
+                inputs[focusingDecInput].blur();
+                return true;
+            }else{
+                storeDraft().then(() => null); //預設行為
+            }
+        });
+
+        return () => backHandler.remove(); //清除活動監聽器
+    }, [focusingDecInput, inputs]);
 
     return (
         <SafeAreaView style={{flex: 1}}>
             <React.StrictMode>
                 <ScrollView nestedScrollEnabled={true}>
                     <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                        {/* 日期 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>日期</Text>
-                            <DateSelect date={state.date} dispatch={dispatch} focusNextField={focusNextField}/>
+                            <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
+                                hideKeyboard().then(r => null);
+                                DateTimePickerAndroid.open({
+                                    value: state.date, onChange: (event, newDate) => {
+                                        focusNextField('orderID');
+                                        dispatch({type: UPDATE_DATE, payload: {date: newDate}});
+                                    }
+                                });
+                            }} value={moment(state.date).format('D/M/yyyy')}/>
                         </View>
+                        {/* 單號 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>單號</Text>
-                            <TextInput placeholder={'03/09/020'} keyboardType="numeric" returnKeyType={'next'} maxLength={9} onSubmitEditing={() => focusNextField(
-                                'CargoLetter')} ref={(ref) => inputs['orderID'] = ref} render={props =>
-                                <TextInputMask {...props} selectTextOnFocus={true} mask={'[00]/[00]/[000]'}/>}/>
+                            <View style={{flex: 1}}>
+                                <TextInput placeholder={'03/09/020'} keyboardType="numeric" returnKeyType={'next'} maxLength={9}
+                                           onSubmitEditing={() => focusNextField('CargoLetter')} ref={(ref) => inputs['orderID'] = ref}
+                                           onBlur={(text) => dispatch({type: UPDATE_ORDER_ID, payload: {orderID: text}})}
+                                           render={props => <TextInputMask {...props} mask={'[00]/[00]/[000]'}/>}
+                                           error={state.error.orderID !== null} value={state.orderID}
+                                />
+                                <ErrorHelperText visible={state.error.orderID !== null}>{state.error.orderID}</ErrorHelperText>
+                            </View>
                         </View>
+                        {/* 類型 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>類型</Text>
-                            <RadioGroup containerStyle={{
-                                justifyContent: 'space-between',
-                                flex: 1
-                            }} onPress={(value) => dispatch({type: UPDATE_TYPE, payload: {type: value}})}>
+                            <RadioGroup containerStyle={{justifyContent: 'space-between', flex: 1}} selectValue={state.type}
+                                        onPress={(value) => dispatch({type: UPDATE_TYPE, payload: {type: value}})}>
                                 <RadioButton value={'20'} label={'20'} color={Color.primaryColor}/>
-                                <RadioButton value={'40'} label={'40'} color={Color.primaryColor} selected={true}/>
+                                <RadioButton value={'40'} label={'40'} color={Color.primaryColor}/>
                                 <RadioButton value={'45'} label={'45'} color={Color.primaryColor}/>
                             </RadioGroup>
                         </View>
+                        {/* 櫃號 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>櫃號</Text>
                             <View style={[{flex: 1}, style.Flex_row]}>
-                                <CargoLetterInput/>
-                                <TextInput placeholder={'000000'} keyboardType="numeric" returnKeyType={'next'} maxLength={6} onSubmitEditing={() => focusNextField(
-                                    'CargoCheckNum')} ref={(ref) => inputs['CargoNum'] = ref} render={props =>
-                                    <TextInputMask {...props} mask={'[000000]'}/>}/>
+                                <View style={{flex: 1 / 3, marginRight: 4}}>
+                                    <TextInput error={state.error.cargo !== null} value={state.cargoLetter}
+                                               placeholder={'AAAA'} returnKeyType={'next'} maxLength={4}
+                                               onSubmitEditing={() => focusNextField('CargoNum')}
+                                               ref={(ref) => inputs['CargoLetter'] = ref}
+                                               onBlur={(text) => {dispatch({type: UPDATE_CARGO_LETTER, payload: {cargoLetter: text.toUpperCase()}});}}
+                                               render={props => <TextInputMask {...props} selectTextOnFocus={true} mask={'[AAAA]'}/>}
+                                    />
+                                    <ErrorHelperText visible={state.error.cargo !== null}>{state.error.cargo}</ErrorHelperText>
+                                </View>
+                                <View style={{flex: 1, marginRight: 4}}>
+                                    <TextInput placeholder={'000000'} keyboardType="numeric" returnKeyType={'next'}
+                                               maxLength={6} error={state.error.cargo !== null} value={state.cargoNum}
+                                               onSubmitEditing={() => focusNextField('CargoCheckNum')}
+                                               onBlur={(text) => {dispatch({type: UPDATE_CARGO_NUM, payload: {cargoNum: text}});}}
+                                               ref={(ref) => inputs['CargoNum'] = ref}
+                                               render={props => <TextInputMask {...props} mask={'[000000]'}/>}
+                                    />
+                                    <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
+                                </View>
                                 <Text>(</Text>
-                                <TextInput style={{flex: 1 / 6}} placeholder={'0'} keyboardType="numeric" returnKeyType={'next'} maxLength={1} onSubmitEditing={() => focusNextField(
-                                    'local')} ref={(ref) => inputs['CargoCheckNum'] = ref} render={props =>
-                                    <TextInputMask {...props} mask={'[0]'}/>}/>
+                                <View style={{flex: 1 / 5}}>
+                                    <TextInput placeholder={'0'} keyboardType="numeric" returnKeyType={'next'} value={state.cargoCheckNum}
+                                               maxLength={1} error={state.error.cargo !== null} style={{textAlign: 'center', marginHorizontal: 2}}
+                                               onSubmitEditing={() => focusNextField('local')}
+                                               onBlur={(text) => {dispatch({type: UPDATE_CARGO_CHECK_NUM, payload: {cargoCheckNum: text}});}}
+                                               ref={(ref) => inputs['CargoCheckNum'] = ref}
+                                               render={props => <TextInputMask {...props} mask={'[0]'}/>}
+                                    />
+                                    <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
+                                </View>
                                 <Text>)</Text>
                             </View>
                         </View>
+                        {/* 地點 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>地點</Text>
-                            <LocalInput/>
+                            <LocalInput ref={(ref) => {inputs['local'] = ref;}} value={state.location}
+                                        onBlur={(text) => dispatch({type: UPDATE_LOCATION, payload: {location: text}})}
+                                        onSubmitEditing={() => focusNextField('RMB')} error={state.error.location}
+                            />
                         </View>
+                        {/* 人民幣 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>人民幣</Text>
                             <View style={[{flex: 1}, style.Flex_row]}>
                                 <View style={{flex: 1, marginRight: 4}}>
-                                    <DecimalInput ref={(ref) => {inputs['RMB'] = ref;}} containerStyle={{flex: 1}} inputStyle={style.formInput} placeholder={'¥ --'} inputProps={{
-                                        showSoftInputOnFocus: false
-                                    }} onValueChange={(value) => dispatch({
-                                                                              type: UPDATE_RMB,
-                                                                              payload: {RMB: value}
-                                                                          })} symbol={'¥ '} keyboardRef={NumKeyboard_refs} onFocus={() => DecimalInput_Focus(
-                                        'RMB')} onBlur={DecimalInput_Blur}/>
+                                    <DecimalInput ref={(ref) => {inputs['RMB'] = ref;}} containerStyle={{flex: 1}}
+                                                  inputStyle={style.formInput} placeholder={'¥ --'} inputProps={{showSoftInputOnFocus: false}}
+                                                  onValueChange={(value) => dispatch({type: UPDATE_RMB, payload: {RMB: value}})}
+                                                  symbol={'¥ '} keyboardRef={NumKeyboard_refs} onFocus={() => DecimalInput_Focus('RMB')}
+                                                  onBlur={DecimalInput_Blur} value={state.RMB}
+                                    />
                                     <HelperText>匯率: 1 港幣 = {Rates} 人民幣</HelperText>
                                 </View>
                                 <Text>折算 HK$ {(state.RMB / Rates).toFixed(2)}</Text>
                             </View>
                         </View>
+                        {/* 港幣 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>港幣</Text>
-                            <DecimalInput ref={(ref) => {inputs['HKD'] = ref;}} containerStyle={{flex: 1}} inputStyle={style.formInput} placeholder={'$ --'} inputProps={{
-                                showSoftInputOnFocus: false
-                            }} onValueChange={(value) => dispatch(
-                                {type: UPDATE_HKD, payload: {HKD: value}})} symbol={'$ '} onFocus={() => DecimalInput_Focus(
-                                'HKD')} onBlur={DecimalInput_Blur}/>
+                            <DecimalInput ref={(ref) => {inputs['HKD'] = ref;}} containerStyle={{flex: 1}} value={state.HKD}
+                                          inputStyle={style.formInput} placeholder={'$ --'} inputProps={{showSoftInputOnFocus: false}}
+                                          onValueChange={(value) => dispatch({type: UPDATE_HKD, payload: {HKD: value}})}
+                                          symbol={'$ '} onFocus={() => DecimalInput_Focus('HKD')} onBlur={DecimalInput_Blur}
+                            />
                         </View>
+                        {/* 加收&運費 */}
                         <View style={style.formGroup}>
                             <View style={[{flex: 1 / 2}, style.Flex_row]}>
                                 <Text style={{flex: 1 / 2}}>加收</Text>
-                                <DecimalInput ref={(ref) => {inputs['ADD'] = ref;}} containerStyle={{flex: 1}} inputStyle={style.formInput} placeholder={'$ --'} inputProps={{
-                                    showSoftInputOnFocus: false
-                                }} onValueChange={(value) => dispatch(
-                                    {type: UPDATE_ADD, payload: {ADD: value}})} symbol={'$ '} onFocus={() => DecimalInput_Focus(
-                                    'ADD')} onBlur={DecimalInput_Blur}/>
+                                <DecimalInput ref={(ref) => {inputs['ADD'] = ref;}} containerStyle={{flex: 1}} value={state.ADD}
+                                              inputStyle={style.formInput} placeholder={'$ --'} inputProps={{showSoftInputOnFocus: false}}
+                                              onValueChange={(value) => dispatch({type: UPDATE_ADD, payload: {ADD: value}})}
+                                              symbol={'$ '} onFocus={() => DecimalInput_Focus('ADD')} onBlur={DecimalInput_Blur}
+                                />
                             </View>
                             <View style={[{flex: 1 / 2}, style.Flex_row]}>
                                 <Text style={{flex: 1 / 2}}>運費</Text>
-                                <DecimalInput ref={(ref) => {inputs['shipping'] = ref;}} containerStyle={{flex: 1}} inputStyle={style.formInput} placeholder={'$ --'} inputProps={{
-                                    showSoftInputOnFocus: false
-                                }} onValueChange={(value) => dispatch(
-                                    {type: UPDATE_SHIPPING, payload: {shipping: value}})} symbol={'$ '} onFocus={() => DecimalInput_Focus(
-                                    'shipping')} onBlur={DecimalInput_Blur}/>
+                                <DecimalInput ref={(ref) => {inputs['shipping'] = ref;}} containerStyle={{flex: 1}} value={state.shipping}
+                                              inputStyle={style.formInput} placeholder={'$ --'} inputProps={{showSoftInputOnFocus: false}}
+                                              onValueChange={(value) => dispatch({type: UPDATE_SHIPPING, payload: {shipping: value}})}
+                                              symbol={'$ '} onFocus={() => DecimalInput_Focus('shipping')} onBlur={DecimalInput_Blur}
+                                />
                             </View>
                         </View>
                     </View>
+                    {/* 備註 */}
                     <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.formGroup, {marginTop: -10}]}>
-                            <TextInput ref={(ref) => {inputs['remark'] = ref;}} label={'備註'} selectTextOnFocus={true} returnKeyType={'done'} maxLength={50}/>
+                            <TextInput ref={(ref) => {inputs['remark'] = ref;}} label={'備註'} returnKeyType={'done'} maxLength={50} value={state.remark} onChangeText={(text) => dispatch(
+                                {type: UPDATE_REMARK, payload: {remark: text}})}/>
                         </View>
                     </View>
+                    {/* 儲存 */}
                     <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.Flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
-                            <Text style={{
-                                color: Color.primaryColor,
-                                fontSize: 20
-                            }}>HK$ {(state.shipping + state.ADD + state.HKD + state.RMB / Rates).toFixed(2)}</Text>
+                            <Text style={{color: Color.primaryColor, fontSize: 20}}>
+                                HK$ {(state.shipping + state.ADD + state.HKD + state.RMB / Rates).toFixed(2)}
+                            </Text>
                         </View>
                         <Button icon={'content-save-outline'} mode={'contained'} onPress={submit}>儲存</Button>
                     </View>
@@ -428,15 +403,137 @@ const AddRecord = () => {
                 <NumKeyboard ref={NumKeyboard_refs} onKeyPress={onKeyPress}/>
             </React.StrictMode>
         </SafeAreaView>
-    )
-}
+    );
+};
+
+/* 地點input */
+const LocalInput = forwardRef(({value, onSubmitEditing, error = null, onBlur}, ref) => {
+    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+    const [autoComplete, setAutoComplete] = useState([]); //自動完成
+    const [inputText, setInputText] = useState('');
+    const [showList, setShowList] = useState(false);
+
+    /* 文字被更改 */
+    const onChange = (text) => {
+        setInputText(text);
+    };
+
+    /* 向數據庫取數據 */
+    useEffect(() => {
+        DB.transaction(function(tr){
+            tr.executeSql('SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10', ['%' + inputText + '%'], function(tx, rs){
+                if(rs.rows.length <= 0 || inputText.length <= 0){
+                    switchShowList(false);
+                }else{
+                    switchShowList(true);
+                    let val = [];
+                    for(let i = 0 ; i < rs.rows.length ; i++){
+                        val.push(rs.rows.item(i).Local);
+                    }
+                    setAutoComplete(val);
+                }
+            });
+        }, function(error){
+            console.log('傳輸錯誤: ' + error.message); //debug
+        });
+    }, [inputText]);
+
+    /* 預設文字 */
+    useEffect(() => {
+        setInputText(value);
+    }, [value]);
+
+    /* 關閉自動完成, 並且儲存值 */
+    function closeAndSave(callback){
+        switchShowList(false, () => {
+            callback && callback();
+        });
+    }
+
+    /* 自動完成 表列文字 */
+    const ListText = ({item}) => {
+        let wordIndex = item.search(new RegExp(inputText, 'i'));
+
+        let first = item.substring(0, wordIndex);
+        let correct = item.substring(wordIndex, wordIndex + inputText.length); //符合文字
+        let last = item.substring(wordIndex + inputText.length);
+
+        return (
+            <Text>
+                <Text>{first}</Text>
+                <Text style={{color: Color.primaryColor}}>{correct}</Text>
+                <Text>{last}</Text>
+            </Text>
+        );
+    };
+
+    /* 開啟動畫 */
+    const fade = useRef(new Animated.Value(0)).current;
+    const scale = useRef(new Animated.Value(0.8)).current;
+
+    function switchShowList(setShow, callback = () => null){
+        if(setShow){
+            //開啟
+            setShowList(true);
+            Animated.timing(fade, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true
+            }).start();
+            Animated.timing(scale, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true
+            }).start();
+        }else{
+            //關閉
+            Animated.timing(fade, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true
+            }).start();
+            Animated.timing(scale, {
+                toValue: 0.8,
+                duration: 200,
+                useNativeDriver: true
+            }).start(() => {
+                setShowList(false);
+                callback();
+            });
+        }
+    }
+
+    return (
+        <View style={{position: 'relative', flex: 1}}>
+            <TextInput onChangeText={onChange} value={inputText} autoComplete={'off'}
+                       onSubmitEditing={() => closeAndSave(onSubmitEditing)}
+                       returnKeyType={'next'} error={error !== null}
+                       onBlur={() => closeAndSave(onBlur(inputText))} ref={ref}
+            />
+            <ErrorHelperText visible={error !== null}>{error}</ErrorHelperText>
+            <Animated.View style={[style.autoComplete, {
+                backgroundColor: isDarkMode ? Color.darkColor : Color.white,
+                opacity: fade,
+                display: showList ? undefined : 'none',
+                transform: [{scale}]
+            }]}>
+                <ScrollView nestedScrollEnabled={true}>
+                    {autoComplete.map((data, index) =>
+                        <View key={index} style={{flex: 1, marginVertical: 4}}>
+                            <ListText item={data}/>
+                        </View>
+                    )}
+                </ScrollView>
+            </Animated.View>
+        </View>
+    );
+});
 
 const style = StyleSheet.create({
     formGroup: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 5,
-
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 5
     },
     autoComplete: {
         flex: 1,
@@ -447,7 +544,7 @@ const style = StyleSheet.create({
         elevation: 5,
         zIndex: 5,
         borderRadius: 10,
-        padding: 5,
+        padding: 5
     },
     Remark: {
         borderColor: Color.darkColorLight,
@@ -460,11 +557,11 @@ const style = StyleSheet.create({
     Data: {
         borderColor: Color.darkColorLight,
         borderBottomWidth: .7,
-        padding: 10,
+        padding: 10
     },
     Flex_row: {
         flexDirection: 'row',
         alignItems: 'center'
     }
-})
+});
 export {AddRecord};

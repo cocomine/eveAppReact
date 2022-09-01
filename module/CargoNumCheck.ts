@@ -1,35 +1,29 @@
 function CargoNumCheck(CargoLetter: string, CargoNum: string, CargoCheckNum: number) {
     //分拆字元
-    let CargoLetterArray = CargoLetter.split("");
-    let CargoNumArray = CargoNum.split("");
-    let CargoLetterTransformArray: number[] = [];
-    let CargoNumTransformArray: number[] = [];
+    let CargoLetterArray = CargoLetter.toUpperCase().split('');
+    let CargoNumArray = CargoNum.split('');
 
     //英文轉換數字
-    for (let i = 0; i < CargoLetterArray.length; i++) {
-        CargoLetterTransformArray[i] = (function () {
-            if (CargoLetterArray[i] === "A") {
-                return 10;
-            } else {
-                const [LetterList, LetterList2, LetterList3] = ["BCDEFGHIJK", "LMNOPQRSTU", "VWXYZ"];
-                let index = LetterList.indexOf(CargoLetterArray[i]);
+    let CargoLetterTransformArray = CargoLetterArray.map((char) => {
+        if (char === "A") {
+            return 10;
+        } else {
+            const [LetterList, LetterList2, LetterList3] = ["BCDEFGHIJK", "LMNOPQRSTU", "VWXYZ"];
+            let index = LetterList.indexOf(char);
+            if (index < 0) {
+                index = LetterList2.indexOf(char);
                 if (index < 0) {
-                    index = LetterList2.indexOf(CargoLetterArray[i]);
-                    if (index < 0) {
-                        index = LetterList3.indexOf(CargoLetterArray[i]);
-                        return 34 + index
-                    }
-                    return 23 + index;
+                    index = LetterList3.indexOf(char);
+                    return 34 + index
                 }
-                return 12 + index;
+                return 23 + index;
             }
-        })();
-    }
+            return 12 + index;
+        }
+    })
 
     //字串轉換數字
-    for (let i = 0; i < CargoNum.length; i++) {
-        CargoNumTransformArray[i] = parseInt(CargoNumArray[i]);
-    }
+    let CargoNumTransformArray = CargoNumArray.map((char) => parseInt(char))
 
     //console.log(CargoNum, CargoLetter)
 
