@@ -7,7 +7,7 @@ const DB = SQLite.openDatabase({name: 'my.DB', location: 'default'});
 
 console.log('DatabaseVer_Helper loaded!');
 const restartApp = () => {
-    ToastAndroid.show('資料庫更新完成, 正在重新啟動');
+    ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.LONG);
     RNRestart.Restart();
 };
 const checkUpdate = () => {

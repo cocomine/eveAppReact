@@ -1,5 +1,5 @@
-import React, {forwardRef, useEffect, useReducer, useRef, useState} from 'react';
-import {Animated, BackHandler, SafeAreaView, ScrollView, StyleSheet, useColorScheme, View} from 'react-native';
+import React, {forwardRef, useCallback, useEffect, useReducer, useRef, useState} from 'react';
+import {Animated, BackHandler, SafeAreaView, ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import moment from 'moment';
 import {Color} from '../module/Color';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
@@ -135,17 +135,17 @@ const AddRecord = ({navigation}) => {
     };
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
-    const DecimalInput_Focus = (id) => {
-        hideKeyboard().then(r => null);
+    const DecimalInput_Focus = useCallback((id) => {
+        hideKeyboard().then();
         setFocusingDecInput(id);
         NumKeyboard_refs.current.openKeyBoard();
-    };
+    }, []);
 
     /* 失焦金錢輸入欄 => 關閉虛擬鍵盤 */
-    const DecimalInput_Blur = () => {
+    const DecimalInput_Blur = useCallback(() => {
         setFocusingDecInput(null);
         NumKeyboard_refs.current.closeKeyBoard();
-    };
+    }, []);
 
     /* 虛擬鍵盤點擊 */
     const onKeyPress = (value) => {
@@ -157,7 +157,7 @@ const AddRecord = ({navigation}) => {
     };
 
     /* 遞交 */
-    const submit = () => {
+    const submit = useCallback(() => {
         let initialError = {
             cargo: null,
             location: null,
@@ -195,24 +195,14 @@ const AddRecord = ({navigation}) => {
             console.log('傳輸錯誤: ' + error.message); //debug
         }, function(){
             console.log('ok'); //debug
-            //todo
+            //todo: 跳轉頁面
         });
-    };
+    }, [state]);
 
     //debug
     useEffect(() => {
         console.log(state);
     });
-
-    /* 儲存草稿 */
-    const storeDraft = async() => {
-        try{
-            let draft = JSON.stringify(state);
-            await AsyncStorage.setItem('Draft', draft);
-        }catch(e){
-            console.log('Save Daft error: ', e);
-        }
-    };
 
     /* 讀取草稿 */
     useEffect(() => {
@@ -242,13 +232,31 @@ const AddRecord = ({navigation}) => {
             if(focusingDecInput !== null){ //打開了自定義數字鍵盤行為
                 inputs[focusingDecInput].blur();
                 return true;
-            }else{
-                storeDraft().then(() => null); //預設行為
             }
         });
 
-        return () => backHandler.remove(); //清除活動監聽器
+        //清除活動監聽器
+        return () => backHandler.remove();
     }, [focusingDecInput, inputs]);
+
+    /* 處理退出頁面 儲存草稿 */
+    useEffect(() => {
+        //儲存
+        const storeDraft = async() => {
+            try{
+                let draft = JSON.stringify(state);
+                await AsyncStorage.setItem('Draft', draft);
+                ToastAndroid.show('已儲存為草稿', ToastAndroid.SHORT);
+            }catch(e){
+                console.log('Save Daft error: ', e);
+            }
+        };
+
+        //處理
+        return navigation.addListener('beforeRemove', () => {
+            storeDraft().then(); //儲存草稿
+        });
+    }, [navigation, state]);
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -259,7 +267,7 @@ const AddRecord = ({navigation}) => {
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>日期</Text>
                             <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
-                                hideKeyboard().then(r => null);
+                                hideKeyboard().then();
                                 DateTimePickerAndroid.open({
                                     value: state.date, onChange: (event, newDate) => {
                                         focusNextField('orderID');
@@ -385,8 +393,9 @@ const AddRecord = ({navigation}) => {
                     {/* 備註 */}
                     <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.formGroup, {marginTop: -10}]}>
-                            <TextInput ref={(ref) => {inputs['remark'] = ref;}} label={'備註'} returnKeyType={'done'} maxLength={50} value={state.remark} onChangeText={(text) => dispatch(
-                                {type: UPDATE_REMARK, payload: {remark: text}})}/>
+                            <TextInput ref={(ref) => {inputs['remark'] = ref;}} label={'備註'} returnKeyType={'done'} maxLength={50}
+                                       value={state.remark} onChangeText={(text) => dispatch({type: UPDATE_REMARK, payload: {remark: text}})}
+                            />
                         </View>
                     </View>
                     {/* 儲存 */}

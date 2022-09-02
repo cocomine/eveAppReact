@@ -1,13 +1,9 @@
 import React from 'react';
-import {createNativeStackNavigator} from "@react-navigation/native-stack";
-import {AddRecord} from "./page/AddRecord";
-import {GestureHandlerRootView} from "react-native-gesture-handler";
-import {useColorScheme} from "react-native";
-import {
-    DarkTheme as NavigationDarkTheme,
-    DefaultTheme as NavigationDefaultTheme,
-    NavigationContainer,
-} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {AddRecord} from './page/AddRecord';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {useColorScheme} from 'react-native';
+import {DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme, NavigationContainer} from '@react-navigation/native';
 import {
     Appbar,
     BottomNavigation,
@@ -16,8 +12,9 @@ import {
     Provider as PaperProvider
 } from 'react-native-paper';
 import merge from 'deepmerge';
-import {Home} from "./page/Home";
-import {Color} from "./module/Color";
+import {Home} from './page/Home';
+import {Color} from './module/Color';
+import Calculator from './module/Calculator';
 
 const Stack = createNativeStackNavigator();
 
@@ -55,15 +52,20 @@ function App(){
                         <Stack.Screen //主要介面
                             name="Main"
                             component={MainScreen}
-                            options={{
-                                headerShown: false,
-                            }}
+                            options={{headerShown: false}}
                         />
                         <Stack.Screen //增加紀錄
                             name="AddRecord"
                             component={AddRecord}
                             options={{title: '增加紀錄'}}
                         />
+                        <Stack.Group screenOptions={{presentation: 'modal'}}>
+                            <Stack.Screen //計算機
+                                name="calculator"
+                                component={Calculator}
+                                options={{headerShown: false}}
+                            />
+                        </Stack.Group>
                     </Stack.Navigator>
                 </NavigationContainer>
             </PaperProvider>
