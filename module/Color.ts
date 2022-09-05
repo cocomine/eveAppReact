@@ -1,4 +1,7 @@
 /* 通用顏色 */
+/**
+ * 顏色列表
+ */
 export const Color = {
     primaryColor: '#127dff',
     darkColor: '#232323',

@@ -123,36 +123,48 @@ const reducer = (state, action) => {
 const AddRecord = ({navigation}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [state, dispatch] = useReducer(reducer, initialState);
-    const [focusingDecInput, setFocusingDecInput] = useState(null);
+    const focusingDecInput = useRef(null);
 
-    let inputs = {}; //textInput refs
+    //textInput refs
+    let inputs = useRef({
+        orderID: null,
+        CargoLetter: null,
+        CargoNum: null,
+        CargoCheckNum: null,
+        local: null,
+        RMB: null,
+        HKD: null,
+        ADD: null,
+        shipping: null,
+        remark: null
+    });
     let NumKeyboard_refs = useRef(null);
 
     /* 對焦到下一個輸入欄 */
     const focusNextField = (id) => {
         console.log('Focus to', id); ///debug
-        inputs[id].focus();
+        inputs.current[id].focus();
     };
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback((id) => {
         hideKeyboard().then();
-        setFocusingDecInput(id);
+        focusingDecInput.current = id;
         NumKeyboard_refs.current.openKeyBoard();
     }, []);
 
     /* 失焦金錢輸入欄 => 關閉虛擬鍵盤 */
     const DecimalInput_Blur = useCallback(() => {
-        setFocusingDecInput(null);
+        focusingDecInput.current = null;
         NumKeyboard_refs.current.closeKeyBoard();
     }, []);
 
     /* 虛擬鍵盤點擊 */
     const onKeyPress = (value) => {
-        if(focusingDecInput){
-            if(value === 'back') inputs[focusingDecInput].setText(inputs[focusingDecInput].getText().slice(0, -1)); //刪除最後一個文字
-            else if(value === 'done') focusNextField(Object.keys(inputs)[Object.keys(inputs).indexOf(focusingDecInput) + 1]); //完成輸入
-            else inputs[focusingDecInput].setText(inputs[focusingDecInput].getText() + value); //輸入文字
+        if(focusingDecInput.current){
+            if(value === 'back') inputs.current[focusingDecInput.current].setText(inputs.current[focusingDecInput.current].getText().slice(0, -1)); //刪除最後一個文字
+            else if(value === 'done') focusNextField(Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1]); //完成輸入
+            else inputs.current[focusingDecInput.current].setText(inputs.current[focusingDecInput.current].getText() + value); //輸入文字
         }
     };
 
@@ -229,15 +241,15 @@ const AddRecord = ({navigation}) => {
     /* 處理返回按鈕 */
     useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-            if(focusingDecInput !== null){ //打開了自定義數字鍵盤行為
-                inputs[focusingDecInput].blur();
+            if(focusingDecInput.current !== null){ //打開了自定義數字鍵盤行為
+                inputs.current[focusingDecInput.current].blur();
                 return true;
             }
         });
 
         //清除活動監聽器
         return () => backHandler.remove();
-    }, [focusingDecInput, inputs]);
+    }, [focusingDecInput]);
 
     /* 處理退出頁面 儲存草稿 */
     useEffect(() => {
@@ -281,7 +293,7 @@ const AddRecord = ({navigation}) => {
                             <Text style={{flex: 1 / 5}}>單號</Text>
                             <View style={{flex: 1}}>
                                 <TextInput placeholder={'03/09/020'} keyboardType="numeric" returnKeyType={'next'} maxLength={9}
-                                           onSubmitEditing={() => focusNextField('CargoLetter')} ref={(ref) => inputs['orderID'] = ref}
+                                           onSubmitEditing={() => focusNextField('CargoLetter')} ref={(ref) => inputs.current.orderID = ref}
                                            onBlur={(text) => dispatch({type: UPDATE_ORDER_ID, payload: {orderID: text}})}
                                            render={props => <TextInputMask {...props} mask={'[00]/[00]/[000]'}/>}
                                            error={state.error.orderID !== null} value={state.orderID}
@@ -294,20 +306,20 @@ const AddRecord = ({navigation}) => {
                             <Text style={{flex: 1 / 5}}>類型</Text>
                             <RadioGroup containerStyle={{justifyContent: 'space-between', flex: 1}} selectValue={state.type}
                                         onPress={(value) => dispatch({type: UPDATE_TYPE, payload: {type: value}})}>
-                                <RadioButton value={'20'} label={'20'} color={Color.primaryColor}/>
-                                <RadioButton value={'40'} label={'40'} color={Color.primaryColor}/>
-                                <RadioButton value={'45'} label={'45'} color={Color.primaryColor}/>
+                                <RadioButton value={'20'} label={'20'} color={Color.primaryColor} selected={state.type === '20'}/>
+                                <RadioButton value={'40'} label={'40'} color={Color.primaryColor} selected={state.type === '40'}/>
+                                <RadioButton value={'45'} label={'45'} color={Color.primaryColor} selected={state.type === '45'}/>
                             </RadioGroup>
                         </View>
                         {/* 櫃號 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>櫃號</Text>
                             <View style={[{flex: 1}, style.Flex_row]}>
-                                <View style={{flex: 1 / 3, marginRight: 4}}>
+                                <View style={{flex: 1 / 2, marginRight: 4}}>
                                     <TextInput error={state.error.cargo !== null} value={state.cargoLetter}
                                                placeholder={'AAAA'} returnKeyType={'next'} maxLength={4}
                                                onSubmitEditing={() => focusNextField('CargoNum')}
-                                               ref={(ref) => inputs['CargoLetter'] = ref}
+                                               ref={(ref) => inputs.current.CargoLetter = ref}
                                                onBlur={(text) => {dispatch({type: UPDATE_CARGO_LETTER, payload: {cargoLetter: text.toUpperCase()}});}}
                                                render={props => <TextInputMask {...props} selectTextOnFocus={true} mask={'[AAAA]'}/>}
                                     />
@@ -318,18 +330,18 @@ const AddRecord = ({navigation}) => {
                                                maxLength={6} error={state.error.cargo !== null} value={state.cargoNum}
                                                onSubmitEditing={() => focusNextField('CargoCheckNum')}
                                                onBlur={(text) => {dispatch({type: UPDATE_CARGO_NUM, payload: {cargoNum: text}});}}
-                                               ref={(ref) => inputs['CargoNum'] = ref}
+                                               ref={(ref) => inputs.current.CargoNum = ref}
                                                render={props => <TextInputMask {...props} mask={'[000000]'}/>}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
                                 </View>
                                 <Text>(</Text>
-                                <View style={{flex: 1 / 5}}>
+                                <View style={{flex: 1 / 4}}>
                                     <TextInput placeholder={'0'} keyboardType="numeric" returnKeyType={'next'} value={state.cargoCheckNum}
                                                maxLength={1} error={state.error.cargo !== null} style={{textAlign: 'center', marginHorizontal: 2}}
                                                onSubmitEditing={() => focusNextField('local')}
                                                onBlur={(text) => {dispatch({type: UPDATE_CARGO_CHECK_NUM, payload: {cargoCheckNum: text}});}}
-                                               ref={(ref) => inputs['CargoCheckNum'] = ref}
+                                               ref={(ref) => inputs.current.CargoCheckNum = ref}
                                                render={props => <TextInputMask {...props} mask={'[0]'}/>}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
@@ -340,7 +352,7 @@ const AddRecord = ({navigation}) => {
                         {/* 地點 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>地點</Text>
-                            <LocalInput ref={(ref) => {inputs['local'] = ref;}} value={state.location}
+                            <LocalInput ref={(ref) => {inputs.current.local = ref;}} value={state.location}
                                         onBlur={(text) => dispatch({type: UPDATE_LOCATION, payload: {location: text}})}
                                         onSubmitEditing={() => focusNextField('RMB')} error={state.error.location}
                             />
@@ -350,7 +362,7 @@ const AddRecord = ({navigation}) => {
                             <Text style={{flex: 1 / 5}}>人民幣</Text>
                             <View style={[{flex: 1}, style.Flex_row]}>
                                 <View style={{flex: 1, marginRight: 4}}>
-                                    <DecimalInput ref={(ref) => {inputs['RMB'] = ref;}} containerStyle={{flex: 1}}
+                                    <DecimalInput ref={(ref) => {inputs.current.RMB = ref;}} containerStyle={{flex: 1}}
                                                   inputStyle={style.formInput} placeholder={'¥ --'} inputProps={{showSoftInputOnFocus: false}}
                                                   onValueChange={(value) => dispatch({type: UPDATE_RMB, payload: {RMB: value}})}
                                                   symbol={'¥ '} keyboardRef={NumKeyboard_refs} onFocus={() => DecimalInput_Focus('RMB')}
@@ -364,7 +376,7 @@ const AddRecord = ({navigation}) => {
                         {/* 港幣 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>港幣</Text>
-                            <DecimalInput ref={(ref) => {inputs['HKD'] = ref;}} containerStyle={{flex: 1}} value={state.HKD}
+                            <DecimalInput ref={(ref) => {inputs.current.HKD = ref;}} containerStyle={{flex: 1}} value={state.HKD}
                                           inputStyle={style.formInput} placeholder={'$ --'} inputProps={{showSoftInputOnFocus: false}}
                                           onValueChange={(value) => dispatch({type: UPDATE_HKD, payload: {HKD: value}})}
                                           symbol={'$ '} onFocus={() => DecimalInput_Focus('HKD')} onBlur={DecimalInput_Blur}
@@ -374,7 +386,7 @@ const AddRecord = ({navigation}) => {
                         <View style={style.formGroup}>
                             <View style={[{flex: 1 / 2}, style.Flex_row]}>
                                 <Text style={{flex: 1 / 2}}>加收</Text>
-                                <DecimalInput ref={(ref) => {inputs['ADD'] = ref;}} containerStyle={{flex: 1}} value={state.ADD}
+                                <DecimalInput ref={(ref) => {inputs.current.ADD = ref;}} containerStyle={{flex: 1}} value={state.ADD}
                                               inputStyle={style.formInput} placeholder={'$ --'} inputProps={{showSoftInputOnFocus: false}}
                                               onValueChange={(value) => dispatch({type: UPDATE_ADD, payload: {ADD: value}})}
                                               symbol={'$ '} onFocus={() => DecimalInput_Focus('ADD')} onBlur={DecimalInput_Blur}
@@ -382,7 +394,7 @@ const AddRecord = ({navigation}) => {
                             </View>
                             <View style={[{flex: 1 / 2}, style.Flex_row]}>
                                 <Text style={{flex: 1 / 2}}>運費</Text>
-                                <DecimalInput ref={(ref) => {inputs['shipping'] = ref;}} containerStyle={{flex: 1}} value={state.shipping}
+                                <DecimalInput ref={(ref) => {inputs.current.shipping = ref;}} containerStyle={{flex: 1}} value={state.shipping}
                                               inputStyle={style.formInput} placeholder={'$ --'} inputProps={{showSoftInputOnFocus: false}}
                                               onValueChange={(value) => dispatch({type: UPDATE_SHIPPING, payload: {shipping: value}})}
                                               symbol={'$ '} onFocus={() => DecimalInput_Focus('shipping')} onBlur={DecimalInput_Blur}
@@ -393,7 +405,7 @@ const AddRecord = ({navigation}) => {
                     {/* 備註 */}
                     <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.formGroup, {marginTop: -10}]}>
-                            <TextInput ref={(ref) => {inputs['remark'] = ref;}} label={'備註'} returnKeyType={'done'} maxLength={50}
+                            <TextInput ref={(ref) => {inputs.current.remark = ref;}} label={'備註'} returnKeyType={'done'} maxLength={50}
                                        value={state.remark} onChangeText={(text) => dispatch({type: UPDATE_REMARK, payload: {remark: text}})}
                             />
                         </View>

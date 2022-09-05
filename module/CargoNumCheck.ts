@@ -1,3 +1,10 @@
+/**
+ * 檢查櫃號完整性
+ * @param CargoLetter 前四個英文字母
+ * @param CargoNum 中間六位數字
+ * @param CargoCheckNum 括號內數字
+ * @constructor
+ */
 function CargoNumCheck(CargoLetter: string, CargoNum: string, CargoCheckNum: number) {
     //分拆字元
     let CargoLetterArray = CargoLetter.toUpperCase().split('');
