@@ -14,7 +14,7 @@ import {
 import merge from 'deepmerge';
 import {Home} from './page/Home';
 import {Color} from './module/Color';
-import Calculator from './module/Calculator';
+import Calculator from './module/Calculator/Calculator';
 
 const Stack = createNativeStackNavigator();
 

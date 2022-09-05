@@ -1,6 +1,5 @@
 import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {
-    Animated,
     StyleProp,
     StyleSheet,
     TextInput as NativeTextInput,
@@ -245,13 +244,6 @@ type NumKeyboardRef = {
     isOpen: () => boolean
 }
 
-/* 介面 */
-interface NumKeyboardComponent extends React.ForwardRefExoticComponent<NumKeyboardProps & React.RefAttributes<NumKeyboardRef>> {
-    openKeyBoard: () => void,
-    closeKeyBoard: () => void,
-    isOpen: () => boolean
-}
-
 /* 數字鍵盤 */
 const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
                                                                       onKeyPress = () => {
@@ -261,6 +253,7 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
     const {colors} = useTheme();
     const [display, setDisplay] = useState<string | undefined>('none');
     const navigation = useNavigation();
+    const BG_color = isDarkMode ? Color.darkBlock : Color.white
 
     /* 鍵盤點擊 */
     const onPress = useCallback((value: string) => {
@@ -288,34 +281,34 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
 
     return (
         // @ts-ignore
-        <Animated.View style={{display, height: 220}}>
-            <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('1')}><View style={style.button}><Text style={style.text}>1</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('2')}><View style={style.button}><Text style={style.text}>2</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('3')}><View style={style.button}><Text style={style.text}>3</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('back')}><View style={style.button}><IconButton icon={'backspace-outline'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+        <View style={{display, height: 220}}>
+            <View style={[style.row, {backgroundColor: BG_color}]}>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('1')}><View style={style.button}><Text style={style.text}>1</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('2')}><View style={style.button}><Text style={style.text}>2</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('3')}><View style={style.button}><Text style={style.text}>3</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('back')}><View style={style.button}><IconButton icon={'backspace-outline'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
-            <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('4')}><View style={style.button}><Text style={style.text}>4</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('5')}><View style={style.button}><Text style={style.text}>5</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('6')}><View style={style.button}><Text style={style.text}>6</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('-')}><View style={style.button}><Text style={style.text}>-</Text></View></TouchableNativeFeedback>
+            <View style={[style.row, {backgroundColor: BG_color}]}>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('4')}><View style={style.button}><Text style={style.text}>4</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('5')}><View style={style.button}><Text style={style.text}>5</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('6')}><View style={style.button}><Text style={style.text}>6</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('-')}><View style={style.button}><Text style={style.text}>-</Text></View></TouchableNativeFeedback>
             </View>
-            <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('7')}><View style={style.button}><Text style={style.text}>7</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('8')}><View style={style.button}><Text style={style.text}>8</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('9')}><View style={style.button}><Text style={style.text}>9</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={openCalculator}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+            <View style={[style.row, {backgroundColor: BG_color}]}>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('7')}><View style={style.button}><Text style={style.text}>7</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('8')}><View style={style.button}><Text style={style.text}>8</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('9')}><View style={style.button}><Text style={style.text}>9</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={openCalculator}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
-            <View style={[style.row, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('00')}><View style={style.button}><Text style={style.text}>00</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('0')}><View style={style.button}><Text style={style.text}>0</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('.')}><View style={style.button}><Text style={style.text}>.</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={() => onPress('done')}><View style={style.button}><IconButton icon={'check'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+            <View style={[style.row, {backgroundColor: BG_color}]}>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('00')}><View style={style.button}><Text style={style.text}>00</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('0')}><View style={style.button}><Text style={style.text}>0</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('.')}><View style={style.button}><Text style={style.text}>.</Text></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('done')}><View style={style.button}><IconButton icon={'check'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
-        </Animated.View>
+        </View>
     )
-}) as NumKeyboardComponent;
+});
 
 export {DecimalInput, NumberInput, NumKeyboard}
 

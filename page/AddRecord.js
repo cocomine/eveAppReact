@@ -141,10 +141,9 @@ const AddRecord = ({navigation}) => {
     let NumKeyboard_refs = useRef(null);
 
     /* 對焦到下一個輸入欄 */
-    const focusNextField = (id) => {
-        console.log('Focus to', id); ///debug
+    const focusNextField = useCallback((id) => {
         inputs.current[id].focus();
-    };
+    }, []);
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback((id) => {
@@ -160,13 +159,13 @@ const AddRecord = ({navigation}) => {
     }, []);
 
     /* 虛擬鍵盤點擊 */
-    const onKeyPress = (value) => {
+    const onKeyPress = useCallback((value) => {
         if(focusingDecInput.current){
             if(value === 'back') inputs.current[focusingDecInput.current].setText(inputs.current[focusingDecInput.current].getText().slice(0, -1)); //刪除最後一個文字
             else if(value === 'done') focusNextField(Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1]); //完成輸入
             else inputs.current[focusingDecInput.current].setText(inputs.current[focusingDecInput.current].getText() + value); //輸入文字
         }
-    };
+    }, []);
 
     /* 遞交 */
     const submit = useCallback(() => {
@@ -272,7 +271,7 @@ const AddRecord = ({navigation}) => {
 
     return (
         <SafeAreaView style={{flex: 1}}>
-            <React.StrictMode>
+            {/*<React.StrictMode>*/}
                 <ScrollView nestedScrollEnabled={true}>
                     <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         {/* 日期 */}
@@ -422,7 +421,7 @@ const AddRecord = ({navigation}) => {
                     </View>
                 </ScrollView>
                 <NumKeyboard ref={NumKeyboard_refs} onKeyPress={onKeyPress}/>
-            </React.StrictMode>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };
