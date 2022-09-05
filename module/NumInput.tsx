@@ -12,7 +12,6 @@ import {
 import {Color} from "./Color";
 import {TouchableNativeFeedbackPresets} from "./styles";
 import {IconButton, Text, TextInput, TextInputProps, useTheme} from "react-native-paper";
-import {CommonActions, useNavigation} from "@react-navigation/native";
 
 /* 輸入參數 */
 interface InputProps {
@@ -246,13 +245,11 @@ type NumKeyboardRef = {
 
 /* 數字鍵盤 */
 const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
-                                                                      onKeyPress = () => {
-                                                                      }
+                                                                      onKeyPress = () => null,
                                                                   }, ref) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const {colors} = useTheme();
     const [display, setDisplay] = useState<string | undefined>('none');
-    const navigation = useNavigation();
     const BG_color = isDarkMode ? Color.darkBlock : Color.white
 
     /* 鍵盤點擊 */
@@ -275,10 +272,6 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
         isOpen: () => display === undefined
     }));
 
-    const openCalculator = useCallback(() => {
-        navigation.dispatch(CommonActions.navigate({name: 'calculator'}));
-    }, [navigation]);
-
     return (
         // @ts-ignore
         <View style={{display, height: 220}}>
@@ -298,7 +291,7 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('7')}><View style={style.button}><Text style={style.text}>7</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('8')}><View style={style.button}><Text style={style.text}>8</Text></View></TouchableNativeFeedback>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('9')}><View style={style.button}><Text style={style.text}>9</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={openCalculator}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('calculator')}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></TouchableNativeFeedback>
             </View>
             <View style={[style.row, {backgroundColor: BG_color}]}>
                 <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('00')}><View style={style.button}><Text style={style.text}>00</Text></View></TouchableNativeFeedback>

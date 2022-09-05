@@ -120,7 +120,7 @@ const reducer = (state, action) => {
 };
 
 /* 增加紀錄 */
-const AddRecord = ({navigation}) => {
+const AddRecord = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [state, dispatch] = useReducer(reducer, initialState);
     const focusingDecInput = useRef(null);
@@ -163,6 +163,7 @@ const AddRecord = ({navigation}) => {
         if(focusingDecInput.current){
             if(value === 'back') inputs.current[focusingDecInput.current].setText(inputs.current[focusingDecInput.current].getText().slice(0, -1)); //刪除最後一個文字
             else if(value === 'done') focusNextField(Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1]); //完成輸入
+            else if(value === 'calculator') navigation.navigate('calculator', {inputID: focusingDecInput.current});
             else inputs.current[focusingDecInput.current].setText(inputs.current[focusingDecInput.current].getText() + value); //輸入文字
         }
     }, []);
@@ -214,6 +215,13 @@ const AddRecord = ({navigation}) => {
     useEffect(() => {
         console.log(state);
     });
+
+    useEffect(() => {
+        console.log(route);
+        if(route.params){
+            inputs.current[route.params.inputID].setText(route.params.value.toString());
+        }
+    }, [route]);
 
     /* 讀取草稿 */
     useEffect(() => {

@@ -1,5 +1,5 @@
 {
-  "name": "eveApp",
+  "name": "eveapp",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -19,6 +19,7 @@
     "moment": "^2.29.4",
     "react": "18.0.0",
     "react-native": "^0.69.4",
+    "react-native-auto-size-text": "^1.1.0",
     "react-native-gesture-handler": "^2.5.0",
     "react-native-haptic-feedback": "^1.14.0",
     "react-native-hide-keyboard": "^0.2.1",

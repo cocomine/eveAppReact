@@ -14,7 +14,7 @@ import {
 import merge from 'deepmerge';
 import {Home} from './page/Home';
 import {Color} from './module/Color';
-import Calculator from './module/Calculator/Calculator';
+import Calculator from './module/Calculator';
 
 const Stack = createNativeStackNavigator();
 
@@ -74,13 +74,13 @@ function App(){
 }
 
 /* 主要介面 */
-const MainScreen = ({theme}) => {
+const MainScreen = () => {
     const [index, setIndex] = React.useState(0);
     const [routes] = React.useState([
         {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
         {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
         {key: 'Backup', title: '備份', focusedIcon: 'cloud-upload', color: Color.success},
-        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo},
+        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo}
     ]);
 
     const renderScene = BottomNavigation.SceneMap({

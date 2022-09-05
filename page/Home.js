@@ -9,19 +9,19 @@ import {
     TouchableOpacity,
     useColorScheme,
     View
-} from "react-native";
-import {Color} from "../module/Color";
-import {Toolbar, ToolBarView} from "../module/Toolbar";
-import ADIcon from "react-native-vector-icons/AntDesign";
-import FW5Icon from "react-native-vector-icons/FontAwesome5";
-import {SmailText, styles, TouchableNativeFeedbackPresets} from "../module/styles";
-import moment from "moment";
-import 'moment/min/locales'
-import {Swipeable} from "react-native-gesture-handler";
-import ReactNativeHapticFeedback from "react-native-haptic-feedback";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import {useNavigation} from "@react-navigation/native";
-import {Text} from "react-native-paper";
+} from 'react-native';
+import {Color} from '../module/Color';
+import {Toolbar, ToolBarView} from '../module/Toolbar';
+import ADIcon from 'react-native-vector-icons/AntDesign';
+import FW5Icon from 'react-native-vector-icons/FontAwesome5';
+import {SmailText, styles, TouchableNativeFeedbackPresets} from '../module/styles';
+import moment from 'moment';
+import 'moment/min/locales';
+import {Swipeable} from 'react-native-gesture-handler';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useNavigation} from '@react-navigation/native';
+import {Text} from 'react-native-paper';
 
 let Rates = 0.86; //匯率變數
 //debug
@@ -359,7 +359,7 @@ const DataPart = ({data}) => {
                                     <Animated.View style={{flex: 1, transform: [{translateY}]}}>
                                         <Text style={{}}><SmailText color={Color.textGary}>港幣</SmailText>$ {item.HKD}
                                         </Text>
-                                        <Text style={{}}><SmailText>人民幣</SmailText>$ {item.RMB}</Text>
+                                        <Text style={{}}><SmailText color={Color.textGary}>人民幣</SmailText>$ {item.RMB}</Text>
                                     </Animated.View>
                                 </View>
                             </View>

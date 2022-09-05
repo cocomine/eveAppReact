@@ -32,6 +32,9 @@ const checkUpdate = () => {
                 case '1.4.1':
                     doUpdate.To_1_5();
                     break;
+                case '1.5':
+                    doUpdate.To_1_5_1();
+                    break;
                 default:
                     console.log('DatabaseVer_Helper:', '已是最新');
                     break;
@@ -121,6 +124,17 @@ const doUpdate = {
             console.log('DatabaseVer_Helper:', '資料庫已更新至1.5');
             restartApp();
         });
+    },
+    To_1_5_1: function(){
+        DB.transaction(function(tr){
+            tr.executeSql('DELETE FROM Setting WHERE Target = \'Decimal_places\'', []);
+            tr.executeSql('UPDATE Setting SET value = \'1.5.1\' WHERE Target = \'database_version\'', []);
+        }, function(e){
+            console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
+        }, function(){
+            console.log('DatabaseVer_Helper:', '資料庫已更新至1.5');
+            restartApp();
+        });
     }
 };
 const startUp = () => {
@@ -145,7 +159,6 @@ const startUp = () => {
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Driver-license\', \'RT XXXX\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'database_version\', \'1.5\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Email-to\', \'mail@example.com\')', []);
-        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Decimal_places\', \'2\')', []);
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup\', \'Off\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup_cycle\', \'day\')', []); //放入sql
 
