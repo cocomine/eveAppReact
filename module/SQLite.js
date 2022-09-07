@@ -1,11 +1,12 @@
 import SQLite from 'react-native-sqlite-storage';
 import {ToastAndroid} from 'react-native';
 import RNRestart from 'react-native-restart';
+import {useEffect, useState} from 'react';
 
 /* 連接sql */
 const DB = SQLite.openDatabase({name: 'my.DB', location: 'default'});
-
 console.log('DatabaseVer_Helper loaded!');
+
 const restartApp = () => {
     ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.LONG);
     RNRestart.Restart();
@@ -169,7 +170,33 @@ const startUp = () => {
         restartApp();
     });
 };
-
 checkUpdate();
 
+/**
+ * 設定Hook
+ * @returns {unknown[]}
+ */
+function useSetting(){
+    const [setting, setSetting] = useState(null);
+
+    useEffect(() => {
+        DB.transaction(function(tr){
+            tr.executeSql('SELECT * FROM Setting', [], function(tx, rs){
+                let Setting = [];
+                for(let i = 0 ; i < rs.rows.length ; i++){
+                    Setting[rs.rows.item(i).Target] = rs.rows.item(i).value;
+                }
+                setSetting(Setting);
+            }, function(error){
+                console.log('獲取失敗: ' + error.message); //debug
+            });
+        }, function(error){
+            console.log('傳輸錯誤: ' + error.message); //debug
+        });
+    }, []);
+
+    return [setting];
+}
+
 export default DB;
+export {useSetting};

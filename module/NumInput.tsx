@@ -12,6 +12,7 @@ import {
 import {Color} from "./Color";
 import {TouchableNativeFeedbackPresets} from "./styles";
 import {IconButton, Text, TextInput, TextInputProps, useTheme} from "react-native-paper";
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 /* 輸入參數 */
 interface InputProps {
@@ -254,6 +255,7 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
 
     /* 鍵盤點擊 */
     const onPress = useCallback((value: string) => {
+        ReactNativeHapticFeedback.trigger("keyboardTap");
         onKeyPress(value)
     }, [onKeyPress]);
 

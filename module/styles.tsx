@@ -28,6 +28,10 @@ const TouchableNativeFeedbackPresets = {
     borderless: {
         useForeground: true,
         background: TouchableNativeFeedback.Ripple(Color.darkColorLight, true),
+    },
+    borderless_color: {
+        useForeground: true,
+        background: TouchableNativeFeedback.Ripple(Color.primaryColor, true),
     }
 }
 export default styles;

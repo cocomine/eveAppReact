@@ -6,6 +6,7 @@ import {TouchableNativeFeedbackPresets} from './styles';
 import {NavigationProp, RouteProp} from "@react-navigation/core/src/types";
 import {ParamListBase} from "@react-navigation/routers";
 import {AutoSizeText, ResizeTextMode} from 'react-native-auto-size-text';
+import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 const Calculator: React.FC<{ navigation: NavigationProp<ReactNavigation.RootParamList>, route: RouteProp<ParamListBase> }> = ({
                                                                                                                                   navigation,
@@ -20,6 +21,8 @@ const Calculator: React.FC<{ navigation: NavigationProp<ReactNavigation.RootPara
 
     /* Key Press */
     const onPress = useCallback((value: string) => {
+        ReactNativeHapticFeedback.trigger("keyboardTap");
+
         let pop = array.current.pop();
         if (!pop) {
             //is undefined
@@ -29,19 +32,21 @@ const Calculator: React.FC<{ navigation: NavigationProp<ReactNavigation.RootPara
         } else {
             let popIsNumber = /[0-9]+(\.[0-9]+)?/.test(pop);
 
-            if (/[0-9]+(\.[0-9]+)?/.test(value)) { //is number
+            if (/[0-9]+(\.[0-9]+)?/.test(value)) {
+                //is number
                 if (popIsNumber) array.current.push(pop + value);
                 else array.current.push(pop, value);
-            } else if (/\./.test(value)) { //is .
+            } else if (/\./.test(value)) {
+                //is .
                 if (popIsNumber) array.current.push(pop + value);
                 else array.current.push(pop, '0' + value);
-            } else { //is (+ - * /)
+            } else {
+                //is (+ - * /)
                 if (popIsNumber) array.current.push(pop, value);
-                //else if(pop) array.current.push('0', value)
                 else array.current.push(value);
             }
         }
-        console.log(array.current)
+        //console.log(array.current)
 
         setRow1(array.current.join('')); //print
     }, []);

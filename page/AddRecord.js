@@ -206,18 +206,17 @@ const AddRecord = ({navigation, route}) => {
         }, function(error){
             console.log('傳輸錯誤: ' + error.message); //debug
         }, function(){
-            console.log('ok'); //debug
-            //todo: 跳轉頁面
+            navigation.navigate('Main', {ShowDay: state.date}); //go back home
         });
     }, [state]);
 
     //debug
-    useEffect(() => {
-        console.log(state);
-    });
+    /*useEffect(() => {
+     console.log(state);
+     });*/
 
+    /* 計算機返回輸入欄位id */
     useEffect(() => {
-        console.log(route);
         if(route.params){
             inputs.current[route.params.inputID].setText(route.params.value.toString());
         }
