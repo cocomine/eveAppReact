@@ -45,7 +45,7 @@ function group_data(ResultSet, Rate, Total_callback){
         total.Total += (row.RMB / Rate) + row.HKD + row.Add + row.Shipping;
 
         //資料
-        if(last_item && last_item.DateTime.getDay() === item_date.getDay()){
+        if(last_item && last_item.DateTime.getDate() === item_date.getDate()){
             //存在 & 相同日期
             last_item.Total += (row.RMB / Rate) + row.HKD + row.Add + row.Shipping;
             last_item.Record.push({
@@ -92,7 +92,7 @@ function grouping_note(package_list = [], ResultSet){
     for(let i = 0 ; i < ResultSet.rows.length ; i++){
         const row = ResultSet.rows.item(i);
         const item_date = new Date(row.DateTime);
-        const match_item = package_list.find((item) => item.DateTime.getDay() === item_date.getDay()); //尋找相同日期
+        const match_item = package_list.find((item) => item.DateTime.getDate() === item_date.getDate()); //尋找相同日期
 
         if(match_item){
             //存在
@@ -121,12 +121,12 @@ function grouping_note(package_list = [], ResultSet){
 /* "紀錄"介面 */
 const Home = ({}) => {
     const navigation = useNavigation(); //導航
-    const route = useRoute();
-    const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0});
-    const [Data, setData] = useState(null);
-    const [ShowDay, setShowDay] = useState(new Date());
-    const [setting] = useSetting();
-    const listRef = useRef(null);
+    const route = useRoute(); //路由
+    const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
+    const [Data, setData] = useState(null); //紀錄資料
+    const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
+    const [setting] = useSetting(); //設定
+    const listRef = useRef(null); //FlatList Ref
 
     /* 選擇顯示月份 */
     const NextMonth = useCallback(() => {
@@ -149,48 +149,46 @@ const Home = ({}) => {
 
     /* 讀取 */
     useEffect(() => {
+        let package_list;
+
         /* 讀取紀錄 */
         DB.transaction(function(tr){
-            console.log('顯示: ', moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY'));
+            console.log('顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
             tr.executeSql(
                 'SELECT * FROM Record WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime DESC',
                 [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')], function(tx, rs){
-                    let package_list = group_data(rs, setting['Rate'], (total) => {setTotal(total);});
-
-                    /* 讀取備忘錄 */
-                    DB.transaction(function(tr){
-                        console.log('備忘錄顯示: ', moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY'));
-                        tr.executeSql(
-                            'SELECT * FROM Note WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime DESC ',
-                            [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')], function(tx, rs){
-                                if(rs.rows.length > 0){
-                                    package_list = grouping_note(package_list);
-                                }
-                                setData(package_list);
-                            }
-                        );
-                    }, function(error){
-                        console.log('傳輸錯誤: ' + error.message);
-                    }, function(){
-                        console.log('已取得資料');
-                    });
-
+                    package_list = group_data(rs, setting['Rate'], (total) => {setTotal(total);});
                 }
             );
         }, function(error){
             console.log('傳輸錯誤: ' + error.message);
         }, function(){
-            console.log('已取得資料');
+
+            /* 讀取備忘錄 */
+            DB.transaction(function(tr){
+                console.log('備忘錄顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
+                tr.executeSql(
+                    'SELECT * FROM Note WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime DESC ',
+                    [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')], function(tx, rs){
+                        if(rs.rows.length > 0) package_list = grouping_note(package_list);
+                    }
+                );
+            }, function(error){
+                console.log('傳輸錯誤: ' + error.message);
+            }, function(){
+                console.log('已取得資料');
+                setData(package_list);
+            });
         });
     }, [ShowDay, setting]);
 
-    useEffect(() => {console.log('update');});
-    /*  */
+    /* 自動滑動最新紀錄 */
     useEffect(() => {
         if(Data != null){
-            const index = Data.findIndex((item) => item.DateTime.getDay() === ShowDay.getDay());
-            console.log(index);
-            listRef.current.scrollToIndex({index: index < 0 ? 0 : index, viewOffset: 50});
+            const index = Data.findIndex((item) => item.DateTime.getDate() === ShowDay.getDate());
+            if(index > 0){
+                listRef.current.scrollToIndex({index: index});
+            }
         }
     }, [Data]);
 
@@ -268,6 +266,11 @@ const Home = ({}) => {
                 data={Data}
                 renderItem={({item}) => <DataPart data={item} Rate={setting['Rate']}/>}
                 ref={listRef}
+                onScrollToIndexFailed={(info) => {
+                    setTimeout(() => {
+                        listRef.current.scrollToIndex({index: info.index});
+                    }, 500);
+                }}
                 ListFooterComponent={
                     <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
                         <SVGCargo height="60" width="180"/>
@@ -287,7 +290,7 @@ const Home = ({}) => {
 /* 內容render */
 const DataPart = ({data, Rate}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    let date = moment(data.DataTime).locale('zh-hk');
+    let date = moment(data.DateTime).locale('zh-hk');
 
     /* 判斷週末 */
     let weekColor = Color.darkColorLight; //預設平日
@@ -315,16 +318,16 @@ const DataPart = ({data, Rate}) => {
                 data.Mark.length > 0 ?
                     <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default}>
                         <View style={style.dataPartMark}>
-                            {data.Mark.map((item) => (
-                                <DataPartMark key={item.MarkID} item={item} id={item.MarkID}/>
+                            {data.Mark.map((item, index) => (
+                                <DataPartMark key={index} item={item} id={item.MarkID}/>
                             ))}
                         </View>
                     </TouchableNativeFeedback> : null
             }
 
             {/* 數據內容 */
-                data.Record.map((item) => (
-                    <DataPartBody key={item.RecordID} item={item} rate={Rate} id={item.RecordID}/>
+                data.Record.map((item, index) => (
+                    <DataPartBody key={index} item={item} rate={Rate} id={item.RecordID}/>
                 ))}
         </View>
     );
@@ -333,11 +336,12 @@ const DataPart = ({data, Rate}) => {
 /* 數據內容 */
 const DataPartBody = ({item, rate, id}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+    const navigation = useNavigation(); //導航
     const isRMBShow = useRef(false); //人民幣顯示
     const canHaptic = useRef(true);
 
     /* 向左滑動 */
-    const swipeRight = (progress, dragX) => {
+    const swipeRight = useCallback((progress, dragX) => {
         //背景動畫
         const translateX = dragX.interpolate({
             inputRange: [-120, 0],
@@ -360,10 +364,10 @@ const DataPartBody = ({item, rate, id}) => {
                 </Animated.View>
             </Animated.View>
         );
-    };
+    });
 
     /* 向右滑動 */
-    const swipeLeft = (progress, dragX) => {
+    const swipeLeft = useCallback((progress, dragX) => {
         //背景動畫
         const translateX = dragX.interpolate({
             inputRange: [0, 120],
@@ -404,7 +408,7 @@ const DataPartBody = ({item, rate, id}) => {
                 </Animated.View>
             </Animated.View>
         );
-    };
+    });
 
     /* 切換人民幣顯示 */
     const translateY = useRef(new Animated.Value(0)).current;
@@ -428,67 +432,92 @@ const DataPartBody = ({item, rate, id}) => {
         }
     }, []);
 
+    /* 移除動畫 */
+    const height = useRef(null);
+    //動畫執行
+    const hide = useCallback(() => {
+        Animated.timing(height.current, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: false
+        }).start();
+    }, []);
+    //初始化
+    const onLayout = useCallback(({nativeEvent}) => {
+        if(height.current === null) height.current = new Animated.Value(nativeEvent.layout.height);
+    }, []);
+
     /* 確認動作*/
     const swipeOpen = useCallback((direction) => {
         console.log(direction);
+        //編輯
         if(direction === 'left'){
-            //todo
+            navigation.navigate('AddRecord', {recordID: id});
         }
+        //移除
         if(direction === 'right'){
-            //todo
+            DB.transaction(function(tr){
+                tr.executeSql('DELETE FROM Record WHERE RecordID = ?', [id]);
+            }, function(error){
+                console.log('傳輸錯誤: ' + error.message); //debug
+            }, () => {
+                hide();
+            });
         }
     }, []);
 
     return (
-        <Swipeable renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} leftThreshold={120} rightThreshold={120} renderLeftActions={swipeLeft} overshootFriction={8}>
-            <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={switchRMBShow}>
-                <Animated.View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+        <Animated.View style={{height: height.current}} onLayout={onLayout}>
+            <Swipeable renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} leftThreshold={120} rightThreshold={120} renderLeftActions={swipeLeft} overshootFriction={8}>
+                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={switchRMBShow}>
+                    <Animated.View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
 
-                    <View style={[style.row, {justifyContent: 'flex-start'}]}>
-                        <View style={{marginRight: 10}}>
-                            <Text style={{color: Color.textGary}}>{item.OrderNum}</Text>
-                            <Text style={{color: Color.textGary, fontSize: 13}}>{item.Type}</Text>
-                        </View>
-                        <View>
-                            <Text>{item.Local}</Text>
-                            <Text style={{color: Color.textGary, fontSize: 13}}>
-                                <Text style={{fontWeight: 'bold', color: Color.textGary}}>{item.CargoNum.slice(0, 4)}</Text>
-                                {item.CargoNum.slice(4, 10) + '(' + item.CargoNum.slice(10) + ')'}
-                            </Text>
-                        </View>
-                    </View>
-                    <View>
-                        <Text style={style.dataPartRemark}>{item.Remark === null ? '' : item.Remark}</Text>
-                    </View>
-                    <View style={[style.row, {justifyContent: 'flex-start'}]}>
-                        <View style={{marginRight: 10}}>
-                            <Text style={{color: Color.textGary, fontSize: 12}}>代付</Text>
-                        </View>
-                        <View style={{flex: 1}}>
-                            <Text>
-                                <SmailText color={Color.textGary}>折算</SmailText>$ {formatPrice((item.RMB / rate).toFixed(2))}
-                            </Text>
-                            <View style={{overflow: 'hidden', height: 22 * PixelRatio.getFontScale()}}>
-                                <Animated.View style={{flex: 1, transform: [{translateY}]}}>
-                                    <Text><SmailText color={Color.textGary}>港幣</SmailText>$ {formatPrice(item.HKD.toFixed(2))}</Text>
-                                    <Text><SmailText color={Color.textGary}>人民幣</SmailText>$ {formatPrice(item.RMB.toFixed(2))}</Text>
-                                </Animated.View>
+                        <View style={[style.row, {justifyContent: 'flex-start'}]}>
+                            <View style={{marginRight: 10}}>
+                                <Text style={{color: Color.textGary}}>{item.OrderNum}</Text>
+                                <Text style={{color: Color.textGary, fontSize: 13}}>{item.Type}</Text>
+                            </View>
+                            <View>
+                                <Text>{item.Local}</Text>
+                                <Text style={{color: Color.textGary, fontSize: 13}}>
+                                    <Text style={{fontWeight: 'bold', color: Color.textGary}}>{item.CargoNum.slice(0, 4)}</Text>
+                                    {item.CargoNum.slice(4, 10) + '(' + item.CargoNum.slice(10) + ')'}
+                                </Text>
                             </View>
                         </View>
-                        <View style={style.dataPartShipping}>
-                            <Text><SmailText color={Color.textGary}>加收</SmailText>$ {formatPrice(item.Add.toFixed(2))}</Text>
-                            <Text><SmailText color={Color.textGary}>運費</SmailText>$ {formatPrice(item.Shipping.toFixed(2))}</Text>
+                        <View>
+                            <Text style={style.dataPartRemark}>{item.Remark === null ? '' : item.Remark}</Text>
                         </View>
-                    </View>
-                    <View>
-                        <Text style={{color: Color.primaryColor, alignSelf: 'flex-end'}}>
-                            <SmailText color={Color.textGary}>合計</SmailText>
-                            HK$ {formatPrice((item.RMB / rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
-                        </Text>
-                    </View>
-                </Animated.View>
-            </TouchableNativeFeedback>
-        </Swipeable>
+                        <View style={[style.row, {justifyContent: 'flex-start'}]}>
+                            <View style={{marginRight: 10}}>
+                                <Text style={{color: Color.textGary, fontSize: 12}}>代付</Text>
+                            </View>
+                            <View style={{flex: 1}}>
+                                <Text>
+                                    <SmailText color={Color.textGary}>折算</SmailText>$ {formatPrice((item.RMB / rate).toFixed(2))}
+                                </Text>
+                                <View style={{overflow: 'hidden', height: 22 * PixelRatio.getFontScale()}}>
+                                    <Animated.View style={{flex: 1, transform: [{translateY}]}}>
+                                        <Text><SmailText color={Color.textGary}>港幣</SmailText>$ {formatPrice(item.HKD.toFixed(2))}</Text>
+                                        <Text><SmailText color={Color.textGary}>人民幣</SmailText>$ {formatPrice(item.RMB.toFixed(2))}</Text>
+                                    </Animated.View>
+                                </View>
+                            </View>
+                            <View style={style.dataPartShipping}>
+                                <Text><SmailText color={Color.textGary}>加收</SmailText>$ {formatPrice(item.Add.toFixed(2))}</Text>
+                                <Text><SmailText color={Color.textGary}>運費</SmailText>$ {formatPrice(item.Shipping.toFixed(2))}</Text>
+                            </View>
+                        </View>
+                        <View>
+                            <Text style={{color: Color.primaryColor, alignSelf: 'flex-end'}}>
+                                <SmailText color={Color.textGary}>合計</SmailText>
+                                HK$ {formatPrice((item.RMB / rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
+                            </Text>
+                        </View>
+                    </Animated.View>
+                </TouchableNativeFeedback>
+            </Swipeable>
+        </Animated.View>
     );
 };
 

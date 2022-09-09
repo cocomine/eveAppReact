@@ -1,4 +1,4 @@
-import React, {forwardRef, useImperativeHandle, useRef, useState} from "react";
+import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
 import {StyleProp, StyleSheet, TextInput as NativeTextInput, TextStyle} from "react-native";
 import {TextInput} from "react-native-paper";
 
@@ -61,6 +61,11 @@ const Input = forwardRef<Ref, Props>(({
         }
     }
 
+    /* update state */
+    useEffect(() => {
+        setVal(value.toString());
+    }, [value])
+
     /* 失去焦點 */
     const blur = () => {
         onBlur(val);
@@ -71,6 +76,7 @@ const Input = forwardRef<Ref, Props>(({
         onSubmitEditing(nativeEvent)
     }
 
+    /* ref function */
     useImperativeHandle(ref, () => ({
         focus: () => inputRef.current?.focus(),
         blur: () => inputRef.current?.blur(),

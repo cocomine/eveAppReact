@@ -65,3 +65,4 @@ buck-out/
 # 项目排除路径
 /android/
 /ios/
+/.github/

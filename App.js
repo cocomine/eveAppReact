@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {AddRecord} from './page/AddRecord';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -75,8 +75,8 @@ function App(){
 
 /* 主要介面 */
 const MainScreen = () => {
-    const [index, setIndex] = React.useState(0);
-    const [routes] = React.useState([
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
         {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
         {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
         {key: 'Backup', title: '備份', focusedIcon: 'cloud-upload', color: Color.success},
@@ -95,6 +95,8 @@ const MainScreen = () => {
             navigationState={{index, routes}}
             onIndexChange={setIndex}
             renderScene={renderScene}
+            sceneAnimationEnabled={true}
+            sceneAnimationType={'shifting'}
         />
     );
 }

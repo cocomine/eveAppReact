@@ -8,10 +8,9 @@ import {ParamListBase} from "@react-navigation/routers";
 import {AutoSizeText, ResizeTextMode} from 'react-native-auto-size-text';
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
-const Calculator: React.FC<{ navigation: NavigationProp<ReactNavigation.RootParamList>, route: RouteProp<ParamListBase> }> = ({
-                                                                                                                                  navigation,
-                                                                                                                                  route
-                                                                                                                              }) => {
+const Calculator: React.FC<{
+    navigation: NavigationProp<ReactNavigation.RootParamList>, route: RouteProp<ParamListBase>
+}> = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const {colors} = useTheme();
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;
@@ -136,7 +135,7 @@ const Calculator: React.FC<{ navigation: NavigationProp<ReactNavigation.RootPara
     const onDone = useCallback(() => {
         onCalculator()
         // @ts-ignore
-        navigation.navigate('AddRecord', {value: array.current[0], inputID: route.params.inputID})
+        navigation.navigate(route.params.pageID, {value: array.current[0], inputID: route.params.inputID}) //todo
     }, [navigation]);
 
     return (
