@@ -13,6 +13,7 @@ import CargoNumCheck from '../module/CargoNumCheck';
 import DB, {useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import {LocalInput} from './AddRecord';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 //預設狀態
 const initialState = {
@@ -169,7 +170,7 @@ const EditRecord = ({navigation, route}) => {
         }
     }, []);
 
-    /* 遞交 */ //todo
+    /* 遞交 */
     const submit = useCallback(() => {
         let initialError = {
             cargo: null,
@@ -196,13 +197,13 @@ const EditRecord = ({navigation, route}) => {
         dispatch({type: SET_ERROR, payload: {error: {...error}}});
         if(Object.values(error).findIndex((value) => value !== null) >= 0) return; //是否全部已通過
 
-        //通過放入資料庫 //todo
+        //通過更新資料庫
         const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
         DB.transaction(function(tr){
             tr.executeSql(
-                'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ? WHERE RecordID = ?',
                 [moment(state.date).format('yyyy-MM-DD'), state.orderID, state.type,
-                 CargoNum, state.location, state.RMB, state.HKD, state.ADD, state.shipping, state.remark]
+                 CargoNum, state.location, state.RMB, state.HKD, state.ADD, state.shipping, state.remark, route.params.recordID]
             );
         }, function(error){
             console.log('傳輸錯誤: ' + error.message); //debug
@@ -213,17 +214,26 @@ const EditRecord = ({navigation, route}) => {
 
     /* 複製 */
     const copy = useCallback(() => {
-        //todo: copy
-    }, []);
+        const storeDraft = async() => {
+            try{
+                let draft = JSON.stringify(state);
+                await AsyncStorage.setItem('Draft', draft);
+            }catch(e){
+                console.log('Save Daft error: ', e);
+            }
+        };
+
+        //儲存後跳轉頁面
+        storeDraft().then(() => navigation.replace('AddRecord'));
+    }, [navigation, state]);
 
     //debug
-    useEffect(() => {
-        console.log(state);
-    });
+    /*useEffect(() => {
+     console.log(state);
+     });*/
 
     /* route 處理 */
     useEffect(() => {
-        console.log(route.params);
         if(route.params){
             //計算機返回輸入欄位id
             if(route.params.value && route.params.inputID) inputs.current[route.params.inputID].setText(route.params.value.toString());
