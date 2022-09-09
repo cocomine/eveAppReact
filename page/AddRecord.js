@@ -15,7 +15,7 @@ import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState = {
-    date: new Date,
+    date: new Date(),
     orderID: '',
     type: '40',
     cargoLetter: '',
@@ -441,14 +441,21 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, onBlur}, r
     const [autoComplete, setAutoComplete] = useState([]); //自動完成
     const [inputText, setInputText] = useState('');
     const [showList, setShowList] = useState(false);
+    const isFocus = useRef(false); //是否聚焦
 
     /* 文字被更改 */
     const onChange = (text) => {
         setInputText(text);
     };
 
+    /* 聚焦 */
+    const onFocus = () => {
+        isFocus.current = true;
+    };
+
     /* 向數據庫取數據 */
     useEffect(() => {
+        if(!isFocus.current) return; //非聚焦狀態不處理
         DB.transaction(function(tr){
             tr.executeSql('SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10', ['%' + inputText + '%'], function(tx, rs){
                 if(rs.rows.length <= 0 || inputText.length <= 0){
@@ -538,6 +545,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, onBlur}, r
                        onSubmitEditing={() => closeAndSave(onSubmitEditing)}
                        returnKeyType={'next'} error={error !== null}
                        onBlur={() => closeAndSave(onBlur(inputText))} ref={ref}
+                       onFocus={onFocus}
             />
             <ErrorHelperText visible={error !== null}>{error}</ErrorHelperText>
             <Animated.View style={[style.autoComplete, {
@@ -593,4 +601,4 @@ const style = StyleSheet.create({
         alignItems: 'center'
     }
 });
-export {AddRecord};
+export {AddRecord, LocalInput};

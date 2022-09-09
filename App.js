@@ -15,6 +15,7 @@ import merge from 'deepmerge';
 import {Home} from './page/Home';
 import {Color} from './module/Color';
 import Calculator from './module/Calculator';
+import {EditRecord} from './page/EditRecord';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +59,11 @@ function App(){
                             name="AddRecord"
                             component={AddRecord}
                             options={{title: '增加紀錄'}}
+                        />
+                        <Stack.Screen //增加紀錄
+                            name="EditRecord"
+                            component={EditRecord}
+                            options={{title: '編輯紀錄'}}
                         />
                         <Stack.Group screenOptions={{presentation: 'modal'}}>
                             <Stack.Screen //計算機
