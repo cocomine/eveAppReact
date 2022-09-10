@@ -21,7 +21,7 @@ import {Swipeable} from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {Text} from 'react-native-paper';
+import {Portal, Snackbar, Text} from 'react-native-paper';
 import DB, {useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
@@ -335,18 +335,19 @@ const DataPart = ({data, Rate}) => {
 
             {/* 數據內容 */
                 data.Record.map((item, index) => (
-                    <DataPartBody key={index} item={item} rate={Rate} id={item.RecordID}/>
+                    <DataPartBody key={index} item={item} rate={Rate} id={item.RecordID} dateTime={data.DateTime}/>
                 ))}
         </View>
     );
 };
 
 /* 數據內容 */
-const DataPartBody = ({item, rate, id}) => {
+const DataPartBody = ({item, rate, id, dateTime}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const navigation = useNavigation(); //導航
     const isRMBShow = useRef(false); //人民幣顯示
     const canHaptic = useRef(true); //可否震動
+    const [confirmMSG, setConfirmMSG] = useState(false); //確認刪除訊息
     const ref = useRef(null);
 
     /* 向左滑動 */
@@ -451,14 +452,20 @@ const DataPartBody = ({item, rate, id}) => {
             useNativeDriver: false
         }).start();
     }, []);
+    const show = useCallback(() => {
+        Animated.timing(height.current, {
+            toValue: height.current._startingValue,
+            duration: 300,
+            useNativeDriver: false
+        }).start();
+    }, []);
     //初始化
     const onLayout = useCallback(({nativeEvent}) => {
         if(height.current === null) height.current = new Animated.Value(nativeEvent.layout.height);
     }, []);
 
-    /* 確認動作*/
+    /* 確認動作 */
     const swipeOpen = useCallback((direction) => {
-        console.log(direction);
         //編輯
         if(direction === 'left'){
             navigation.navigate('EditRecord', {recordID: id});
@@ -472,8 +479,26 @@ const DataPartBody = ({item, rate, id}) => {
                 console.log('傳輸錯誤: ' + error.message); //debug
             }, () => {
                 hide();
+                ref.current.close();
+                setConfirmMSG(true);
             });
         }
+    }, []);
+
+    /* 取消刪除 */
+    const undo = useCallback(() => {
+        DB.transaction(function(tr){
+            tr.executeSql(
+                'INSERT INTO Record VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [id, moment(dateTime).format('yyyy-MM-DD'), item.OrderNum, item.Type,
+                 item.CargoNum, item.Local, item.RMB, item.HKD, item.Add, item.Shipping, item.Remark]
+            );
+        }, function(error){
+            console.log('傳輸錯誤: ' + error.message); //debug
+        }, function(){
+            show();
+            setConfirmMSG(false);
+        });
     }, []);
 
     return (
@@ -524,6 +549,16 @@ const DataPartBody = ({item, rate, id}) => {
                                 HK$ {formatPrice((item.RMB / rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
                             </Text>
                         </View>
+                        <Portal>
+                            <Snackbar
+                                visible={confirmMSG} onDismiss={() => setConfirmMSG(false)}
+                                action={{
+                                    label: '復原',
+                                    onPress: undo
+                                }}>
+                                已經刪除1個紀錄
+                            </Snackbar>
+                        </Portal>
                     </Animated.View>
                 </TouchableNativeFeedback>
             </Swipeable>
