@@ -1,8 +1,8 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {AddRecord} from './page/AddRecord';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {useColorScheme} from 'react-native';
+import {StatusBar, useColorScheme} from 'react-native';
 import {DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme, NavigationContainer} from '@react-navigation/native';
 import {
     Appbar,
@@ -16,6 +16,7 @@ import {Home} from './page/Home';
 import {Color} from './module/Color';
 import Calculator from './module/Calculator';
 import {EditRecord} from './page/EditRecord';
+import {Export} from './page/Export';
 
 const Stack = createNativeStackNavigator();
 
@@ -91,15 +92,24 @@ const MainScreen = () => {
 
     const renderScene = BottomNavigation.SceneMap({
         Home: Home,
-        Export: Home,
+        Export: Export,
         Backup: Home,
-        Setting: Home,
+        Setting: Home
     });
+
+    useEffect(() => {
+        StatusBar.setBackgroundColor(routes[index].color, true);
+    }, []);
+
+    const indexChange = (index) => {
+        setIndex(index);
+        StatusBar.setBackgroundColor(routes[index].color, true);
+    };
 
     return (
         <BottomNavigation
             navigationState={{index, routes}}
-            onIndexChange={setIndex}
+            onIndexChange={indexChange}
             renderScene={renderScene}
             sceneAnimationEnabled={true}
             sceneAnimationType={'shifting'}

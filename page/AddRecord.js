@@ -1,5 +1,5 @@
 import React, {forwardRef, useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {Animated, BackHandler, SafeAreaView, ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
+import {Animated, BackHandler, SafeAreaView, ScrollView, StatusBar, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import moment from 'moment';
 import {Color} from '../module/Color';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
@@ -281,16 +281,17 @@ const AddRecord = ({navigation, route}) => {
     return (
         <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-                <ScrollView nestedScrollEnabled={true}>
-                    <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
-                        {/* 日期 */}
-                        <View style={style.formGroup}>
-                            <Text style={{flex: 1 / 5}}>日期</Text>
-                            <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
-                                hideKeyboard().then();
-                                DateTimePickerAndroid.open({
-                                    value: state.date, onChange: (event, newDate) => {
-                                        focusNextField('orderID');
+            <StatusBar backgroundColor={Color.primaryColor}/>
+            <ScrollView nestedScrollEnabled={true}>
+                <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    {/* 日期 */}
+                    <View style={style.formGroup}>
+                        <Text style={{flex: 1 / 5}}>日期</Text>
+                        <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
+                            hideKeyboard().then();
+                            DateTimePickerAndroid.open({
+                                value: state.date, onChange: (event, newDate) => {
+                                    focusNextField('orderID');
                                         dispatch({type: UPDATE_DATE, payload: {date: newDate}});
                                     }
                                 });
