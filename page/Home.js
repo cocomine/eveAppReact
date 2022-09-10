@@ -125,29 +125,34 @@ const Home = ({route}) => {
     const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
+    const [isRefresh, setIsRefresh] = useState(false); //是否重新更新
     const [setting] = useSetting(); //設定
     const listRef = useRef(null); //FlatList Ref
 
     /* 選擇顯示月份 */
     const NextMonth = useCallback(() => {
-        let tmp = new Date(ShowDay);
-        tmp.setMonth(ShowDay.getMonth() + 1);
-        setShowDay(tmp);
+        let tmp = moment(ShowDay);
+        tmp.add(1, 'M').endOf('month');
+
+        setShowDay(tmp.toDate());
+        setIsRefresh(true);
     }, [ShowDay]);
     const LastMonth = useCallback(() => {
-        let tmp = new Date(ShowDay);
-        tmp.setMonth(ShowDay.getMonth() - 1);
-        setShowDay(tmp);
+        let tmp = moment(ShowDay);
+        tmp.subtract(1, 'M').endOf('month');
+
+        setShowDay(tmp.toDate());
+        setIsRefresh(true);
     }, [ShowDay]);
 
     /* 自動跳轉顯示月份 */
     useEffect(() => {
         if(RNroute.params){
-            setShowDay(RNroute.params.ShowDay);
+            setShowDay(new Date(RNroute.params.ShowDay));
         }
     }, [RNroute]);
 
-    /* 讀取 */
+    /* 更新資料 */
     useEffect(() => {
         let package_list;
 
@@ -178,6 +183,7 @@ const Home = ({route}) => {
             }, function(){
                 console.log('已取得資料');
                 setData(package_list);
+                setIsRefresh(false);
             });
         });
     }, [ShowDay, setting]);
@@ -264,9 +270,9 @@ const Home = ({route}) => {
 
             {/* 內容 */}
             <FlatList
-                data={Data}
+                data={Data} ref={listRef}
+                onRefresh={() => null} refreshing={isRefresh}
                 renderItem={({item}) => <DataPart data={item} Rate={setting['Rate']}/>}
-                ref={listRef}
                 onScrollToIndexFailed={(info) => {
                     setTimeout(() => {
                         listRef.current.scrollToIndex({index: info.index});

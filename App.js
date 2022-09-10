@@ -86,14 +86,14 @@ const MainScreen = () => {
     const [routes] = useState([
         {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
         {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
-        {key: 'Backup', title: '備份', focusedIcon: 'cloud-upload', color: Color.success},
+        {key: 'Statistics', title: '統計', focusedIcon: 'chart-bar', color: Color.success},
         {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo}
     ]);
 
     const renderScene = BottomNavigation.SceneMap({
         Home: Home,
         Export: Export,
-        Backup: Home,
+        Statistics: Home,
         Setting: Home
     });
 

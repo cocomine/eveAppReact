@@ -210,7 +210,7 @@ const EditRecord = ({navigation, route}) => {
         }, function(error){
             console.log('傳輸錯誤: ' + error.message); //debug
         }, function(){
-            navigation.navigate('Main', {ShowDay: state.date}); //go back home
+            navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
         });
     }, [state]);
 

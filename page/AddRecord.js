@@ -208,7 +208,7 @@ const AddRecord = ({navigation, route}) => {
             console.log('傳輸錯誤: ' + error.message); //debug
         }, function(){
             needSaveDraft.current = false;
-            navigation.navigate('Main', {ShowDay: state.date}); //go back home
+            navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
         });
     }, [state]);
 
