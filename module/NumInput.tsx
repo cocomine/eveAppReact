@@ -99,12 +99,12 @@ const DecimalInput = forwardRef<InputRef, InputProps>(({
         onValueChange(parseFloat(real_value) || 0);
     }
 
-    const focus = () => {
+    const Focus = () => {
         setFocus(true);
         setReal_value('')
         onFocus();
     };
-    const blur = () => {
+    const Blur = () => {
         setFocus(false);
         onBlur();
     };
@@ -126,18 +126,18 @@ const DecimalInput = forwardRef<InputRef, InputProps>(({
         },
         focus: () => {
             inputRef.current?.focus();
-            focus();
+            Focus();
         },
         blur: () => {
             inputRef.current?.blur();
-            blur();
+            Blur();
         }
     }));
 
     return (
         <View style={[containerStyle, {position: 'relative'}]}>
             <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined}/>
-            <TextInput {...inputProps} caretHidden={true} contextMenuHidden={true} ref={inputRef} style={style.coverInput} keyboardType='numeric' value={real_value} onChangeText={onChange} dense={true} onFocus={focus} onBlur={blur} selectTextOnFocus={true}/>
+            <TextInput {...inputProps} caretHidden={true} contextMenuHidden={true} ref={inputRef} style={style.coverInput} keyboardType='numeric' value={real_value} onChangeText={onChange} dense={true} onFocus={Focus} onBlur={Blur} selectTextOnFocus={true}/>
         </View>
     );
 }) as InputComponent;

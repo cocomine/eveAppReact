@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useReducer, useRef} from 'react';
+import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
 import {BackHandler, SafeAreaView, ScrollView, StatusBar, StyleSheet, useColorScheme, View} from 'react-native';
 import moment from 'moment';
 import {Color} from '../module/Color';
@@ -123,6 +123,7 @@ const reducer = (state, action) => {
 const EditRecord = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [state, dispatch] = useReducer(reducer, initialState); //輸入資料
+    const [recordID] = useState(route.params.recordID); //recordID
     const focusingDecInput = useRef(null); //目前聚焦銀碼輸入框
     const [setting] = useSetting(); //設定
     const Rate = parseFloat(setting ? setting.Rate : 0);
@@ -196,6 +197,7 @@ const EditRecord = ({navigation, route}) => {
 
         dispatch({type: SET_ERROR, payload: {error: {...error}}});
         if(Object.values(error).findIndex((value) => value !== null) >= 0) return; //是否全部已通過
+        console.log('submit', state);
 
         //通過更新資料庫
         const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
@@ -203,7 +205,7 @@ const EditRecord = ({navigation, route}) => {
             tr.executeSql(
                 'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ? WHERE RecordID = ?',
                 [moment(state.date).format('yyyy-MM-DD'), state.orderID, state.type,
-                 CargoNum, state.location, state.RMB, state.HKD, state.ADD, state.shipping, state.remark, route.params.recordID]
+                 CargoNum, state.location, state.RMB, state.HKD, state.ADD, state.shipping, state.remark, recordID]
             );
         }, function(error){
             console.log('傳輸錯誤: ' + error.message); //debug
@@ -228,15 +230,17 @@ const EditRecord = ({navigation, route}) => {
     }, [navigation, state]);
 
     //debug
-    /*useEffect(() => {
-     console.log(state);
-     });*/
+    useEffect(() => {
+        console.log(state);
+    });
 
     /* route 處理 */
     useEffect(() => {
         if(route.params){
             //計算機返回輸入欄位id
-            if(route.params.value && route.params.inputID) inputs.current[route.params.inputID].setText(route.params.value.toString());
+            if(route.params.value && route.params.inputID){
+                inputs.current[route.params.inputID].setText(route.params.value.toString());
+            }
             //取得紀錄
             if(route.params.recordID){
                 DB.transaction(function(tr){

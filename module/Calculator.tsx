@@ -135,12 +135,12 @@ const Calculator: React.FC<{
     const onDone = useCallback(() => {
         onCalculator()
         // @ts-ignore
-        navigation.navigate(route.params.pageID, {value: array.current[0], inputID: route.params.inputID}) //todo
+        navigation.navigate(route.params.pageID, {value: array.current[0], inputID: route.params.inputID})
     }, [navigation]);
 
     return (
         <SafeAreaView style={{flex: 1}}>
-            <React.StrictMode>
+            {/*<React.StrictMode>*/}
                 <View style={{flex: 1, flexDirection: 'column'}}>
                     <View style={{alignItems: 'flex-end'}}>
                         <IconButton icon={'close'} iconColor={colors.text} animated={true} onPress={onClose}/>
@@ -213,7 +213,7 @@ const Calculator: React.FC<{
                         </View>
                     </View>
                 </View>
-            </React.StrictMode>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };
