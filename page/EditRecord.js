@@ -197,7 +197,6 @@ const EditRecord = ({navigation, route}) => {
 
         dispatch({type: SET_ERROR, payload: {error: {...error}}});
         if(Object.values(error).findIndex((value) => value !== null) >= 0) return; //是否全部已通過
-        console.log('submit', state);
 
         //通過更新資料庫
         const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
@@ -230,9 +229,9 @@ const EditRecord = ({navigation, route}) => {
     }, [navigation, state]);
 
     //debug
-    useEffect(() => {
-        console.log(state);
-    });
+    /*useEffect(() => {
+     console.log(state);
+     });*/
 
     /* route 處理 */
     useEffect(() => {

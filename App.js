@@ -30,7 +30,6 @@ function App(){
     let theme = isDarkMode ? CombinedDarkTheme : CombinedDefaultTheme;
     theme = {
         ...theme,
-        dark: false,
         colors: {
             ...theme.colors,
             primary: Color.primaryColor,
