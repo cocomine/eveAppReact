@@ -42,7 +42,7 @@ type nativeEvent = {
 /* 輸入組件 */
 const Input = forwardRef<Ref, Props>(({
                                           value = '',
-                                          style,
+                                          style = {},
                                           onChangeText = () => null,
                                           maxLength,
                                           onSubmitEditing = () => null,
@@ -94,7 +94,6 @@ const Input = forwardRef<Ref, Props>(({
 
 const styles = StyleSheet.create({
     formInput: {
-        flex: 1,
         backgroundColor: 'transparent'
     }
 })

@@ -202,101 +202,103 @@ const Home = ({route}) => {
         /* 頂部toolbar */
         <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-            <Toolbar>
-                <ToolBarView>
-                    <TouchableOpacity activeOpacity={0.7} onPress={LastMonth}>
-                        <ADIcon name={'left'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
-                            padding: 10,
-                            marginRight: 5
-                        }}/>
-                    </TouchableOpacity>
-                    <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
-                    <TouchableOpacity activeOpacity={0.7} onPress={NextMonth}>
-                        <ADIcon name={'right'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
-                            padding: 10,
-                            marginLeft: 5
-                        }}/>
-                    </TouchableOpacity>
-                </ToolBarView>
-                <ToolBarView>
-                    <TouchableOpacity activeOpacity={0.7}>
-                        <ADIcon name={'search1'} size={16} color={Color.white} backgroundColor={Color.primaryColor} style={{padding: 10}}/>
-                    </TouchableOpacity>
-                    <SmailText color={Color.white}>本月總計</SmailText>
-                    <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
-                </ToolBarView>
-            </Toolbar>
-            <Toolbar>
-                <View style={{flex: 1}}>
-                    <Text style={{
-                        color: Color.white,
-                        fontSize: 12,
-                        textAlign: 'center'
-                    }}>{'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}</Text>
-                </View>
-                <View style={{flex: 1}}>
-                    <Text style={{
-                        color: Color.white,
-                        fontSize: 12,
-                        textAlign: 'center'
-                    }}>{'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}</Text>
-                </View>
-                <View style={{flex: 1}}>
-                    <Text style={{
-                        color: Color.white,
-                        fontSize: 12,
-                        textAlign: 'center'
-                    }}>{'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}</Text>
-                </View>
-                <View style={{flex: 1}}>
-                    <Text style={{
-                        color: Color.white,
-                        fontSize: 12,
-                        textAlign: 'center'
-                    }}>{'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}</Text>
-                </View>
-            </Toolbar>
-
-            {/* 增加紀錄 */}
-            <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
-                <View>
-                    <ADIcon name={'plus'} color={Color.white} size={18}/>
-                </View>
-            </TouchableOpacity>
-            {/* 備忘錄 */}
-            <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
-                <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
-            </TouchableOpacity>
-
-            {/* 內容 */}
-            <FlatList
-                data={Data} ref={listRef}
-                onRefresh={() => null} refreshing={isRefresh}
-                renderItem={({item}) => <DataPart data={item} Rate={setting['Rate']}/>}
-                onScrollToIndexFailed={(info) => {
-                    setTimeout(() => {
-                        listRef.current.scrollToIndex({index: info.index});
-                    }, 500);
-                }}
-                ListFooterComponent={
-                    <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
-                        <SVGCargo height="60" width="180"/>
-                        <Text>已經到底喇~~ (❁´◡`❁)</Text>
-                    </View>}
-                ListEmptyComponent={
-                    <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                        <SVGLostCargo height="100" width="300"/>
-                        <Text>沒有資料... （；´д｀）ゞ</Text>
+            <Portal.Host>
+                <Toolbar>
+                    <ToolBarView>
+                        <TouchableOpacity activeOpacity={0.7} onPress={LastMonth}>
+                            <ADIcon name={'left'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
+                                padding: 10,
+                                marginRight: 5
+                            }}/>
+                        </TouchableOpacity>
+                        <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                        <TouchableOpacity activeOpacity={0.7} onPress={NextMonth}>
+                            <ADIcon name={'right'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
+                                padding: 10,
+                                marginLeft: 5
+                            }}/>
+                        </TouchableOpacity>
+                    </ToolBarView>
+                    <ToolBarView>
+                        <TouchableOpacity activeOpacity={0.7}>
+                            <ADIcon name={'search1'} size={16} color={Color.white} backgroundColor={Color.primaryColor} style={{padding: 10}}/>
+                        </TouchableOpacity>
+                        <SmailText color={Color.white}>本月總計</SmailText>
+                        <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
+                    </ToolBarView>
+                </Toolbar>
+                <Toolbar>
+                    <View style={{flex: 1}}>
+                        <Text style={{
+                            color: Color.white,
+                            fontSize: 12,
+                            textAlign: 'center'
+                        }}>{'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}</Text>
                     </View>
-                }
-            />
-            {/*</React.StrictMode>*/}
+                    <View style={{flex: 1}}>
+                        <Text style={{
+                            color: Color.white,
+                            fontSize: 12,
+                            textAlign: 'center'
+                        }}>{'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}</Text>
+                    </View>
+                    <View style={{flex: 1}}>
+                        <Text style={{
+                            color: Color.white,
+                            fontSize: 12,
+                            textAlign: 'center'
+                        }}>{'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}</Text>
+                    </View>
+                    <View style={{flex: 1}}>
+                        <Text style={{
+                            color: Color.white,
+                            fontSize: 12,
+                            textAlign: 'center'
+                        }}>{'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}</Text>
+                    </View>
+                </Toolbar>
+
+                {/* 增加紀錄 */}
+                <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
+                    <View>
+                        <ADIcon name={'plus'} color={Color.white} size={18}/>
+                    </View>
+                </TouchableOpacity>
+                {/* 備忘錄 */}
+                <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
+                    <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
+                </TouchableOpacity>
+
+                {/* 內容 */}
+                <FlatList
+                    data={Data} ref={listRef}
+                    onRefresh={() => null} refreshing={isRefresh}
+                    renderItem={({item}) => <DataPart data={item} rate={setting['Rate']}/>}
+                    onScrollToIndexFailed={(info) => {
+                        setTimeout(() => {
+                            listRef.current.scrollToIndex({index: info.index});
+                        }, 500);
+                    }}
+                    ListFooterComponent={
+                        <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
+                            <SVGCargo height="60" width="180"/>
+                            <Text>已經到底喇~~ (❁´◡`❁)</Text>
+                        </View>}
+                    ListEmptyComponent={
+                        <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                            <SVGLostCargo height="100" width="300"/>
+                            <Text>沒有資料... （；´д｀）ゞ</Text>
+                        </View>
+                    }
+                />
+                {/*</React.StrictMode>*/}
+            </Portal.Host>
         </SafeAreaView>
     );
 };
 
 /* 內容render */
-const DataPart = ({data, Rate}) => {
+const DataPart = ({data, rate}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     let date = moment(data.DateTime).locale('zh-hk');
 
@@ -335,7 +337,7 @@ const DataPart = ({data, Rate}) => {
 
             {/* 數據內容 */
                 data.Record.map((item, index) => (
-                    <DataPartBody key={index} item={item} rate={Rate} id={item.RecordID} dateTime={data.DateTime}/>
+                    <DataPartBody key={index} item={item} rate={rate} id={item.RecordID} dateTime={data.DateTime}/>
                 ))}
         </View>
     );
@@ -450,7 +452,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
             toValue: 0,
             duration: 300,
             useNativeDriver: false
-        }).start();
+        }).start(() => ref.current.close());
     }, []);
     const show = useCallback(() => {
         Animated.timing(height.current, {
@@ -479,7 +481,6 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 console.log('傳輸錯誤: ' + error.message); //debug
             }, () => {
                 hide();
-                ref.current.close();
                 setConfirmMSG(true);
             });
         }

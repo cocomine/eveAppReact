@@ -292,10 +292,10 @@ const AddRecord = ({navigation, route}) => {
                             DateTimePickerAndroid.open({
                                 value: state.date, onChange: (event, newDate) => {
                                     focusNextField('orderID');
-                                        dispatch({type: UPDATE_DATE, payload: {date: newDate}});
-                                    }
-                                });
-                            }} value={moment(state.date).format('D/M/yyyy')}/>
+                                    dispatch({type: UPDATE_DATE, payload: {date: newDate}});
+                                }
+                            });
+                        }} value={moment(state.date).format('D/M/yyyy')} style={{flex: 1}}/>
                         </View>
                         {/* 單號 */}
                         <View style={style.formGroup}>
@@ -416,6 +416,7 @@ const AddRecord = ({navigation, route}) => {
                         <View style={[style.formGroup, {marginTop: -10}]}>
                             <TextInput ref={(ref) => {inputs.current.remark = ref;}} label={'備註'} returnKeyType={'done'} maxLength={50}
                                        value={state.remark} onChangeText={(text) => dispatch({type: UPDATE_REMARK, payload: {remark: text}})}
+                                       style={{flex: 1}}
                             />
                         </View>
                     </View>
