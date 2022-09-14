@@ -206,7 +206,7 @@ const Export = ({route}) => {
 
                         saveFile().then((e) => {
                             if(e) FileViewer.open(savePath, {showOpenWithDialog: true})
-                                            .then(() => ToastAndroid.show('已儲存在文件資料夾中', ToastAndroid.SHORT));
+                                            .then(() => ToastAndroid.show('已儲存在下載資料夾中', ToastAndroid.SHORT));
                             else ToastAndroid.show('出現錯誤', ToastAndroid.SHORT);
 
                             RNFS.unlink(results.filePath).then(() => null); //delete tmp file
