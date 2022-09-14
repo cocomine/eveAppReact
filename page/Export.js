@@ -106,7 +106,7 @@ const Export = ({route}) => {
                     let tmp = [];
                     for(let i = 0 ; i < rs.rows.length ; i++){
                         const row = rs.rows.item(i);
-                        tmp.push(<Picker.Item label={row.Month + '月'} value={row.Month} color={theme.colors.text} id={i}/>);
+                        tmp.push(<Picker.Item label={row.Month + '月'} value={row.Month} color={theme.colors.text} key={i}/>);
                     }
 
                     //填充選項
