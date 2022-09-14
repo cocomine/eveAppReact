@@ -14,6 +14,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Mailer from 'react-native-mail';
 import RNPrint from 'react-native-print';
 import Lottie from 'lottie-react-native';
+import Sound from 'react-native-sound';
+
+/* Done sound */
+const sound = new Sound('done.mp3', Sound.MAIN_BUNDLE, (error) => {
+    if(error){
+        console.log('failed to load the sound', error);
+    }
+});
 
 const Export = ({route}) => {
     let theme = useTheme();
@@ -146,6 +154,8 @@ const Export = ({route}) => {
             };
 
             setOkDialogVisible(true); //成功動畫 start
+            sound.play(); // Play the sound with an onEnd callback
+
             printPDF().then(results => {
                 setTimeout(() => {
                     setOkDialogVisible(false); //成功動畫 end
