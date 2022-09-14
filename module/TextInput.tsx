@@ -49,7 +49,7 @@ const Input = forwardRef<Ref, Props>(({
                                           onBlur = () => null,
                                           ...props
                                       }, ref) => {
-    const [val, setVal] = useState(value.toString());
+    const [val, setVal] = useState(value);
     const inputRef = useRef<NativeTextInput | null>(null);
 
     /* 文字更新 */
@@ -63,7 +63,7 @@ const Input = forwardRef<Ref, Props>(({
 
     /* update state */
     useEffect(() => {
-        setVal(value.toString());
+        setVal(value);
     }, [value])
 
     /* 失去焦點 */
@@ -88,7 +88,7 @@ const Input = forwardRef<Ref, Props>(({
     }));
 
     return (
-        <TextInput {...props} ref={inputRef} style={[style, styles.formInput]} value={value.toString()} maxLength={maxLength} onSubmitEditing={submitEditing} onChangeText={update} onBlur={blur} dense={true}/>
+        <TextInput {...props} ref={inputRef} style={[style, styles.formInput]} value={value} maxLength={maxLength} onSubmitEditing={submitEditing} onChangeText={update} onBlur={blur} dense={true}/>
     )
 }) as InputComponent;
 

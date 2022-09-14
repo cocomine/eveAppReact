@@ -17,6 +17,7 @@ import {Color} from './module/Color';
 import Calculator from './module/Calculator';
 import {EditRecord} from './page/EditRecord';
 import {Export} from './page/Export';
+import {Setting} from './page/Setting';
 
 const Stack = createNativeStackNavigator();
 
@@ -93,7 +94,7 @@ const MainScreen = () => {
         Home: Home,
         Export: Export,
         Statistics: Home,
-        Setting: Home
+        Setting: Setting
     });
 
     useEffect(() => {

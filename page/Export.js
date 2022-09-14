@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {SafeAreaView, View} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {SafeAreaView, StyleSheet, ToastAndroid, View} from 'react-native';
 import {Appbar, Button, Checkbox, Dialog, Portal, Provider as PaperProvider, Text, Title, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import {Picker} from '@react-native-picker/picker';
@@ -10,6 +10,10 @@ import moment from 'moment';
 import formatPrice from '../module/formatPrice';
 import HTMLtoPDF from 'react-native-html-to-pdf';
 import FileViewer from 'react-native-file-viewer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Mailer from 'react-native-mail';
+import RNPrint from 'react-native-print';
+import Lottie from 'lottie-react-native';
 
 const Export = ({route}) => {
     let theme = useTheme();
@@ -27,7 +31,38 @@ const Export = ({route}) => {
     const [month, setMonth] = useState(''); //選擇月份
     const [YearOpt, setYearOpt] = useState([]); //年份選項
     const [MonthOpt, setMonthOpt] = useState([]); //月份選項
-    const [DialogVisible, setDialogVisible] = useState(false);
+    const [DialogVisible, setDialogVisible] = useState(false); //致... 公司名稱
+    const [okDialogVisible, setOkDialogVisible] = useState(false); //成功動畫
+    const choseType = useRef(null); //匯出類型
+    const [toCompany, setToCompany] = useState(null); //致... 公司名稱
+
+    /* 取得 致... 公司名稱 */
+    useEffect(() => {
+        const get_toCompanyName = async() => {
+            try{
+                return await AsyncStorage.getItem('toCompanyName');
+            }catch(e){
+                console.log('Read toCompanyName error: ', e);
+            }
+        };
+
+        get_toCompanyName().then((toCompanyName) => {
+            if(toCompanyName != null) setToCompany(toCompanyName);
+        });
+    }, []);
+
+    /* 儲存 致... 公司名稱 */
+    useEffect(() => {
+        const store_toCompanyName = async() => {
+            try{
+                await AsyncStorage.setItem('toCompanyName', toCompany);
+            }catch(e){
+                console.log('Save Daft error: ', e);
+            }
+        };
+
+        if(toCompany != null) store_toCompanyName().then(() => null);
+    }, [toCompany]);
 
     /* 取得有資料的年份 */
     useFocusEffect(useCallback(() => {
@@ -82,52 +117,70 @@ const Export = ({route}) => {
     /* 更新月份選項 */
     useEffect(() => getMonth(year), [year]);
 
-    const Export = useCallback(() => {
+    /* 彈出窗口 */
+    const Export = useCallback((type) => {
         setDialogVisible(true);
+        choseType.current = type;
     }, []);
 
+    /* 隱藏彈出窗口 */
     const hideDialog = useCallback(() => {
         setDialogVisible(false);
     }, []);
 
+    /* 確認匯出 */
     const confirm = useCallback(() => {
         getRecordHTML(remark, month, year, setting['Rate'], (html, total) => {
+            hideDialog();
+            const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany + ')';
+
+            /* 生成pdf */
             const printPDF = async() => {
                 return await HTMLtoPDF.convert({
-                    html: HTMLData('abc', total, html, 'abc', setting),
-                    fileName: 'test2',
+                    html: HTMLData(month + '月 ' + year, total, html, 'abc', setting),
+                    fileName: fileName,
                     directory: 'Documents',
                     width: 842,
                     height: 595
                 });
             };
 
+            setOkDialogVisible(true); //成功動畫 start
             printPDF().then(results => {
-                console.log(results);
-                FileViewer.open(results.filePath, {showOpenWithDialog: true}).then(() => console.log('ok'));
+                setTimeout(() => {
+                    setOkDialogVisible(false); //成功動畫 end
 
-                /*Mailer.mail({
-                 subject: 'need help',
-                 recipients: ['cocopixelmc@gmail.com'],
-                 body: '<b>A Bold Body</b>',
-                 isHTML: true,
-                 attachments: [{
-                 path: results.filePath, // The absolute path of the file from which to read data.
-                 //uri: '', // The uri of the file from which to read the data.
-                 type: 'pdf', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
-                 }]
-                 }, (error, event) => {});*/
+                    if(choseType.current === 1){
+                        //以電郵傳送
+                        Mailer.mail({
+                            subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                            recipients: [setting['Email-to']],
+                            body: `致 ${toCompany}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                            attachments: [{
+                                path: results.filePath, // The absolute path of the file from which to read data.
+                                type: 'pdf' // Mime Type: jpg, png, doc, ppt, html, pdf, csv
+                            }]
+                        }, (error, event) => {});
 
-                //RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() => null)
+                    }else if(choseType.current === 2){
+                        //匯出儲存
+                        FileViewer.open(results.filePath, {showOpenWithDialog: true})
+                                  .then(() => ToastAndroid.show('已儲存在文件資料夾中', ToastAndroid.SHORT));
+
+                    }else if(choseType.current === 3){
+                        //打印
+                        RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() => null);
+                    }
+                }, 1000);
             });
         });
-    }, [remark, MonthOpt, YearOpt, setting]);
+    }, [remark, month, year, setting, toCompany]);
 
     return (
         <PaperProvider theme={theme}>
             <SafeAreaView style={{flex: 1}}>
                 <Appbar.Header style={{backgroundColor: route.color}}>
-                    <Appbar.Content title={'匯出'} color={Color.white}/>
+                    <Appbar.Content title={route.title} color={Color.white}/>
                 </Appbar.Header>
                 <React.StrictMode>
                     <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
@@ -144,33 +197,34 @@ const Export = ({route}) => {
                                 {MonthOpt}
                             </Picker>
                         </View>
-                        <View style={{flexDirection: 'row'}}>
-                            <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => null} style={{
-                                flex: 1,
-                                marginRight: 5
-                            }}>以電郵傳送</Button>
-                            <Button icon={'export'} mode={'outlined'} onPress={() => null} style={{
-                                flex: 1,
-                                marginRight: 5
-                            }}>匯出儲存</Button>
-                            <Button icon={'printer'} mode={'contained'} onPress={Export} style={{flex: 1}}>打印</Button>
+                        <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
+                            <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => Export(1)} style={style.button}>以電郵傳送</Button>
+                            <Button icon={'export'} mode={'outlined'} onPress={() => Export(2)} style={style.button}>匯出儲存</Button>
+                            <Button icon={'printer'} mode={'contained'} onPress={() => Export(3)} style={{flex: 1}}>打印</Button>
                         </View>
                         <View style={{flexDirection: 'row', alignItems: 'center', width: '100%'}}>
-                            <Checkbox status={remark ? 'checked' : 'unchecked'} onPress={() => {
-                                setRemark(!remark);
-                            }} color={theme.colors.primary}/><Text>包含備註</Text>
+                            <Checkbox status={remark ? 'checked' : 'unchecked'} onPress={() => {setRemark(!remark);}} color={theme.colors.primary}/>
+                            <Text>包含備註</Text>
                         </View>
                     </View>
                     <Portal>
                         <Dialog visible={DialogVisible} dismissable={false}>
                             <Dialog.Title>致...</Dialog.Title>
                             <Dialog.Content>
-                                <TextInput placeholder={'03/09/020'} dense={true}/>
+                                <TextInput placeholder={'請輸入公司名稱'} dense={true} value={toCompany} onChangeText={(text) => setToCompany(text)}/>
                             </Dialog.Content>
                             <Dialog.Actions>
                                 <Button onPress={confirm}>確認</Button>
                                 <Button onPress={hideDialog}>取消</Button>
                             </Dialog.Actions>
+                        </Dialog>
+                        <Dialog visible={okDialogVisible} dismissable={false}>
+                            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                                <Lottie source={require('../resource/89101-confirmed-tick.json')} autoPlay={true} loop={false} style={{
+                                    width: 200,
+                                    height: 200
+                                }}/>
+                            </View>
                         </Dialog>
                     </Portal>
                 </React.StrictMode>
@@ -179,6 +233,12 @@ const Export = ({route}) => {
     );
 };
 
+const style = StyleSheet.create({
+    button: {
+        flex: 1,
+        marginRight: 5
+    }
+});
 export {Export};
 
 /* 套入html模板 */
@@ -189,7 +249,6 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
 <head>
     <meta charset="UTF-8">
     <title>PDF_Template</title>
-    <link rel="stylesheet" href="file:///android_asset/www/css/bootstrap.min.css">
     <style>
         tr > td:nth-child(6) {
             border-left: 1px solid lightgray;
@@ -205,23 +264,50 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
         body{
             font-size: 10px;
         }
+        table{
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th{
+            text-align: left;
+        }
+        tfoot{
+            border-top: 1px solid lightgray;
+        }
+        h2, h5{
+            text-align: center
+        }
+        #head{
+            display: flex; 
+            background-color: #a7d086; 
+            align-content: center
+        }
+        #head > div{
+            font-size: 1.2em
+        }
+        #s{
+            border-left: 1px solid lightgray; 
+            border-right: 1px solid lightgray; 
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-<h2 style="text-align: center" id="company-name-ZH">${setting['company-name-ZH']}</h2>
-<h5 style="text-align: center" id="company-name-EN">${setting['company-name-EN']}</h5>
+<h2>${setting['company-name-ZH']}</h2>
+<h5>${setting['company-name-EN']}</h5>
 <p></p>
-<div class="row align-items-end" style="background-color: #a7d086">
-    <div class="col" style="font-size: 1.5em">致 ${toCompanyName}</div>
-    <div class="col-auto" id="Date" style="font-size: 1.2em">${Date}</div>
-    <div class="col-auto" id="Driver-license" style="font-size: 1.2em">車牌: ${setting['Driver-license']}</div>
-    <div class="col-auto" id="Driver-name" style="font-size: 1.2em">司機: ${setting['Driver-name']}</div>
+<div id="head">
+        <div>致 ${toCompanyName}</div>
+        <div style="flex-grow: 1"></div>
+        <div style=" margin-right: 1.2rem">${Date}</div>
+        <div style=" margin-right: 1.2rem">車牌: ${setting['Driver-license']}</div>
+        <div>司機: ${setting['Driver-name']}</div>
 </div>
-<table class="table table-sm">
+<table>
     <thead>
     <tr>
         <th scope="col" colspan="5"></th>
-        <th scope="col" colspan="3" style="border-left: 1px solid lightgray; border-right: 1px solid lightgray; text-align: center">代付</th>
+        <th scope="col" colspan="3" id="s">代付</th>
         <th scope="col" colspan="3"></th>
     </tr>
     <tr>
@@ -243,8 +329,8 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
     </tbody>
     <tfoot>
     <tr>
-        <td colspan="5" id="Rate">匯率: 1 港幣 = ${setting['Rate']} 人民幣</td>
-        <td colspan="6" style="text-align: right; font-size: 1.5em" id="monthTotal">總計: HK$ ${Total}</td>
+        <td colspan="5">匯率: 1 港幣 = ${setting['Rate']} 人民幣</td>
+        <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${Total}</td>
     </tr>
     </tfoot>
 </table>
@@ -289,7 +375,7 @@ function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, rate, ou
                 /* 打印紀錄 */
                 for(let i = 0 ; i < rs.rows.length ; i++){
                     const row = rs.rows.item(i);
-                    console.log(row); //debug
+                    //console.log(row); //debug
                     row.DateTime = moment(row.DateTime);
                     row.CargoNum = '<b>' + row.CargoNum.slice(0, 4) + '</b>' + row.CargoNum.slice(4, 10) + '(' + row.CargoNum.slice(10) + ')';
 
