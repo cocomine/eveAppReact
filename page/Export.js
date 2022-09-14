@@ -9,12 +9,13 @@ import TextInput from '../module/TextInput';
 import moment from 'moment';
 import formatPrice from '../module/formatPrice';
 import HTMLtoPDF from 'react-native-html-to-pdf';
-import FileViewer from 'react-native-file-viewer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Mailer from 'react-native-mail';
 import RNPrint from 'react-native-print';
 import Lottie from 'lottie-react-native';
 import Sound from 'react-native-sound';
+import RNFS, {CachesDirectoryPath, DownloadDirectoryPath} from 'react-native-fs';
+import FileViewer from 'react-native-file-viewer';
 
 /* Done sound */
 const sound = new Sound('done.mp3', Sound.MAIN_BUNDLE, (error) => {
@@ -105,7 +106,7 @@ const Export = ({route}) => {
                     let tmp = [];
                     for(let i = 0 ; i < rs.rows.length ; i++){
                         const row = rs.rows.item(i);
-                        tmp.push(<Picker.Item label={row.Month + '月'} value={row.Month} color={theme.colors.text}/>);
+                        tmp.push(<Picker.Item label={row.Month + '月'} value={row.Month} color={theme.colors.text} id={i}/>);
                     }
 
                     //填充選項
@@ -162,25 +163,62 @@ const Export = ({route}) => {
 
                     if(choseType.current === 1){
                         //以電郵傳送
-                        Mailer.mail({
-                            subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
-                            recipients: [setting['Email-to']],
-                            body: `致 ${toCompany}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                            attachments: [{
-                                path: results.filePath, // The absolute path of the file from which to read data.
-                                type: 'pdf' // Mime Type: jpg, png, doc, ppt, html, pdf, csv
-                            }]
-                        }, (error) => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT));
+                        let savePath = CachesDirectoryPath + '/' + fileName + '.pdf';
+
+                        RNFS.copyFile(results.filePath, savePath).then(() => { //先複製度暫存目錄
+                            RNFS.unlink(results.filePath).then(() => null); //delete tmp file
+
+                            Mailer.mail({
+                                subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                                recipients: [setting['Email-to']],
+                                body: `致 ${toCompany}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                attachments: [{
+                                    path: savePath, // The absolute path of the file from which to read data.
+                                    type: 'pdf' // Mime Type: jpg, png, doc, ppt, html, pdf, csv
+                                }]
+                            }, (error) => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT));
+                        });
 
                     }else if(choseType.current === 2){
                         //匯出儲存
-                        FileViewer.open(results.filePath, {showOpenWithDialog: true})
-                                  .then(() => ToastAndroid.show('已儲存在文件資料夾中', ToastAndroid.SHORT));
+                        let savePath = DownloadDirectoryPath + '/' + fileName + '.pdf';
 
+                        /* 複製到下載資料夾 */
+                        const saveFile = async() => {
+                            try{
+                                let is_exists = await RNFS.exists(savePath);
+                                let verser = 0;
+                                if(is_exists){
+                                    //已存在檔案
+                                    do{
+                                        verser++;
+                                        savePath = DownloadDirectoryPath + '/' + fileName + ' (' + verser + ') ' + '.pdf';
+                                        is_exists = await RNFS.exists(savePath);
+                                    }while(is_exists);
+                                }
+
+                                await RNFS.copyFile(results.filePath, savePath); //copy
+                                return true;
+                            }catch(e){
+                                return false;
+                            }
+                        };
+
+                        saveFile().then((e) => {
+                            if(e) FileViewer.open(savePath, {showOpenWithDialog: true})
+                                            .then(() => ToastAndroid.show('已儲存在文件資料夾中', ToastAndroid.SHORT));
+                            else ToastAndroid.show('出現錯誤', ToastAndroid.SHORT);
+
+                            RNFS.unlink(results.filePath).then(() => null); //delete tmp file
+                        });
                     }else if(choseType.current === 3){
                         //打印
-                        RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() => null);
+                        RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() =>
+                            RNFS.unlink(results.filePath).then(() => null) //delete tmp file
+                        );
                     }
+
+
                 }, 1000);
             });
         });
