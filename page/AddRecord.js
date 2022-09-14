@@ -171,12 +171,11 @@ const AddRecord = ({navigation, route}) => {
 
     /* 遞交 */
     const submit = useCallback(() => {
-        let initialError = {
+        let error = {
             cargo: null,
             location: null,
             orderID: null
         };
-        let error = structuredClone(initialError);
 
         //檢查條件
         if(state.orderID.length > 0 && state.orderID.length < 9){

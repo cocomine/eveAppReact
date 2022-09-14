@@ -22,7 +22,8 @@ import {Setting} from './page/Setting';
 const Stack = createNativeStackNavigator();
 
 const CombinedDefaultTheme = merge(PaperDefaultTheme, NavigationDefaultTheme);
-const CombinedDarkTheme = merge(PaperDarkTheme, NavigationDarkTheme);
+let CombinedDarkTheme = merge(PaperDarkTheme, NavigationDarkTheme);
+CombinedDarkTheme = {...CombinedDarkTheme, colors: {...CombinedDarkTheme.colors, background: Color.darkColor}};
 
 /* 進入介面 */
 function App(){
@@ -39,7 +40,7 @@ function App(){
 
     function CustomNavigationBar({navigation, back, options}){
         return (
-            <Appbar.Header>
+            <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
                 {back ? <Appbar.BackAction onPress={navigation.goBack}/> : null}
                 <Appbar.Content title={options.title}/>
             </Appbar.Header>

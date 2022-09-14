@@ -192,16 +192,16 @@ const Export = ({route}) => {
                 <Appbar.Header style={{backgroundColor: route.color}}>
                     <Appbar.Content title={route.title} color={Color.white}/>
                 </Appbar.Header>
-                <React.StrictMode>
+                {/*<React.StrictMode>*/}
                     <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
                         <Title>選擇匯出月份</Title>
                         <View style={{flexDirection: 'row'}}>
-                            <Picker style={{flex: 1 / 3}} selectedValue={year}
+                            <Picker style={{flex: 1}} selectedValue={year}
                                     onValueChange={(itemValue) => setYear(itemValue)}
                                     dropdownIconColor={theme.colors.text} prompt={'選擇年份'}>
                                 {YearOpt}
                             </Picker>
-                            <Picker style={{flex: 1 / 3}} selectedValue={month}
+                            <Picker style={{flex: 1}} selectedValue={month}
                                     onValueChange={(itemValue) => setMonth(itemValue)}
                                     dropdownIconColor={theme.colors.text} prompt={'選擇月份'}>
                                 {MonthOpt}
@@ -237,7 +237,7 @@ const Export = ({route}) => {
                             </View>
                         </Dialog>
                     </Portal>
-                </React.StrictMode>
+                {/*</React.StrictMode>*/}
             </SafeAreaView>
         </PaperProvider>
     );
