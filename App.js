@@ -26,6 +26,7 @@ import {Setting} from './page/Setting';
 import {StartUp} from './page/StartUp';
 import {ChangeSave} from './page/ChangeSave';
 import {Statistics} from './page/Statistics';
+import {Backup} from './page/Backup';
 
 const Stack = createNativeStackNavigator();
 
@@ -80,6 +81,11 @@ function App(){
                                 name="ChangeSave"
                                 component={ChangeSave}
                                 options={{title: '選擇存檔'}}
+                            />
+                            <Stack.Screen //備份
+                                name="Backup"
+                                component={Backup}
+                                options={{title: '備份', headerShown: false}}
                             />
                         </Stack.Group>
                         <Stack.Screen //啟動介面

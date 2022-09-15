@@ -321,7 +321,7 @@ const EditRecord = ({navigation, route}) => {
                         {/* 類型 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>類型</Text>
-                            <RadioGroup containerStyle={{justifyContent: 'space-between', flex: 1}} selectValue={state.type}
+                            <RadioGroup containerStyle={{justifyContent: 'space-between', flex: 1}}
                                         onPress={(value) => dispatch({type: UPDATE_TYPE, payload: {type: value}})}>
                                 <RadioButton value={'20'} label={'20'} color={Color.primaryColor} selected={state.type === '20'}/>
                                 <RadioButton value={'40'} label={'40'} color={Color.primaryColor} selected={state.type === '40'}/>

@@ -257,7 +257,8 @@ const Setting = ({route}) => {
                         <List.Section>
                             <List.Subheader style={style.header}>存檔</List.Subheader>
                             <View style={[style.Section, {backgroundColor: BG_color}]}>
-                                <List.Item style={style.item} title={'備份'} description={'點擊進入備份設定介面'}/>
+                                <List.Item style={style.item} title={'備份'} description={'點擊進入備份設定介面'} onPress={() => navigation.navigate(
+                                    'Backup')}/>
                                 <Divider/>
                                 <List.Item style={style.item} title={'更換其他存檔'} description={'點擊更換'} onPress={() => navigation.navigate(
                                     'ChangeSave')}/>
