@@ -1,5 +1,5 @@
 import React, {useCallback, useRef, useState} from 'react';
-import {SafeAreaView, StyleSheet, TouchableNativeFeedback, useColorScheme, View} from 'react-native';
+import {SafeAreaView, StatusBar, StyleSheet, TouchableNativeFeedback, useColorScheme, View} from 'react-native';
 import {IconButton, Text, useTheme} from 'react-native-paper';
 import {Color} from './Color';
 import {TouchableNativeFeedbackPresets} from './styles';
@@ -141,16 +141,17 @@ const Calculator: React.FC<{
     return (
         <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-                <View style={{flex: 1, flexDirection: 'column'}}>
-                    <View style={{alignItems: 'flex-end'}}>
-                        <IconButton icon={'close'} iconColor={colors.text} animated={true} onPress={onClose}/>
-                    </View>
-                    <View style={{flex: 1 / 4, paddingHorizontal: 20, marginBottom: 10}}>
-                        <View style={[style.show,]}>
-                            <AutoSizeText style={{
-                                color: Color.textGary,
-                                textAlign: 'right'
-                            }} fontSize={30} numberOfLines={3} mode={ResizeTextMode.max_lines}>{row2}</AutoSizeText>
+            <StatusBar backgroundColor={colors.background} barStyle={isDarkMode ? 'light-content' : 'dark-content'} animated={true}/>
+            <View style={{flex: 1, flexDirection: 'column'}}>
+                <View style={{alignItems: 'flex-end'}}>
+                    <IconButton icon={'close'} iconColor={colors.text} animated={true} onPress={onClose}/>
+                </View>
+                <View style={{flex: 1 / 4, paddingHorizontal: 20, marginBottom: 10}}>
+                    <View style={[style.show,]}>
+                        <AutoSizeText style={{
+                            color: Color.textGary,
+                            textAlign: 'right'
+                        }} fontSize={30} numberOfLines={3} mode={ResizeTextMode.max_lines}>{row2}</AutoSizeText>
                         </View>
                         <View style={style.show}>
                             <AutoSizeText style={{

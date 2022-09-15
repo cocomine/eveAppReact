@@ -2,10 +2,24 @@ import SQLite from 'react-native-sqlite-storage';
 import {ToastAndroid} from 'react-native';
 import RNRestart from 'react-native-restart';
 import {useEffect, useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* 連接sql */
-const DB = SQLite.openDatabase({name: 'my.DB', location: 'default'});
-console.log('DatabaseVer_Helper loaded!');
+let DB = null;
+
+async function openDB(){
+    let dbname = await AsyncStorage.getItem('openDB') || 'eveApp.db';
+    console.log('Loading database: ' + dbname);
+
+    if(DB != null){
+        closeDB();
+        DB = null;
+    }
+    DB = SQLite.openDatabase({name: dbname, location: 'default'});
+    checkUpdate();
+}
+
+function closeDB(){DB.close();} //colse DB
 
 const restartApp = () => {
     ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.LONG);
@@ -170,7 +184,7 @@ const startUp = () => {
         restartApp();
     });
 };
-checkUpdate();
+console.log('DatabaseVer_Helper loaded!');
 
 /**
  * 設定Hook
@@ -198,5 +212,4 @@ function useSetting(){
     return [setting];
 }
 
-export default DB;
-export {useSetting};
+export {DB, useSetting, openDB, closeDB};

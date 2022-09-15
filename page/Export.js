@@ -4,7 +4,7 @@ import {Appbar, Button, Checkbox, Dialog, Portal, Provider as PaperProvider, Tex
 import {Color} from '../module/Color';
 import {Picker} from '@react-native-picker/picker';
 import {useFocusEffect} from '@react-navigation/native';
-import DB, {useSetting} from '../module/SQLite';
+import {DB, useSetting} from '../module/SQLite';
 import TextInput from '../module/TextInput';
 import moment from 'moment';
 import formatPrice from '../module/formatPrice';
@@ -217,7 +217,6 @@ const Export = ({route}) => {
                             RNFS.unlink(results.filePath).then(() => null) //delete tmp file
                         );
                     }
-
 
                 }, 1000);
             });

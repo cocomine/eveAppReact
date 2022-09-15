@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useReducer, useState} from 'react';
 import {Appbar, Button, Dialog, Divider, IconButton, List, Portal, Provider as PaperProvider, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import {ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
-import DB from '../module/SQLite';
+import {DB} from '../module/SQLite';
 import TextInput from '../module/TextInput';
 import ErrorHelperText from '../module/ErrorHelperText';
 

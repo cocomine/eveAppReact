@@ -10,7 +10,7 @@ import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {hideKeyboard} from 'react-native-hide-keyboard/src';
 import CargoNumCheck from '../module/CargoNumCheck';
-import DB, {useSetting} from '../module/SQLite';
+import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -280,7 +280,7 @@ const AddRecord = ({navigation, route}) => {
     return (
         <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-            <StatusBar backgroundColor={Color.primaryColor}/>
+            <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true}/>
             <ScrollView nestedScrollEnabled={true}>
                 <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                     {/* 日期 */}

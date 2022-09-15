@@ -22,7 +22,7 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {Portal, Snackbar, Text} from 'react-native-paper';
-import DB, {useSetting} from '../module/SQLite';
+import {DB, useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
 import SVGCargo from '../module/SVGCargo';
