@@ -1,20 +1,10 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {
-    Animated,
-    FlatList,
-    PixelRatio,
-    SafeAreaView,
-    StyleSheet,
-    TouchableNativeFeedback,
-    TouchableOpacity,
-    useColorScheme,
-    View
-} from 'react-native';
+import {Animated, FlatList, PixelRatio, SafeAreaView, StyleSheet, TouchableOpacity, useColorScheme, View} from 'react-native';
 import {Color} from '../module/Color';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import ADIcon from 'react-native-vector-icons/AntDesign';
 import FW5Icon from 'react-native-vector-icons/FontAwesome5';
-import {SmailText, styles, TouchableNativeFeedbackPresets} from '../module/styles';
+import {SmailText} from '../module/styles';
 import moment from 'moment';
 import 'moment/min/locales';
 import {Swipeable} from 'react-native-gesture-handler';
@@ -26,6 +16,7 @@ import {DB, useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
 import SVGCargo from '../module/SVGCargo';
+import {Ripple} from '../module/Ripple';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate, Total_callback){
@@ -505,7 +496,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
     return (
         <Animated.View style={{height: height.current}} onLayout={onLayout}>
             <Swipeable ref={ref} renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} leftThreshold={120} rightThreshold={120} renderLeftActions={swipeLeft} overshootFriction={8}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default} onPress={switchRMBShow}>
+                <Ripple.Default onPress={switchRMBShow}>
                     <Animated.View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
 
                         <View style={[style.row, {justifyContent: 'flex-start'}]}>
@@ -561,7 +552,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                             </Snackbar>
                         </Portal>
                     </Animated.View>
-                </TouchableNativeFeedback>
+                </Ripple.Default>
             </Swipeable>
         </Animated.View>
     );

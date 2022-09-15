@@ -1,8 +1,8 @@
 import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {Animated, StyleProp, StyleSheet, TextStyle, TouchableNativeFeedback, useColorScheme, View, ViewStyle} from "react-native";
-import {TouchableNativeFeedbackPresets} from "./styles";
+import {Animated, StyleProp, StyleSheet, TextStyle, useColorScheme, View, ViewStyle} from "react-native";
 import {Color} from "./Color";
 import {Text} from "react-native-paper";
+import {Ripple} from "./Ripple";
 import EndCallback = Animated.EndCallback;
 
 const ANIME_TIME = 300; //動畫時間
@@ -144,7 +144,7 @@ const RadioButton = forwardRef<Ref, Props>(({
 
     return (
         <View style={[style.container, containerStyle, {flexDirection: layout}]}>
-            <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.borderless} onPress={onPress}>
+            <Ripple.Borderless onPress={onPress}>
                 <View style={{width: size, height: size}}>
                     <Animated.View style={[style.border, {borderWidth: border, borderColor: b_color}]}/>
                     <Animated.View style={[style.center, {
@@ -152,7 +152,7 @@ const RadioButton = forwardRef<Ref, Props>(({
                         borderColor: isDarkMode ? Color.darkColor : Color.light
                     }]}/>
                 </View>
-            </TouchableNativeFeedback>
+            </Ripple.Borderless>
             <Text style={[labelStyle, {marginLeft: layout === 'row' ? 4 : 0}]} onPress={onPress}>{label}</Text>
         </View>
     )

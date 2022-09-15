@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /* 連接sql */
 let DB = null;
 
+//連接 DB
 async function openDB(){
     let dbname = await AsyncStorage.getItem('openDB') || 'eveApp.db';
     console.log('Loading database: ' + dbname);
@@ -19,7 +20,7 @@ async function openDB(){
     checkUpdate();
 }
 
-function closeDB(){DB.close();} //colse DB
+function closeDB(){DB.close();} //close DB
 
 const restartApp = () => {
     ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.LONG);

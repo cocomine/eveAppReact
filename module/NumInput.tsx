@@ -1,18 +1,9 @@
 import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
-import {
-    StyleProp,
-    StyleSheet,
-    TextInput as NativeTextInput,
-    TextStyle,
-    TouchableNativeFeedback,
-    useColorScheme,
-    View,
-    ViewStyle,
-} from "react-native";
+import {StyleProp, StyleSheet, TextInput as NativeTextInput, TextStyle, useColorScheme, View, ViewStyle,} from "react-native";
 import {Color} from "./Color";
-import {TouchableNativeFeedbackPresets} from "./styles";
 import {IconButton, Text, TextInput, TextInputProps, useTheme} from "react-native-paper";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import {Ripple} from './Ripple';
 
 /* 輸入參數 */
 interface InputProps {
@@ -278,28 +269,28 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({
         // @ts-ignore
         <View style={{display, height: 220}}>
             <View style={[style.row, {backgroundColor: BG_color}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('1')}><View style={style.button}><Text style={style.text}>1</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('2')}><View style={style.button}><Text style={style.text}>2</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('3')}><View style={style.button}><Text style={style.text}>3</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('back')}><View style={style.button}><IconButton icon={'backspace-outline'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+                <Ripple.Color onPress={() => onPress('1')}><View style={style.button}><Text style={style.text}>1</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('2')}><View style={style.button}><Text style={style.text}>2</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('3')}><View style={style.button}><Text style={style.text}>3</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('back')}><View style={style.button}><IconButton icon={'backspace-outline'} iconColor={colors.text}/></View></Ripple.Color>
             </View>
             <View style={[style.row, {backgroundColor: BG_color}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('4')}><View style={style.button}><Text style={style.text}>4</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('5')}><View style={style.button}><Text style={style.text}>5</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('6')}><View style={style.button}><Text style={style.text}>6</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('-')}><View style={style.button}><Text style={style.text}>-</Text></View></TouchableNativeFeedback>
+                <Ripple.Color onPress={() => onPress('4')}><View style={style.button}><Text style={style.text}>4</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('5')}><View style={style.button}><Text style={style.text}>5</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('6')}><View style={style.button}><Text style={style.text}>6</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('-')}><View style={style.button}><Text style={style.text}>-</Text></View></Ripple.Color>
             </View>
             <View style={[style.row, {backgroundColor: BG_color}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('7')}><View style={style.button}><Text style={style.text}>7</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('8')}><View style={style.button}><Text style={style.text}>8</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('9')}><View style={style.button}><Text style={style.text}>9</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('calculator')}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+                <Ripple.Color onPress={() => onPress('7')}><View style={style.button}><Text style={style.text}>7</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('8')}><View style={style.button}><Text style={style.text}>8</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('9')}><View style={style.button}><Text style={style.text}>9</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('calculator')}><View style={style.button}><IconButton icon={'calculator'} iconColor={colors.text}/></View></Ripple.Color>
             </View>
             <View style={[style.row, {backgroundColor: BG_color}]}>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('00')}><View style={style.button}><Text style={style.text}>00</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('0')}><View style={style.button}><Text style={style.text}>0</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('.')}><View style={style.button}><Text style={style.text}>.</Text></View></TouchableNativeFeedback>
-                <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.color} onPress={() => onPress('done')}><View style={style.button}><IconButton icon={'check'} iconColor={colors.text}/></View></TouchableNativeFeedback>
+                <Ripple.Color onPress={() => onPress('00')}><View style={style.button}><Text style={style.text}>00</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('0')}><View style={style.button}><Text style={style.text}>0</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('.')}><View style={style.button}><Text style={style.text}>.</Text></View></Ripple.Color>
+                <Ripple.Color onPress={() => onPress('done')}><View style={style.button}><IconButton icon={'check'} iconColor={colors.text}/></View></Ripple.Color>
             </View>
         </View>
     )
