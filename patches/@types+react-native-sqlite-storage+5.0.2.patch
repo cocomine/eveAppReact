@@ -1,0 +1,32 @@
+diff --git a/node_modules/@types/react-native-sqlite-storage/index.d.ts b/node_modules/@types/react-native-sqlite-storage/index.d.ts
+index f570a51..f1f2b70 100644
+--- a/node_modules/@types/react-native-sqlite-storage/index.d.ts
++++ b/node_modules/@types/react-native-sqlite-storage/index.d.ts
+@@ -70,14 +70,16 @@ export interface SQLError {
+ }
+ 
+ export type StatementCallback = (transaction: Transaction, resultSet: ResultSet) => void;
+-export type StatementErrorCallback = (transaction: Transaction, error: SQLError) => void;
++export type StatementErrorCallback = (error: SQLError) => void;
++export type successfulCallback = () => void;
+ export interface Transaction {
+-    executeSql(sqlStatement: string, arguments?: any[]): Promise<[Transaction, ResultSet]>;
++    executeSql(sqlStatement: string, arguments?: any[]): void;
+     executeSql(
+         sqlStatement: string,
+         arguments?: any[],
+         callback?: StatementCallback,
+         errorCallback?: StatementErrorCallback,
++        successfulCallback?: successfulCallback,
+     ): void;
+ }
+ 
+@@ -85,7 +87,7 @@ export type TransactionCallback = (transaction: Transaction) => void;
+ export type TransactionErrorCallback = (error: SQLError) => void;
+ 
+ export interface SQLiteDatabase {
+-    transaction(scope: (tx: Transaction) => void): Promise<Transaction>;
++    transaction(scope: (tx: Transaction) => void): void;
+     transaction(
+         scope: (tx: Transaction) => void,
+         error?: TransactionErrorCallback,

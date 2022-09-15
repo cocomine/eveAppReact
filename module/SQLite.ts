@@ -5,31 +5,31 @@ import {useEffect, useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* 連接sql */
-let DB = null;
+let DB: SQLite.SQLiteDatabase;
 
 //連接 DB
-async function openDB(){
+async function openDB() {
     let dbname = await AsyncStorage.getItem('openDB') || 'eveApp.db';
     console.log('Loading database: ' + dbname);
 
-    if(DB != null){
-        closeDB();
-        DB = null;
-    }
-    DB = SQLite.openDatabase({name: dbname, location: 'default'});
+    if (DB != null) await closeDB();
+    DB = await SQLite.openDatabase({name: dbname, location: 'default'});
     checkUpdate();
 }
 
-function closeDB(){DB.close();} //close DB
+//close DB
+async function closeDB() {
+    await DB.close();
+}
 
 const restartApp = () => {
     ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.LONG);
     RNRestart.Restart();
 };
 const checkUpdate = () => {
-    DB.transaction(function(tr){
+    DB.transaction(function (tr) {
         tr.executeSql('SELECT value FROM Setting WHERE Target = \'database_version\'', [], (tx, rs) => {
-            switch(rs.rows.item(0).value){
+            switch (rs.rows.item(0).value) {
                 case '1.0':
                     doUpdate.To_1_2();
                     break;
@@ -55,10 +55,10 @@ const checkUpdate = () => {
                     console.log('DatabaseVer_Helper:', '已是最新');
                     break;
             }
-        }, function(e){
+        }, function (e) {
             console.log('DatabaseVer_Helper:', '檢查資料庫發現錯誤', e.message);
             startUp();//初始化資料庫
-        }, function(){
+        }, function () {
             console.log('DatabaseVer_Helper:', '檢查資料庫完成');
         });
     });
@@ -192,12 +192,12 @@ console.log('DatabaseVer_Helper loaded!');
  * @returns {unknown[]}
  */
 function useSetting(){
-    const [setting, setSetting] = useState(null);
+    const [setting, setSetting] = useState<string[] | null>(null);
 
     useEffect(() => {
         DB.transaction(function(tr){
             tr.executeSql('SELECT * FROM Setting', [], function(tx, rs){
-                let Setting = [];
+                let Setting: string[] = [];
                 for(let i = 0 ; i < rs.rows.length ; i++){
                     Setting[rs.rows.item(i).Target] = rs.rows.item(i).value;
                 }
