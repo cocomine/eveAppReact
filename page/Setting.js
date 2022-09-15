@@ -5,6 +5,7 @@ import {ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, ToastAndroid, u
 import {DB} from '../module/SQLite';
 import TextInput from '../module/TextInput';
 import ErrorHelperText from '../module/ErrorHelperText';
+import {useNavigation} from '@react-navigation/native';
 
 const initialState = {
     'Rate': '0.836',
@@ -62,6 +63,7 @@ const Setting = ({route}) => {
     };
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;
+    const navigation = useNavigation();
 
     const [state, dispatch] = useReducer(reducer, initialState); //setting value
     const [DialogState, DialogDispatch] = useReducer(reducer, Dialog_initialState); //Dialog
@@ -214,7 +216,7 @@ const Setting = ({route}) => {
                 <Appbar.Header style={{backgroundColor: route.color}}>
                     <Appbar.Content title={route.title} color={Color.white}/>
                 </Appbar.Header>
-                <React.StrictMode>
+                {/*<React.StrictMode>*/}
                     <ScrollView>
                         <List.Section>
                             <List.Subheader style={style.header}>匯率</List.Subheader>
@@ -257,7 +259,8 @@ const Setting = ({route}) => {
                             <View style={[style.Section, {backgroundColor: BG_color}]}>
                                 <List.Item style={style.item} title={'備份'} description={'點擊進入備份設定介面'}/>
                                 <Divider/>
-                                <List.Item style={style.item} title={'更換其他存檔'} description={'點擊更換'}/>
+                                <List.Item style={style.item} title={'更換其他存檔'} description={'點擊更換'} onPress={() => navigation.navigate(
+                                    'ChangeSave')}/>
                             </View>
                         </List.Section>
                     </ScrollView>
@@ -275,7 +278,7 @@ const Setting = ({route}) => {
                             </Dialog.Actions>
                         </Dialog>
                     </Portal>
-                </React.StrictMode>
+                {/*</React.StrictMode>*/}
             </SafeAreaView>
         </PaperProvider>
     );

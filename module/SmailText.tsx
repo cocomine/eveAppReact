@@ -1,4 +1,3 @@
-import {StyleSheet} from "react-native";
 import React from "react";
 import {Text, useTheme} from "react-native-paper";
 
@@ -11,7 +10,4 @@ const SmailText: React.FC<{ color?: string | number, children: React.ReactNode }
     );
 }
 
-/* 通用styles */
-const styles = StyleSheet.create({});
-export default styles;
 export {SmailText}

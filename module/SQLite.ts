@@ -12,14 +12,16 @@ async function openDB() {
     let dbname = await AsyncStorage.getItem('openDB') || 'eveApp.db';
     console.log('Loading database: ' + dbname);
 
-    if (DB != null) await closeDB();
-    DB = await SQLite.openDatabase({name: dbname, location: 'default'});
-    checkUpdate();
+    if (DB != null) closeDB();
+    DB = SQLite.openDatabase({name: dbname, location: 'default'}, () => {
+        checkUpdate();
+        return;
+    });
 }
 
 //close DB
-async function closeDB() {
-    await DB.close();
+function closeDB() {
+    DB.close();
 }
 
 const restartApp = () => {

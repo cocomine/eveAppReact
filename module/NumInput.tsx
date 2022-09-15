@@ -82,8 +82,8 @@ const DecimalInput = forwardRef<InputRef, InputProps>(({
 
         if (isNegative) value = '-' + value; //前面加負數符號
 
-        const real_value = value.replace(',', ''); //移除所有逗號, 另外儲存
-        if(value.length > 0) value = symbol + value; //加上符號
+        const real_value = value.replace(/,/g, ''); //移除所有逗號, 另外儲存
+        if (value.length > 0) value = symbol + value; //加上符號
 
         setDisplayValue(value);
         setReal_value(real_value);
@@ -172,7 +172,7 @@ const NumberInput = forwardRef<InputRef, InputProps>(({
 
         if (isNegative) value = '-' + value; //前面加負數符號
 
-        const real_value = value.replace(',', ''); //移除所有逗號, 另外儲存
+        const real_value = value.replace(/,/g, ''); //移除所有逗號, 另外儲存
         if (value.length > 0) value = symbol + value; //加上符號
 
         setDisplayValue(value);

@@ -24,6 +24,7 @@ import {EditRecord} from './page/EditRecord';
 import {Export} from './page/Export';
 import {Setting} from './page/Setting';
 import {StartUp} from './page/StartUp';
+import {ChangeSave} from './page/ChangeSave';
 
 const Stack = createNativeStackNavigator();
 
@@ -69,10 +70,15 @@ function App(){
                                 component={AddRecord}
                                 options={{title: '增加紀錄'}}
                             />
-                            <Stack.Screen //增加紀錄
+                            <Stack.Screen //編輯紀錄
                                 name="EditRecord"
                                 component={EditRecord}
                                 options={{title: '編輯紀錄'}}
+                            />
+                            <Stack.Screen //選擇存檔
+                                name="ChangeSave"
+                                component={ChangeSave}
+                                options={{title: '選擇存檔'}}
                             />
                         </Stack.Group>
                         <Stack.Screen //啟動介面

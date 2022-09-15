@@ -1,7 +1,16 @@
 diff --git a/node_modules/@types/react-native-sqlite-storage/index.d.ts b/node_modules/@types/react-native-sqlite-storage/index.d.ts
-index f570a51..f1f2b70 100644
+index f570a51..06a0f9c 100644
 --- a/node_modules/@types/react-native-sqlite-storage/index.d.ts
 +++ b/node_modules/@types/react-native-sqlite-storage/index.d.ts
+@@ -8,7 +8,7 @@
+ export function DEBUG(isDebug: boolean): void;
+ export function enablePromise(enablePromise: boolean): void;
+ 
+-export function openDatabase(params: DatabaseParams): Promise<SQLiteDatabase>;
++export function openDatabase(params: DatabaseParams): SQLiteDatabase;
+ export function openDatabase(
+     params: DatabaseParams,
+     success?: () => void,
 @@ -70,14 +70,16 @@ export interface SQLError {
  }
  
@@ -30,3 +39,12 @@ index f570a51..f1f2b70 100644
      transaction(
          scope: (tx: Transaction) => void,
          error?: TransactionErrorCallback,
+@@ -97,7 +99,7 @@ export interface SQLiteDatabase {
+         error?: TransactionErrorCallback,
+         success?: TransactionCallback,
+     ): void;
+-    close(): Promise<void>;
++    close(): void;
+     close(success: () => void, error: (err: SQLError) => void): void;
+     executeSql(statement: string, params?: any[]): Promise<[ResultSet]>;
+     executeSql(statement: string, params?: any[], success?: StatementCallback, error?: StatementErrorCallback): void;

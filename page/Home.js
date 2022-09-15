@@ -4,7 +4,7 @@ import {Color} from '../module/Color';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import ADIcon from 'react-native-vector-icons/AntDesign';
 import FW5Icon from 'react-native-vector-icons/FontAwesome5';
-import {SmailText} from '../module/styles';
+import {SmailText} from '../module/SmailText';
 import moment from 'moment';
 import 'moment/min/locales';
 import {Swipeable} from 'react-native-gesture-handler';
@@ -367,7 +367,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 </Animated.View>
             </Animated.View>
         );
-    });
+    }, []);
 
     /* 向右滑動 */
     const swipeLeft = useCallback((progress, dragX) => {
@@ -386,12 +386,12 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
         //體感觸摸
         dragX.addListener(({value}) => {
             if(value > 120){
-                if(canHaptic === true){
+                if(canHaptic.current === true){
                     ReactNativeHapticFeedback.trigger('effectTick');
                     canHaptic.current = false;
                 }
             }else if(value < (120 * -1)){
-                if(canHaptic === true){
+                if(canHaptic.current === true){
                     ReactNativeHapticFeedback.trigger('effectTick');
                     canHaptic.current = false;
                 }
@@ -411,7 +411,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 </Animated.View>
             </Animated.View>
         );
-    });
+    }, []);
 
     /* 切換人民幣顯示 */
     const translateY = useRef(new Animated.Value(0)).current;

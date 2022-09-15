@@ -11,7 +11,7 @@ const StartUp = ({navigation}) => {
         openDB().then(() => {
             setTimeout(() => {
                 navigation.reset({index: 0, routes: [{name: 'Main'}]});
-            }, 1000);
+            }, 500);
         });
     }, []);
 
