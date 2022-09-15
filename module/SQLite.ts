@@ -25,7 +25,7 @@ function closeDB() {
 }
 
 const restartApp = () => {
-    ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.LONG);
+    ToastAndroid.show('資料庫更新完成, 正在重新啟動', ToastAndroid.SHORT);
     RNRestart.Restart();
 };
 const checkUpdate = () => {

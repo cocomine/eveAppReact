@@ -25,6 +25,7 @@ import {Export} from './page/Export';
 import {Setting} from './page/Setting';
 import {StartUp} from './page/StartUp';
 import {ChangeSave} from './page/ChangeSave';
+import {Statistics} from './page/Statistics';
 
 const Stack = createNativeStackNavigator();
 
@@ -48,7 +49,7 @@ function App(){
     function CustomNavigationBar({navigation, back, options}){
         return (
             <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
-                {back ? <Appbar.BackAction onPress={navigation.goBack}/> : null}
+                {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack}/>}
                 <Appbar.Content title={options.title}/>
             </Appbar.Header>
         );
@@ -113,7 +114,7 @@ const MainScreen = ({navigation}) => {
     const renderScene = BottomNavigation.SceneMap({
         Home: Home,
         Export: Export,
-        Statistics: Home,
+        Statistics: Statistics,
         Setting: Setting
     });
 

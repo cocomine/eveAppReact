@@ -20,8 +20,7 @@ const StartUp = ({navigation}) => {
             <StatusBar backgroundColor={colors.background} barStyle={isDarkMode ? 'light-content' : 'dark-content'} animated={true}/>
             <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
                 <Image source={require('../resource/logo.png')}/>
-                <View style={{height: 40}}></View>
-                <Headline>運輸紀錄</Headline>
+                <Headline style={{paddingTop: 40}}>運輸紀錄</Headline>
             </View>
         </SafeAreaView>
     );

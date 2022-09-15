@@ -273,12 +273,12 @@ const Home = ({route}) => {
                     ListFooterComponent={
                         <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
                             <SVGCargo height="60" width="180"/>
-                            <Text>已經到底喇~~ (❁´◡`❁)</Text>
+                            <Text>已經到底喇~~ （￣︶￣）↗ </Text>
                         </View>}
                     ListEmptyComponent={
                         <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
                             <SVGLostCargo height="100" width="300"/>
-                            <Text>沒有資料... （；´д｀）ゞ</Text>
+                            <Text>沒有資料... Σ(っ °Д °;)っ</Text>
                         </View>
                     }
                 />

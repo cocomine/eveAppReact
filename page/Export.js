@@ -30,7 +30,7 @@ const Export = ({route}) => {
         ...theme,
         colors: {
             ...theme.colors,
-            primary: Color.orange
+            primary: route.color
         }
     };
 

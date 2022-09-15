@@ -58,7 +58,7 @@ const Setting = ({route}) => {
         ...theme,
         colors: {
             ...theme.colors,
-            primary: Color.indigo
+            primary: route.color
         }
     };
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
@@ -269,7 +269,7 @@ const Setting = ({route}) => {
                             <Dialog.Title>{DialogState.title}</Dialog.Title>
                             <Dialog.Content>
                                 <TextInput placeholder={DialogState.placeholder} dense={true} value={DialogState.value} error={DialogState.error != null}
-                                           onChangeText={(text) => DialogDispatch({type: UPDATE_VALUE, payload: text})}/>
+                                           onChangeText={(text) => DialogDispatch({type: UPDATE_VALUE, payload: text})} onSubmitEditing={confirm}/>
                                 <ErrorHelperText visible={DialogState.error != null}>{DialogState.error}</ErrorHelperText>
                             </Dialog.Content>
                             <Dialog.Actions>
