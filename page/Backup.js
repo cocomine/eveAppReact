@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Image, Linking, SafeAreaView, StatusBar, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import {Color} from '../module/Color';
-import {Appbar, Button, Dialog, Headline, Switch, Text, Title, useTheme} from 'react-native-paper';
+import {Appbar, Button, Headline, Portal, Switch, Text, Title, useTheme} from 'react-native-paper';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import Lottie from 'lottie-react-native';
 import {GoogleSignin, statusCodes} from '@react-native-google-signin/google-signin';
@@ -10,6 +10,8 @@ import RNFS, {CachesDirectoryPath} from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
 import {closeDB, openDB} from '../module/SQLite';
+import Animated, {FadeIn, FadeOut} from 'react-native-reanimated';
+import {FoldIn, FoldOut} from '../module/Fold';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
@@ -52,6 +54,8 @@ const Backup = ({navigation}) => {
         await GoogleSignin.signOut();
         setUserInfo({user: null});
         setIsLogin(false);
+        setNewBackupDate(null);
+        folderID.current = null;
         ToastAndroid.show('連接已斷開', ToastAndroid.SHORT);
     }, []);
 
@@ -64,7 +68,9 @@ const Backup = ({navigation}) => {
             setUserInfo({...userinfo});
             setIsLogin(true);
 
-            folderID.current = await listAllBackup();
+            const [folder, BackupDate] = await listAllBackup();
+            folderID.current = folder;
+            setNewBackupDate(BackupDate);
         }catch(error){
             console.log(error);
             if(error.code === statusCodes.SIGN_IN_CANCELLED){
@@ -151,21 +157,22 @@ const Backup = ({navigation}) => {
                             </View>
                         </View>
                     </View>
-                    <View style={[style.backup, {backgroundColor: BG_color, display: !isLogin ? 'none' : undefined}]}>
-                        <View style={style.logo}>
-                            <Title>自動備份:</Title>
-                            <Switch value={true} color={Color.primaryColor} onValueChange={() => null}/>
-                        </View>
-                        <RadioGroup containerStyle={{
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            paddingHorizontal: 20
-                        }} onPress={(value) => null}>
-                            <RadioButton value={'Day'} label={'每日'} color={Color.primaryColor} selected={false}/>
-                            <RadioButton value={'Week'} label={'每週'} color={Color.primaryColor} selected={false}/>
-                            <RadioButton value={'Month'} label={'每月'} color={Color.primaryColor} selected={true}/>
-                        </RadioGroup>
-                    </View>
+                    {isLogin ?
+                        <Animated.View style={[style.backup, {backgroundColor: BG_color}]} entering={FoldIn} exiting={FoldOut}>
+                            <View style={style.logo}>
+                                <Title>自動備份:</Title>
+                                <Switch value={true} color={Color.primaryColor} onValueChange={() => null}/>
+                            </View>
+                            <RadioGroup containerStyle={{
+                                justifyContent: 'space-between',
+                                width: '100%',
+                                paddingHorizontal: 20
+                            }} onPress={(value) => null}>
+                                <RadioButton value={'Day'} label={'每日'} color={Color.primaryColor} selected={false}/>
+                                <RadioButton value={'Week'} label={'每週'} color={Color.primaryColor} selected={false}/>
+                                <RadioButton value={'Month'} label={'每月'} color={Color.primaryColor} selected={true}/>
+                            </RadioGroup>
+                        </Animated.View> : null}
                 </View>
                 <View style={[style.button, {backgroundColor: BG_color}]}>
                     <View style={{display: isLogin ? 'none' : undefined}}>
@@ -173,18 +180,22 @@ const Backup = ({navigation}) => {
                     </View>
                     <View style={[style.row, {display: !isLogin ? 'none' : undefined}]}>
                         <Button mode={'outlined'} style={{flex: 1, marginRight: 5}} icon={'backup-restore'}>恢復</Button>
-                        <Button mode={'contained'} style={{flex: 1}} icon={'cloud-upload'} onPress={backup}>備份</Button>
+                        <Button mode={'contained'} style={{flex: 1}} icon={'cloud-upload'} onPress={backup} disabled={newBackupDate === null}>備份</Button>
                     </View>
                 </View>
             </View>
-            <Dialog visible={BackingUp} dismissable={false}>
-                <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                    <Lottie source={require('../resource/upload.json')} autoPlay={true} loop={true} style={{
-                        width: 300,
-                        height: 300
-                    }}/>
-                </View>
-            </Dialog>
+            <Portal>
+                {BackingUp ?
+                    <Animated.View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.74)'}} entering={FadeIn} exiting={FadeOut}>
+                        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                            <Lottie source={require('../resource/upload.json')} autoPlay={true} loop={true} style={{
+                                width: 300,
+                                height: 300
+                            }}/>
+                            <Title style={{color: Color.white, paddingTop: 40}}>備份中...</Title>
+                        </View>
+                    </Animated.View> : null}
+            </Portal>
         </SafeAreaView>
     );
 };
@@ -254,17 +265,15 @@ const doBackup = async(folderID) => {
     //上載檔案
     const fileName = custom_name + moment(new Date).format('_D/M/YYYY-H:mm:ss.SSS') + '.db';
     const uploader = gdrive.files.newResumableUploader();
-    await uploader.setDataType('application/x-sqlite3')
+    await uploader.setData(byteArray, 'application/x-sqlite3')
                   .setRequestBody({
                       name: fileName,
                       description: 'eveApp Database. Backup on ' + moment(new Date).format('DD/M/YYY HH:mm:ss'),
                       parents: [folderID]
                   }).execute();
 
-    await uploader.uploadChunk(byteArray);
-    uploader.setContentLength(byteArray.length);
     const status = await uploader.requestUploadStatus();
-
+    console.log(status);
     return status.isComplete;
 };
 
