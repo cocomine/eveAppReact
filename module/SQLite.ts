@@ -9,7 +9,12 @@ let DB: SQLite.SQLiteDatabase;
 
 //連接 DB
 async function openDB() {
-    let dbname = await AsyncStorage.getItem('openDB') || 'eveApp.db';
+    let dbname = await AsyncStorage.getItem('openDB');
+    //不存在
+    if (dbname === null) {
+        await AsyncStorage.setItem('openDB', 'eveApp.db')
+        dbname = 'eveApp.db';
+    }
     console.log('Loading database: ' + dbname);
 
     if (DB != null) closeDB();

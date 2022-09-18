@@ -1,7 +1,8 @@
 import React, {useEffect} from 'react';
-import {Image, SafeAreaView, StatusBar, useColorScheme, View} from 'react-native';
+import {SafeAreaView, StatusBar, useColorScheme, View} from 'react-native';
 import {Headline, useTheme} from 'react-native-paper';
 import {openDB} from '../module/SQLite';
+import Lottie from 'lottie-react-native';
 
 const StartUp = ({navigation}) => {
     const {colors} = useTheme();
@@ -11,7 +12,7 @@ const StartUp = ({navigation}) => {
         openDB().then(() => {
             setTimeout(() => {
                 navigation.reset({index: 0, routes: [{name: 'Main'}]});
-            }, 500);
+            }, 2500);
         });
     }, []);
 
@@ -19,7 +20,7 @@ const StartUp = ({navigation}) => {
         <SafeAreaView style={{flex: 1}}>
             <StatusBar backgroundColor={colors.background} barStyle={isDarkMode ? 'light-content' : 'dark-content'} animated={true}/>
             <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
-                <Image source={require('../resource/logo.png')}/>
+                <Lottie source={require('../resource/Cargo.json')} autoPlay={true} loop={false} style={{width: 200, height: 200}}/>
                 <Headline style={{paddingTop: 40}}>運輸紀錄</Headline>
             </View>
         </SafeAreaView>

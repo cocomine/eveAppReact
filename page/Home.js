@@ -317,13 +317,13 @@ const DataPart = ({data, rate}) => {
 
             {/* 備忘錄 */
                 data.Mark.length > 0 ?
-                    <TouchableNativeFeedback {...TouchableNativeFeedbackPresets.default}>
+                    <Ripple.Default>
                         <View style={style.dataPartMark}>
                             {data.Mark.map((item, index) => (
                                 <DataPartMark key={index} item={item} id={item.MarkID}/>
                             ))}
                         </View>
-                    </TouchableNativeFeedback> : null
+                    </Ripple.Default> : null
             }
 
             {/* 數據內容 */
@@ -475,7 +475,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 setConfirmMSG(true);
             });
         }
-    }, []);
+    }, [id]);
 
     /* 取消刪除 */
     const undo = useCallback(() => {
@@ -491,7 +491,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
             show();
             setConfirmMSG(false);
         });
-    }, []);
+    }, [dateTime]);
 
     return (
         <Animated.View style={{height: height.current}} onLayout={onLayout}>
