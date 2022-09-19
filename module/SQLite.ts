@@ -185,39 +185,47 @@ const startUp = () => {
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup\', \'Off\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup_cycle\', \'day\')', []); //放入sql
 
-    }, function(error){
+    }, function (error) {
         console.log('傳輸錯誤: ' + error.message);
-    }, function(){
+    }, function () {
         console.log('已初始化資料庫');
         restartApp();
     });
 };
 console.log('DatabaseVer_Helper loaded!');
 
+let settingRefresh = true; //設定刷新錨定參數
 /**
  * 設定Hook
  * @returns {unknown[]}
  */
-function useSetting(){
+function useSetting() {
     const [setting, setSetting] = useState<string[] | null>(null);
 
     useEffect(() => {
-        DB.transaction(function(tr){
-            tr.executeSql('SELECT * FROM Setting', [], function(tx, rs){
+        DB.transaction(function (tr) {
+            tr.executeSql('SELECT * FROM Setting', [], function (tx, rs) {
                 let Setting: string[] = [];
-                for(let i = 0 ; i < rs.rows.length ; i++){
+                for (let i = 0; i < rs.rows.length; i++) {
                     Setting[rs.rows.item(i).Target] = rs.rows.item(i).value;
                 }
                 setSetting(Setting);
-            }, function(error){
+            }, function (error) {
                 console.log('獲取失敗: ' + error.message); //debug
             });
-        }, function(error){
+        }, function (error) {
             console.log('傳輸錯誤: ' + error.message); //debug
         });
-    }, []);
+    }, [DB, settingRefresh]);
 
     return [setting];
 }
 
-export {DB, useSetting, openDB, closeDB};
+/**
+ * 刷新設定
+ */
+function updateSetting() {
+    settingRefresh = !settingRefresh;
+}
+
+export {DB, useSetting, openDB, closeDB, updateSetting};
