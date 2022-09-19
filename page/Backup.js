@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Image, Linking, SafeAreaView, StatusBar, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
+import {FlatList, Image, Linking, SafeAreaView, StatusBar, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import {Color} from '../module/Color';
-import {Appbar, Button, Headline, Portal, Switch, Text, Title, useTheme} from 'react-native-paper';
+import {Appbar, Button, Dialog, Headline, Portal, Subheading, Switch, Text, Title, useTheme} from 'react-native-paper';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import Lottie from 'lottie-react-native';
 import {GoogleSignin, statusCodes} from '@react-native-google-signin/google-signin';
@@ -12,6 +12,9 @@ import moment from 'moment';
 import {closeDB, openDB} from '../module/SQLite';
 import Animated, {FadeIn, FadeOut} from 'react-native-reanimated';
 import {FoldIn, FoldOut} from '../module/Fold';
+import {Ripple} from '../module/Ripple';
+import SVGLostCargo from '../module/SVGLostCargo';
+import {base64ToBytes, bytesToBase64} from 'byte-base64';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
@@ -27,6 +30,8 @@ const Backup = ({navigation}) => {
     const [userInfo, setUserInfo] = useState({user: null}); //用戶資料
     const [newBackupDate, setNewBackupDate] = useState(null); //最新備份日期
     const [BackingUp, setBackingUp] = useState(false); //備份中彈出視窗
+    const [Restoring, setRestoring] = useState(false); //備份中彈出視窗
+    const [fileList, setFileList] = useState(null); //恢復中彈出視窗
     const folderID = useRef(null); //資料夾id
 
     /* 初始化 */
@@ -89,37 +94,54 @@ const Backup = ({navigation}) => {
     const backup = useCallback(() => {
         setBackingUp(true);
         closeDB();
-        doBackup(folderID.current).then((status) => {
-            if(!status) ToastAndroid.show('備份失敗', ToastAndroid.SHORT);
-            ToastAndroid.show('備份成功', ToastAndroid.SHORT);
-        }).catch((e) => {
-            //ToastAndroid.show('備份失敗', ToastAndroid.SHORT);
-            console.log(e);
-        }).finally(() => {
-            listAllBackup().then(([folder, BackupDate]) => {
-                folderID.current = folder;
-                setNewBackupDate(BackupDate);
+        doBackup(folderID.current)
+            .then(() => ToastAndroid.show('備份成功', ToastAndroid.SHORT))
+            .catch(() => ToastAndroid.show('備份失敗', ToastAndroid.SHORT))
+            .finally(() => {
+                listAllBackup().then(([folder, BackupDate]) => {
+                    folderID.current = folder;
+                    setNewBackupDate(BackupDate);
+                });
+                openDB().then(r => {
+                    setBackingUp(false);
+                });
             });
-            openDB().then(r => {
-                setBackingUp(false);
-            });
-        });
     }, []);
 
     /* 恢復列表 */
     const restoreList = useCallback(() => {
+        backupList(folderID.current).then(e => {
+            setFileList(e.files);
+        });
+    }, []);
 
+    /* 關閉恢復列表 */
+    const closeRestoreList = useCallback(() => {
+        setFileList(null);
     }, []);
 
     /* 恢復 */
     const restore = useCallback((fileID) => {
-
+        setRestoring(true);
+        setFileList(null);
+        closeDB();
+        doRestore(fileID)
+            .then(() => ToastAndroid.show('恢復成功', ToastAndroid.SHORT))
+            //.catch(() => ToastAndroid.show('恢復失敗', ToastAndroid.SHORT))
+            .finally(() => {
+                openDB().then(() => {
+                    setRestoring(false);
+                });
+            });
     }, []);
 
-    //debug
+    /* 處理退出頁面 阻止退出 */
     useEffect(() => {
-        console.log(isLogin, userInfo);
-    });
+        //處理
+        return navigation.addListener('beforeRemove', (e) => { //清除活動監聽器
+            if(BackingUp || Restoring) e.preventDefault(); //阻止退出
+        });
+    }, [navigation, BackingUp, Restoring]);
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -179,7 +201,10 @@ const Backup = ({navigation}) => {
                         <Button mode={'contained'} buttonColor={Color.green} icon={'link-variant'} onPress={link}>連接</Button>
                     </View>
                     <View style={[style.row, {display: !isLogin ? 'none' : undefined}]}>
-                        <Button mode={'outlined'} style={{flex: 1, marginRight: 5}} icon={'backup-restore'}>恢復</Button>
+                        <Button mode={'outlined'} style={{
+                            flex: 1,
+                            marginRight: 5
+                        }} icon={'backup-restore'} onPress={restoreList} disabled={newBackupDate === null}>恢復</Button>
                         <Button mode={'contained'} style={{flex: 1}} icon={'cloud-upload'} onPress={backup} disabled={newBackupDate === null}>備份</Button>
                     </View>
                 </View>
@@ -195,8 +220,47 @@ const Backup = ({navigation}) => {
                             <Title style={{color: Color.white, paddingTop: 40}}>備份中...</Title>
                         </View>
                     </Animated.View> : null}
+                {Restoring ?
+                    <Animated.View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.74)'}} entering={FadeIn} exiting={FadeOut}>
+                        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                            <Lottie source={require('../resource/upload.json')} autoPlay={true} loop={true} style={{
+                                width: 300,
+                                height: 300
+                            }}/>
+                            <Title style={{color: Color.white, paddingTop: 40}}>恢復中...</Title>
+                        </View>
+                    </Animated.View> : null}
+                <Dialog onDismiss={closeRestoreList} visible={fileList != null} style={{maxHeight: '100%', top: -15}}>
+                    <Dialog.Title>恢復備份</Dialog.Title>
+                    <Dialog.ScrollArea>
+                        <FlatList data={fileList ?? []}
+                                  renderItem={({item}) => <RestoreList data={item} onPress={() => restore(item.id)}/>}
+                                  ItemSeparatorComponent={() => <View style={{borderColor: Color.darkColorLight, borderTopWidth: 0.5}}/>}
+                                  ListEmptyComponent={
+                                      <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                                          <SVGLostCargo height="90" width="250"/>
+                                          <Text>沒有資料... Σ(っ °Д °;)っ</Text>
+                                      </View>
+                                  }
+                        />
+                    </Dialog.ScrollArea>
+                    <Dialog.Actions>
+                        <Button onPress={closeRestoreList}>取消</Button>
+                    </Dialog.Actions>
+                </Dialog>
             </Portal>
         </SafeAreaView>
+    );
+};
+
+/* 恢復列表item */
+const RestoreList = ({data, onPress}) => {
+    return (
+        <Ripple.Default onPress={onPress}>
+            <View style={style.list}>
+                <Subheading>{data.name}</Subheading>
+            </View>
+        </Ripple.Default>
     );
 };
 
@@ -204,7 +268,9 @@ const Backup = ({navigation}) => {
 const backupList = async(folderID) => {
     return await gdrive.files.list({
         q: new ListQueryBuilder()
-            .e('parents', folderID),
+            .e('parents', folderID)
+            .and()
+            .e('trashed', false),
         orderBy: 'createdTime desc'
     });
 };
@@ -246,11 +312,7 @@ const doBackup = async(folderID) => {
     //讀取檔案
     const dbname = (await AsyncStorage.getItem('openDB')).split('.');
     const file = await RNFS.readFile(CachesDirectoryPath + '/../databases/' + dbname[0] + '.db', 'base64');
-    const byteCharacters = atob(file);
-    const byteArray = new Array(byteCharacters.length);
-    for(let i = 0 ; i < byteCharacters.length ; i++){
-        byteArray[i] = byteCharacters.charCodeAt(i);
-    }
+    const U8byteArray = base64ToBytes(file);
 
     //自訂名稱
     let name_list = await AsyncStorage.getItem('DBname');
@@ -265,19 +327,60 @@ const doBackup = async(folderID) => {
     //上載檔案
     const fileName = custom_name + moment(new Date).format('_D/M/YYYY-H:mm:ss.SSS') + '.db';
     const uploader = gdrive.files.newResumableUploader();
-    await uploader.setData(byteArray, 'application/x-sqlite3')
+    await uploader.setDataType('application/x-sqlite3')
                   .setRequestBody({
                       name: fileName,
                       description: 'eveApp Database. Backup on ' + moment(new Date).format('DD/M/YYY HH:mm:ss'),
                       parents: [folderID]
                   }).execute();
 
+    // 可恢復上載
+    let tryTime = 0;
+    while(tryTime < 10){
+        try{
+            await uploader.uploadChunk(U8byteArray);
+            console.log('完成上載 (' + fileName + ')');
+            break;
+        }catch(e){
+            tryTime++;
+            console.log('發生中斷嘗試重新上載: ' + tryTime);
+        }
+        if(tryTime >= 10) throw new Error('Upload Fall.');
+    }
+
     const status = await uploader.requestUploadStatus();
-    console.log(status);
+    if(!status.isComplete) throw new Error('Upload is not complete.');
     return status.isComplete;
 };
 
+/* 進行恢復 */
+const doRestore = async(fileID) => {
+    // 下載
+    let tryTime = 0;
+    let U8byteArray;
+    while(tryTime < 10){
+        try{
+            U8byteArray = await gdrive.files.getBinary(fileID);
+            console.log('完成下載');
+            break;
+        }catch(e){
+            tryTime++;
+            console.log('發生中斷嘗試重新下載: ' + tryTime);
+        }
+        if(tryTime >= 10) throw new Error('Download Fall.');
+    }
+
+    // 寫入檔案
+    const dbname = (await AsyncStorage.getItem('openDB')).split('.');
+    const file = bytesToBase64(U8byteArray);
+    await RNFS.writeFile(CachesDirectoryPath + '/../databases/' + dbname[0] + '.db', file, 'base64');
+};
+
 const style = StyleSheet.create({
+    list: {
+        paddingHorizontal: 5,
+        paddingVertical: 10
+    },
     backup: {
         padding: 10, borderColor: Color.darkColorLight, borderBottomWidth: 0.7
     },

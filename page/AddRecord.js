@@ -579,7 +579,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, onBlur, sc
         }, 5);
 
         return () => clearTimeout(x);
-    }, [inputText, scrollOffset]);
+    }, [showList, inputText, scrollOffset]);
 
     /* 取得鍵盤高度 */
     useEffect(() => {
@@ -630,7 +630,7 @@ const style = StyleSheet.create({
     },
     autoComplete: {
         flex: 1,
-
+        maxHeight: 200,
         width: '90%',
         position: 'absolute',
         elevation: 5,

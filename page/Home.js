@@ -177,7 +177,7 @@ const Home = ({route}) => {
                 setIsRefresh(false);
             });
         });
-    }, [ShowDay, setting]);
+    }, [ShowDay, setting, DB]);
 
     /* 自動滑動最新紀錄 */
     useEffect(() => {
@@ -437,7 +437,8 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
 
     /* 移除動畫 */
     const height = useRef(null);
-    //動畫執行
+
+    /* 動畫執行 */
     const hide = useCallback(() => {
         Animated.timing(height.current, {
             toValue: 0,
@@ -452,7 +453,8 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
             useNativeDriver: false
         }).start();
     }, []);
-    //初始化
+
+    /* 初始化 */
     const onLayout = useCallback(({nativeEvent}) => {
         if(height.current === null) height.current = new Animated.Value(nativeEvent.layout.height);
     }, []);
@@ -541,19 +543,19 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                                 HK$ {formatPrice((item.RMB / rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
                             </Text>
                         </View>
-                        <Portal>
-                            <Snackbar
-                                visible={confirmMSG} onDismiss={() => setConfirmMSG(false)}
-                                action={{
-                                    label: '復原',
-                                    onPress: undo
-                                }}>
-                                已經刪除1個紀錄
-                            </Snackbar>
-                        </Portal>
                     </Animated.View>
                 </Ripple.Default>
             </Swipeable>
+            <Portal>
+                <Snackbar
+                    visible={confirmMSG} onDismiss={() => setConfirmMSG(false)}
+                    action={{
+                        label: '復原',
+                        onPress: undo
+                    }}>
+                    已經刪除1個紀錄
+                </Snackbar>
+            </Portal>
         </Animated.View>
     );
 };

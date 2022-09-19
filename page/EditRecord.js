@@ -127,6 +127,7 @@ const EditRecord = ({navigation, route}) => {
     const focusingDecInput = useRef(null); //目前聚焦銀碼輸入框
     const [setting] = useSetting(); //設定
     const Rate = parseFloat(setting ? setting.Rate : 0);
+    const [scrollOffset, setScrollOffset] = useState(0); //滾動位移
 
     //textInput refs
     let inputs = useRef({
@@ -286,11 +287,16 @@ const EditRecord = ({navigation, route}) => {
         return () => backHandler.remove();
     }, [focusingDecInput]);
 
+    /* 滾動事件 */
+    const scroll = useCallback(({nativeEvent}) => {
+        setScrollOffset(nativeEvent.contentOffset.y);
+    }, []);
+
     return (
         <SafeAreaView style={{flex: 1}}>
             <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true}/>
             {/*<React.StrictMode>*/}
-            <ScrollView nestedScrollEnabled={true}>
+            <ScrollView nestedScrollEnabled={true} onScroll={scroll}>
                 <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                     {/* 日期 */}
                     <View style={style.formGroup}>
