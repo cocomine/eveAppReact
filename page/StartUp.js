@@ -3,18 +3,38 @@ import {SafeAreaView, StatusBar, useColorScheme, View} from 'react-native';
 import {Headline, useTheme} from 'react-native-paper';
 import {openDB} from '../module/SQLite';
 import Lottie from 'lottie-react-native';
+import {autoBackup} from './Backup';
+import PushNotification, {Importance} from 'react-native-push-notification';
 
 const StartUp = ({navigation}) => {
     const {colors} = useTheme();
     const isDarkMode = useColorScheme() === 'dark';
 
     useEffect(() => {
+        createChannel();
+
         openDB().then(() => {
+            autoBackup().then();
             setTimeout(() => {
                 navigation.reset({index: 0, routes: [{name: 'Main'}]});
             }, 2500);
         });
     }, []);
+
+    /* 創建通知頻道 */
+    const createChannel = () => {
+        PushNotification.createChannel(
+            {
+                channelId: 'backingup', // (required)
+                channelName: 'BackingUp Status', // (required)
+                channelDescription: '顯示backup資訊',
+                importance: Importance.MIN,
+                playSound: false,
+                vibrate: false
+            },
+            (created) => console.log(`BackingUp Status is '${created}'`)
+        );
+    };
 
     return (
         <SafeAreaView style={{flex: 1}}>
