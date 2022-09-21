@@ -19,7 +19,9 @@ import PushNotification from 'react-native-push-notification';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
-GoogleSignin.signInSilently().then((e) => console.log('Google API: ' + e.user.email)).catch((e) => console.log('Google API Error: ' + e.message));
+GoogleSignin.signInSilently()
+            .then((e) => console.log('Google API Login: ' + e.user.email))
+            .catch((e) => console.log('Google API Error: ' + e.message));
 const gdrive = new GDrive();
 
 const Backup = ({navigation}) => {
@@ -428,7 +430,6 @@ const doRestore = async(fileID) => {
 
 /* 自動備份 */
 const autoBackup = async() => {
-    console.log('tt');
     DB.transaction(function(tr){
         tr.executeSql('SELECT value FROM Setting WHERE Target IN(\'AutoBackup\', \'AutoBackup_cycle\')', [], async(tr, rs) => {
             const setting = {enable: rs.rows.item(0).value === 'On', cycle: rs.rows.item(1).value};
@@ -453,13 +454,16 @@ const autoBackup = async() => {
                         smallIcon: 'ic_notification',
                         ongoing: true
                     });
+                    console.log('正在進行自動備份');
 
                     //進行備份
                     const [folderID] = await listAllBackup();
                     await doBackup(folderID);
-                }
 
-                PushNotification.cancelLocalNotification(1); //取消通知
+                    //取消通知
+                    PushNotification.cancelLocalNotification(1);
+                    console.log('自動備份成功');
+                }
             }
         });
     }, function(e){

@@ -32,7 +32,7 @@ const StartUp = ({navigation}) => {
                 playSound: false,
                 vibrate: false
             },
-            (created) => console.log(`BackingUp Status is '${created}'`)
+            (created) => console.log(`'BackingUp Status' Notification Channel is '${created}'`)
         );
     };
 
