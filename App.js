@@ -27,6 +27,7 @@ import {StartUp} from './page/StartUp';
 import {ChangeSave} from './page/ChangeSave';
 import {Statistics} from './page/Statistics';
 import {Backup} from './page/Backup';
+import {Search} from './page/Search';
 
 const Stack = createNativeStackNavigator();
 
@@ -86,6 +87,11 @@ function App(){
                                 name="Backup"
                                 component={Backup}
                                 options={{title: '備份', headerShown: false}}
+                            />
+                            <Stack.Screen //備份
+                                name="Search"
+                                component={Search}
+                                options={{title: '搜尋', headerShown: false}}
                             />
                         </Stack.Group>
                         <Stack.Screen //啟動介面

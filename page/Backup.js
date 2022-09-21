@@ -188,7 +188,7 @@ const Backup = ({navigation}) => {
 
     return (
         <SafeAreaView style={{flex: 1}}>
-            <React.StrictMode>
+            {/*<React.StrictMode>*/}
                 <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true}/>
                 <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
                     <Appbar.BackAction onPress={navigation.goBack}/>
@@ -297,7 +297,7 @@ const Backup = ({navigation}) => {
                         </Dialog.Actions>
                     </Dialog>
                 </Portal>
-            </React.StrictMode>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };
@@ -473,7 +473,6 @@ const autoBackup = async() => {
     });
 };
 
-export {autoBackup};
 const style = StyleSheet.create({
     list: {
         paddingHorizontal: 5,
@@ -499,4 +498,4 @@ const style = StyleSheet.create({
         borderTopWidth: 0.7
     }
 });
-export {Backup};
+export {autoBackup, Backup};

@@ -233,7 +233,7 @@ const Export = ({route}) => {
                     <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
                         <Title>選擇匯出月份</Title>
                         <View style={{flexDirection: 'row'}}>
-                            <Picker style={{flex: 1}} selectedValue={year}
+                            <Picker style={{flex: 1}} selectedValue={year} mode={'dropdown'}
                                     onValueChange={(itemValue) => setYear(itemValue)}
                                     dropdownIconColor={theme.colors.text} prompt={'選擇年份'}>
                                 {YearOpt}

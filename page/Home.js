@@ -122,7 +122,7 @@ function grouping_note(package_list = [], ResultSet){
 }
 
 /* "紀錄"介面 */
-const Home = ({route}) => {
+const Home = () => {
     const navigation = useNavigation(); //導航
     const RNroute = useRoute(); //路由
     const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
@@ -226,7 +226,7 @@ const Home = ({route}) => {
                             <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth}/>
                         </ToolBarView>
                         <ToolBarView>
-                            <IconButton icon={'magnify'} iconColor={Color.white} onPress={() => null}/>
+                            <IconButton icon={'magnify'} iconColor={Color.white} onPress={() => navigation.navigate('Search')}/>
                             <SmailText color={Color.white}>本月總計</SmailText>
                             <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
                         </ToolBarView>
@@ -264,46 +264,50 @@ const Home = ({route}) => {
                     </Toolbar>
                 </View>
 
-                {/* 增加紀錄 */}
-                <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
+                <TouchableWithoutFeedback onPress={() => setMonthSelect(false)}>
                     <View>
-                        <ADIcon name={'plus'} color={Color.white} size={18}/>
-                    </View>
-                </TouchableOpacity>
-                {/* 備忘錄 */}
-                <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
-                    <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
-                </TouchableOpacity>
+                        {/* 增加紀錄 */}
+                        <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
+                            <View>
+                                <ADIcon name={'plus'} color={Color.white} size={18}/>
+                            </View>
+                        </TouchableOpacity>
+                        {/* 備忘錄 */}
+                        <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
+                            <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
+                        </TouchableOpacity>
 
-                {/* 內容 */}
-                <FlatList
-                    data={Data} ref={listRef}
-                    onRefresh={() => null} refreshing={isRefresh}
-                    renderItem={({item}) => <DataPart data={item} rate={setting['Rate']}/>}
-                    onScrollToIndexFailed={(info) => {
-                        setTimeout(() => {
-                            listRef.current.scrollToIndex({index: info.index});
-                        }, 500);
-                    }}
-                    ListFooterComponent={
-                        <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
-                            <SVGCargo height="60" width="180"/>
-                            <Text>已經到底喇~~ （￣︶￣）↗ </Text>
-                        </View>}
-                    ListEmptyComponent={
-                        <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                            <SVGLostCargo height="100" width="300"/>
-                            <Text>沒有資料... Σ(っ °Д °;)っ</Text>
-                        </View>
-                    }
-                />
+                        {/* 內容 */}
+                        <FlatList
+                            data={Data} ref={listRef}
+                            onRefresh={() => null} refreshing={isRefresh}
+                            renderItem={({item}) => <DataPart data={item} rate={setting['Rate']}/>}
+                            onScrollToIndexFailed={(info) => {
+                                setTimeout(() => {
+                                    listRef.current.scrollToIndex({index: info.index});
+                                }, 500);
+                            }}
+                            ListFooterComponent={
+                                <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
+                                    <SVGCargo height="60" width="180"/>
+                                    <Text>已經到底喇~~ （￣︶￣）↗ </Text>
+                                </View>}
+                            ListEmptyComponent={
+                                <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                                    <SVGLostCargo height="100" width="300"/>
+                                    <Text>沒有資料... Σ(っ °Д °;)っ</Text>
+                                </View>
+                            }
+                        />
+                    </View>
+                </TouchableWithoutFeedback>
                 {/*</React.StrictMode>*/}
             </Portal.Host>
         </SafeAreaView>
     );
 };
 
-/*  */
+/* 直接選擇月份 */
 const DateSelect = ({visibility = false, onSelect = () => null, value = new Date(), onDismiss = () => null}) => {
     const [date, setDate] = useState(value);
     const {colors} = useTheme();
@@ -791,4 +795,4 @@ const style = StyleSheet.create({
     }
 });
 
-export {Home};
+export {Home, group_data, DataPart, grouping_note};

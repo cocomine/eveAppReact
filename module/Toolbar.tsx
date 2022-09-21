@@ -4,7 +4,7 @@ import {Color} from "./Color";
 
 /* 頂部toolbar */
 const Toolbar: React.FC<{ containerStyle?: ViewStyle, children?: React.ReactNode | React.ReactNode[] }> = ({containerStyle, children}) => {
-    return (<View style={[containerStyle, style.toolBar]}>
+    return (<View style={[style.toolBar, containerStyle]}>
         {children}
     </View>);
 }
