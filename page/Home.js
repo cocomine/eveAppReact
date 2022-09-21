@@ -1,5 +1,15 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Animated, FlatList, PixelRatio, SafeAreaView, StyleSheet, TouchableOpacity, useColorScheme, View} from 'react-native';
+import {
+    Animated,
+    FlatList,
+    PixelRatio,
+    SafeAreaView,
+    StyleSheet,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    useColorScheme,
+    View
+} from 'react-native';
 import {Color} from '../module/Color';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import ADIcon from 'react-native-vector-icons/AntDesign';
@@ -11,12 +21,14 @@ import {Swipeable} from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {Portal, Snackbar, Text} from 'react-native-paper';
+import {IconButton, Portal, Snackbar, Text, useTheme} from 'react-native-paper';
 import {DB, useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
 import SVGCargo from '../module/SVGCargo';
 import {Ripple} from '../module/Ripple';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ReAnimated, {FadeInUp, FadeOutUp} from 'react-native-reanimated';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate, Total_callback){
@@ -117,6 +129,7 @@ const Home = ({route}) => {
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
     const [isRefresh, setIsRefresh] = useState(false); //是否重新更新
+    const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
     const [setting] = useSetting(); //設定
     const listRef = useRef(null); //FlatList Ref
 
@@ -189,65 +202,67 @@ const Home = ({route}) => {
         }
     }, [Data]);
 
+    /* 直接選擇月份 */
+    const setMonth = useCallback((date) => {
+        setShowDay(date);
+        setIsRefresh(true);
+    }, []);
+
+    /* 隱藏直接選擇月份 */
+    const hideMonthSelect = useCallback(() => setMonthSelect(false), []);
+
     return (
         /* 頂部toolbar */
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{flex: 1, position: 'relative'}}>
             {/*<React.StrictMode>*/}
             <Portal.Host>
-                <Toolbar>
-                    <ToolBarView>
-                        <TouchableOpacity activeOpacity={0.7} onPress={LastMonth}>
-                            <ADIcon name={'left'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
-                                padding: 10,
-                                marginRight: 5
-                            }}/>
-                        </TouchableOpacity>
-                        <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
-                        <TouchableOpacity activeOpacity={0.7} onPress={NextMonth}>
-                            <ADIcon name={'right'} size={14} color={Color.white} backgroundColor={Color.primaryColor} style={{
-                                padding: 10,
-                                marginLeft: 5
-                            }}/>
-                        </TouchableOpacity>
-                    </ToolBarView>
-                    <ToolBarView>
-                        <TouchableOpacity activeOpacity={0.7}>
-                            <ADIcon name={'search1'} size={16} color={Color.white} backgroundColor={Color.primaryColor} style={{padding: 10}}/>
-                        </TouchableOpacity>
-                        <SmailText color={Color.white}>本月總計</SmailText>
-                        <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
-                    </ToolBarView>
-                </Toolbar>
-                <Toolbar>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}</Text>
-                    </View>
-                    <View style={{flex: 1}}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: 'center'
-                        }}>{'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}</Text>
-                    </View>
-                </Toolbar>
+                <View style={{zIndex: 1, elevation: 1}}>
+                    <Toolbar>
+                        <ToolBarView>
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth}/>
+                            <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
+                                <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                            </TouchableWithoutFeedback>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth}/>
+                        </ToolBarView>
+                        <ToolBarView>
+                            <IconButton icon={'magnify'} iconColor={Color.white} onPress={() => null}/>
+                            <SmailText color={Color.white}>本月總計</SmailText>
+                            <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
+                        </ToolBarView>
+                        <DateSelect visibility={monthSelect} value={ShowDay} onSelect={setMonth} onDismiss={hideMonthSelect}/>
+                    </Toolbar>
+                    <Toolbar containerStyle={{zIndex: -1, elevation: -1}}>
+                        <View style={{flex: 1}}>
+                            <Text style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center'
+                            }}>{'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}</Text>
+                        </View>
+                        <View style={{flex: 1}}>
+                            <Text style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center'
+                            }}>{'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}</Text>
+                        </View>
+                        <View style={{flex: 1}}>
+                            <Text style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center'
+                            }}>{'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}</Text>
+                        </View>
+                        <View style={{flex: 1}}>
+                            <Text style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center'
+                            }}>{'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}</Text>
+                        </View>
+                    </Toolbar>
+                </View>
 
                 {/* 增加紀錄 */}
                 <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
@@ -288,10 +303,112 @@ const Home = ({route}) => {
     );
 };
 
+/*  */
+const DateSelect = ({visibility = false, onSelect = () => null, value = new Date(), onDismiss = () => null}) => {
+    const [date, setDate] = useState(value);
+    const {colors} = useTheme();
+    const correctMonth = date.getMonth();
+
+    /* 修改預設月份 */
+    useEffect(() => setDate(value), [value]);
+
+    /* 選擇顯示年份 */
+    const NextYear = () => {
+        let tmp = moment(date);
+        tmp.add(1, 'y').endOf('month');
+
+        setDate(tmp.toDate());
+    };
+    const LastYear = () => {
+        let tmp = moment(date);
+        tmp.subtract(1, 'y').endOf('month');
+
+        setDate(tmp.toDate());
+    };
+
+    /* 當前月份 */
+    const today = useCallback(() => {
+        onDismiss();
+        onSelect(new Date());
+    }, [onDismiss, onSelect]);
+
+    /* 月份選擇 */
+    const setMonth = (month) => {
+        let tmp = moment(date);
+        tmp.month(month).endOf('month');
+
+        onDismiss();
+        onSelect(tmp.toDate());
+    };
+
+    return (
+        visibility ?
+            <ReAnimated.View style={[style.dateSelect, {backgroundColor: colors.background}]} entering={FadeInUp} exiting={FadeOutUp}>
+                <View style={[style.row, {height: 45, paddingHorizontal: 10, backgroundColor: '#4596ff'}]}>
+                    <Text>選擇日期</Text>
+                    <View style={style.row}>
+                        <IconButton icon={'calendar-end'} iconColor={colors.text} onPress={today}/>
+                        <IconButton icon={'close'} iconColor={colors.text} onPress={onDismiss}/>
+                    </View>
+                </View>
+                <View style={style.row}>
+                    <IconButton icon={'chevron-left'} iconColor={colors.text} onPress={LastYear}/>
+                    <Text>{moment(date).format('yyyy')}</Text>
+                    <IconButton icon={'chevron-right'} iconColor={colors.text} onPress={NextYear}/>
+                </View>
+                <View style={{flex: 1}}>
+                    <View style={[style.row, {flex: 1}]}>
+                        <TouchableWithoutFeedback onPress={() => setMonth(0)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 0 ? Color.primaryColor : colors.text}}>1月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(1)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 1 ? Color.primaryColor : colors.text}}>2月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(2)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 2 ? Color.primaryColor : colors.text}}>3月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(3)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 3 ? Color.primaryColor : colors.text}}>4月</Text></View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                    <View style={[style.row, {flex: 1}]}>
+                        <TouchableWithoutFeedback onPress={() => setMonth(4)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 4 ? Color.primaryColor : colors.text}}>5月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(5)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 5 ? Color.primaryColor : colors.text}}>6月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(6)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 6 ? Color.primaryColor : colors.text}}>7月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(7)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 7 ? Color.primaryColor : colors.text}}>8月</Text></View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                    <View style={[style.row, {flex: 1}]}>
+                        <TouchableWithoutFeedback onPress={() => setMonth(8)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 8 ? Color.primaryColor : colors.text}}>9月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(9)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 9 ? Color.primaryColor : colors.text}}>10月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(11)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 10 ? Color.primaryColor : colors.text}}>11月</Text></View>
+                        </TouchableWithoutFeedback>
+                        <TouchableWithoutFeedback onPress={() => setMonth(11)}>
+                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 11 ? Color.primaryColor : colors.text}}>12月</Text></View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </View>
+            </ReAnimated.View> : null
+    );
+};
+
 /* 內容render */
 const DataPart = ({data, rate}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     let date = moment(data.DateTime).locale('zh-hk');
+    const navigation = useNavigation();
 
     /* 判斷週末 */
     let weekColor = Color.darkColorLight; //預設平日
@@ -301,19 +418,27 @@ const DataPart = ({data, rate}) => {
         weekColor = Color.primaryColor; //星期六
     }
 
+    /* 創意新紀錄以這裏的日期 */
+    const press = () => {
+        AsyncStorage.setItem('Draft', JSON.stringify({date: date.toISOString()}))
+                    .then(() => navigation.navigate('AddRecord'));
+    };
+
     return (
         /* 內容包裝 */
         <View style={[style.dataPart, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]} key={data.DataTime}>
-            <View style={[style.row, style.dataPartHeard]}>
-                <View style={style.row}>
-                    <Text style={{fontSize: 20, marginRight: 10}}>{date.format('D')}</Text>
-                    <Text style={[style.dataPartWeek, {backgroundColor: weekColor}]}>{date.format('dddd')}</Text>
-                    <Text style={{fontSize: 10}}>{date.format('M.YYYY')}</Text>
+            <Ripple.Default onPress={press}>
+                <View style={[style.row, style.dataPartHeard]}>
+                    <View style={style.row}>
+                        <Text style={{fontSize: 20, marginRight: 10}}>{date.format('D')}</Text>
+                        <Text style={[style.dataPartWeek, {backgroundColor: weekColor}]}>{date.format('dddd')}</Text>
+                        <Text style={{fontSize: 10}}>{date.format('M.YYYY')}</Text>
+                    </View>
+                    <View>
+                        <Text style={{fontSize: 15, color: Color.primaryColor}}>HK$ {formatPrice(data.Total.toFixed(2))}</Text>
+                    </View>
                 </View>
-                <View>
-                    <Text style={{fontSize: 15, color: Color.primaryColor}}>HK$ {formatPrice(data.Total.toFixed(2))}</Text>
-                </View>
-            </View>
+            </Ripple.Default>
 
             {/* 備忘錄 */
                 data.Mark.length > 0 ?
@@ -571,6 +696,22 @@ const DataPartMark = ({item, id}) => {
 
 /* Home style */
 const style = StyleSheet.create({
+    dateSelect: {
+        position: 'absolute',
+        top: '100%',
+        left: 10,
+        right: 10,
+        borderRadius: 10,
+        zIndex: 5,
+        elevation: 5,
+        height: 280,
+        overflow: 'hidden',
+        button: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center'
+        }
+    },
     row: {
         justifyContent: 'space-between',
         alignItems: 'center',

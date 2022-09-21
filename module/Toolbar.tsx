@@ -1,16 +1,16 @@
 import React from 'react';
-import {StyleSheet, View} from "react-native";
+import {StyleSheet, View, ViewStyle} from "react-native";
 import {Color} from "./Color";
 
 /* 頂部toolbar */
-const Toolbar: React.FC<{ children?: React.ReactNode | React.ReactNode[] }> = ({children}) => {
-    return (<View style={[style.toolBar]}>
+const Toolbar: React.FC<{ containerStyle?: ViewStyle, children?: React.ReactNode | React.ReactNode[] }> = ({containerStyle, children}) => {
+    return (<View style={[containerStyle, style.toolBar]}>
         {children}
     </View>);
 }
 /* toolbar 內部 View */
-const ToolBarView: React.FC<{ children?: React.ReactNode | React.ReactNode[] }> = ({children}) => {
-    return (<View style={[{flexDirection: "row", alignItems: 'center'}]}>
+const ToolBarView: React.FC<{ style?: ViewStyle, children?: React.ReactNode | React.ReactNode[] }> = ({style, children}) => {
+    return (<View style={[style, {flexDirection: "row", alignItems: 'center'}]}>
         {children}
     </View>);
 }

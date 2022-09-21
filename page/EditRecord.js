@@ -296,7 +296,7 @@ const EditRecord = ({navigation, route}) => {
         <SafeAreaView style={{flex: 1}}>
             <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true}/>
             {/*<React.StrictMode>*/}
-            <ScrollView nestedScrollEnabled={true} onScroll={scroll}>
+            <ScrollView nestedScrollEnabled={true} onScroll={scroll} keyboardShouldPersistTaps={'handled'}>
                 <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                     {/* 日期 */}
                     <View style={style.formGroup}>
@@ -317,7 +317,7 @@ const EditRecord = ({navigation, route}) => {
                             <View style={{flex: 1}}>
                                 <TextInput placeholder={'03/09/020'} keyboardType="numeric" returnKeyType={'next'} maxLength={9}
                                            onSubmitEditing={() => focusNextField('CargoLetter')} ref={(ref) => inputs.current.orderID = ref}
-                                           onBlur={(text) => dispatch({type: UPDATE_ORDER_ID, payload: {orderID: text}})}
+                                           onChangeText={(text) => dispatch({type: UPDATE_ORDER_ID, payload: {orderID: text}})}
                                            render={props => <TextInputMask {...props} mask={'[00]/[00]/[000]'}/>}
                                            error={state.error.orderID !== null} value={state.orderID}
                                 />
@@ -343,7 +343,9 @@ const EditRecord = ({navigation, route}) => {
                                                placeholder={'AAAA'} returnKeyType={'next'} maxLength={4}
                                                onSubmitEditing={() => focusNextField('CargoNum')}
                                                ref={(ref) => inputs.current.CargoLetter = ref}
-                                               onBlur={(text) => {dispatch({type: UPDATE_CARGO_LETTER, payload: {cargoLetter: text.toUpperCase()}});}}
+                                               onChangeText={(text) => {
+                                                   dispatch({type: UPDATE_CARGO_LETTER, payload: {cargoLetter: text.toUpperCase()}});
+                                               }}
                                                render={props => <TextInputMask {...props} selectTextOnFocus={true} mask={'[AAAA]'}/>}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{state.error.cargo}</ErrorHelperText>
@@ -352,7 +354,7 @@ const EditRecord = ({navigation, route}) => {
                                     <TextInput placeholder={'000000'} keyboardType="numeric" returnKeyType={'next'}
                                                maxLength={6} error={state.error.cargo !== null} value={state.cargoNum}
                                                onSubmitEditing={() => focusNextField('CargoCheckNum')}
-                                               onBlur={(text) => {dispatch({type: UPDATE_CARGO_NUM, payload: {cargoNum: text}});}}
+                                               onChangeText={(text) => {dispatch({type: UPDATE_CARGO_NUM, payload: {cargoNum: text}});}}
                                                ref={(ref) => inputs.current.CargoNum = ref}
                                                render={props => <TextInputMask {...props} mask={'[000000]'}/>}
                                     />
@@ -363,7 +365,7 @@ const EditRecord = ({navigation, route}) => {
                                     <TextInput placeholder={'0'} keyboardType="numeric" returnKeyType={'next'} value={state.cargoCheckNum}
                                                maxLength={1} error={state.error.cargo !== null} style={{textAlign: 'center', marginHorizontal: 2}}
                                                onSubmitEditing={() => focusNextField('local')}
-                                               onBlur={(text) => {dispatch({type: UPDATE_CARGO_CHECK_NUM, payload: {cargoCheckNum: text}});}}
+                                               onChangeText={(text) => {dispatch({type: UPDATE_CARGO_CHECK_NUM, payload: {cargoCheckNum: text}});}}
                                                ref={(ref) => inputs.current.CargoCheckNum = ref}
                                                render={props => <TextInputMask {...props} mask={'[0]'}/>}
                                     />
@@ -376,7 +378,7 @@ const EditRecord = ({navigation, route}) => {
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>地點</Text>
                             <LocalInput ref={(ref) => {inputs.current.local = ref;}} value={state.location}
-                                        onBlur={(text) => dispatch({type: UPDATE_LOCATION, payload: {location: text}})}
+                                        onChangeText={(text) => dispatch({type: UPDATE_LOCATION, payload: {location: text}})}
                                         onSubmitEditing={() => focusNextField('RMB')} error={state.error.location}
                             />
                         </View>
