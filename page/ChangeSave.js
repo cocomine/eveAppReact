@@ -104,8 +104,8 @@ const ChangeSave = () => {
             <ScrollView>
                 <View style={{paddingHorizontal: 10, paddingTop: 10}}>
                     <Caption>不同存檔之間的數據及設定均是獨立並不通用, 最多只能開十個存檔</Caption>
-                    <Caption>(名稱只作用識別用途, 不會更改真實檔案名稱亦不會一起備份)</Caption>
-                    <Caption>單擊-開啟, 雙擊-改名, 滑動-刪除</Caption>
+                    <Caption>(名稱只作用識別用途, 不會更改真實檔案名稱)</Caption>
+                    <Caption>單擊→開啟, 長按→改名, 滑動→刪除</Caption>
                 </View>
                 <ListItem title={dbname[0]} description="eveApp.db" onPress={() => openDB(0)} onLongPress={() => changeName(
                     0)} onSwipe={() => deleteDB(0)}/>

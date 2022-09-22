@@ -271,7 +271,7 @@ const Backup = ({navigation}) => {
                     {Restoring ?
                         <Animated.View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.74)'}} entering={FadeIn} exiting={FadeOut}>
                             <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                                <Lottie source={require('../resource/upload.json')} autoPlay={true} loop={true} style={{
+                                <Lottie source={require('../resource/download.json')} autoPlay={true} loop={true} style={{
                                     width: 300,
                                     height: 300
                                 }}/>
