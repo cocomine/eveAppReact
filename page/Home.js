@@ -264,43 +264,41 @@ const Home = () => {
                     </Toolbar>
                 </View>
 
-                <TouchableWithoutFeedback onPress={() => setMonthSelect(false)}>
+                {/* 增加紀錄 */}
+                <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
                     <View>
-                        {/* 增加紀錄 */}
-                        <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
-                            <View>
-                                <ADIcon name={'plus'} color={Color.white} size={18}/>
-                            </View>
-                        </TouchableOpacity>
-                        {/* 備忘錄 */}
-                        <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
-                            <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
-                        </TouchableOpacity>
-
-                        {/* 內容 */}
-                        <FlatList
-                            data={Data} ref={listRef}
-                            onRefresh={() => null} refreshing={isRefresh}
-                            renderItem={({item}) => <DataPart data={item} rate={setting['Rate']}/>}
-                            onScrollToIndexFailed={(info) => {
-                                setTimeout(() => {
-                                    listRef.current.scrollToIndex({index: info.index});
-                                }, 500);
-                            }}
-                            ListFooterComponent={
-                                <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
-                                    <SVGCargo height="60" width="180"/>
-                                    <Text>已經到底喇~~ （￣︶￣）↗ </Text>
-                                </View>}
-                            ListEmptyComponent={
-                                <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                                    <SVGLostCargo height="100" width="300"/>
-                                    <Text>沒有資料... Σ(っ °Д °;)っ</Text>
-                                </View>
-                            }
-                        />
+                        <ADIcon name={'plus'} color={Color.white} size={18}/>
                     </View>
-                </TouchableWithoutFeedback>
+                </TouchableOpacity>
+                {/* 備忘錄 */}
+                <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
+                    <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
+                </TouchableOpacity>
+
+                <View>
+                    {/* 內容 */}
+                    <FlatList
+                        data={Data} ref={listRef}
+                        onRefresh={() => null} refreshing={isRefresh}
+                        renderItem={({item}) => <DataPart data={item} rate={setting['Rate']}/>}
+                        onScrollToIndexFailed={(info) => {
+                            setTimeout(() => {
+                                listRef.current.scrollToIndex({index: info.index});
+                            }, 500);
+                        }}
+                        ListFooterComponent={
+                            <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
+                                <SVGCargo height="60" width="180"/>
+                                <Text>已經到底喇~~ （￣︶￣）↗ </Text>
+                            </View>}
+                        ListEmptyComponent={
+                            <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                                <SVGLostCargo height="100" width="300"/>
+                                <Text>沒有資料... Σ(っ °Д °;)っ</Text>
+                            </View>
+                        }
+                    />
+                </View>
                 {/*</React.StrictMode>*/}
             </Portal.Host>
         </SafeAreaView>

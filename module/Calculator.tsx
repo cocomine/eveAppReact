@@ -54,6 +54,9 @@ const Calculator: React.FC<{
     const onCalculator = useCallback(() => {
         //console.log(array.current);
 
+        /* is empty return */
+        if (array.current.length <= 0) return;
+
         /* convert word */
         let convert = array.current.map((item) => {
             if (item === '÷') return '/';
@@ -64,7 +67,14 @@ const Calculator: React.FC<{
             if (isNaN(tmp)) return item;
             return tmp;
         });
-        //console.log(convert);
+        console.log(convert);
+
+        /* if last one is symbol */
+        const lastOne = convert[convert.length - 1];
+        if (typeof lastOne !== 'number') {
+            convert.pop();
+            array.current.pop();
+        }
 
         /* Infix to postfix */
         const postfix = [];
