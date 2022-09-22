@@ -139,6 +139,11 @@ const Export = ({route}) => {
 
     /* 確認匯出 */
     const confirm = useCallback(() => {
+        if(month === '' || year === ''){
+            ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
+            return;
+        }
+
         getRecordHTML(remark, month, year, setting['Rate'], (html, total) => {
             hideDialog();
             const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany + ')';
