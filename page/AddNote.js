@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {KeyboardAvoidingView, SafeAreaView, StyleSheet, TouchableWithoutFeedback, View} from 'react-native';
+import {KeyboardAvoidingView, SafeAreaView, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
 import {Appbar, Text, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import moment from 'moment';
@@ -7,13 +7,14 @@ import TextInput from '../module/TextInput';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import Animated, {SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {convertColor} from './Note';
+import {DB} from '../module/SQLite';
 
 const initialState = {
     date: new Date(),
     id: null,
     top: false,
-    title: null,
-    content: null,
+    title: '',
+    content: '',
     color: null
 };
 
@@ -34,12 +35,37 @@ const AddNote = ({navigation, route}) => {
 
     //debug
     useEffect(() => {
-        console.log(route);
-    }, [route]);
+        console.log(state);
+    });
 
+    /* 關閉顏色選擇 */
     const closeColorSelector = useCallback(() => {
         setShowColorSelector(false);
     }, []);
+
+    /* 處理退出頁面 儲存 */
+    useEffect(() => {
+        return navigation.addListener('beforeRemove', (e) => { //清除活動監聽器
+            if(state.title !== '' || state.content !== ''){
+                DB.transaction(function(tr){
+                    if(state.id === null){
+                        //增加備忘錄
+                        tr.executeSql("INSERT INTO Note (DateTime, Top, Color, Title, Contact) VALUES (?,?,?,?,?)",
+                            [moment(state.date).format('yyyy-MM-DD'), state.top, state.color, state.title === '' ? null : state.title, state.content === '' ? null : state.content]);
+                    }else{
+                        //修改備忘錄
+                        tr.executeSql("UPDATE Note SET DateTime = ?, Top = ?, Color = ?, Title = ?, Contact = ? WHERE ID = ?",
+                            [moment(state.date).format('yyyy-MM-DD'), state.top, state.color, state.title === '' ? null : state.title, state.content === '' ? null : state.content, state.id]);
+                    }
+                }, function(e){
+                    console.log('傳輸錯誤: ' + e.message);
+                }, function(){
+                    ToastAndroid.show('備忘錄已儲存', ToastAndroid.SHORT);
+                    navigation.navigate('Note', {ShowDay: state.date.toString()}); //go back notePage
+                });
+            }
+        });
+    }, [navigation, state]);
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -49,8 +75,8 @@ const AddNote = ({navigation, route}) => {
                         <Appbar.BackAction onPress={navigation.goBack} color={Color.white}/>
                         <Appbar.Content title={'備忘錄'}/>
                         <Appbar.Action icon={'palette-outline'} onPress={() => setShowColorSelector(prev => !prev)}/>
-                        <Appbar.Action icon={'pin-outline'} onPress={() => null}/>
-                        {route.params != null ? <Appbar.Action icon={'delete-outline'} onPress={() => null}/> : null}
+                        <Appbar.Action icon={state.top ? 'pin' : 'pin-outline'} onPress={() => dispatch({top: !state.top})}/>
+                        {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={() => null}/> : null}
                     </Appbar>
                     <KeyboardAvoidingView style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}} behavior={'height'}>
                         <Text style={style.date} onPress={() => null} onPressOut={() => {

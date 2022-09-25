@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {FlatList, SafeAreaView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, useColorScheme, View} from 'react-native';
 import SVGCargo from '../module/SVGCargo';
-import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title, useTheme} from 'react-native-paper';
+import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title} from 'react-native-paper';
 import SVGLostCargo from '../module/SVGLostCargo';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
@@ -67,7 +67,7 @@ function group_note(ResultSet){
         const item_date = new Date(row.DateTime);
 
         //資料
-        if(last_item && last_item.DateTime.getDate() === item_date.getDate()){
+        if(last_item && last_item.dateTime.getDate() === item_date.getDate()){
             //存在 & 相同日期
             last_item.note.push({
                 id: row.ID,
@@ -78,7 +78,7 @@ function group_note(ResultSet){
         }else{
             //不存在 & 不相同的日期
             package_list.push({
-                DateTime: item_date,
+                dateTime: item_date,
                 note: [{
                     id: row.ID,
                     title: row.Title,
@@ -175,7 +175,7 @@ const Note = ({navigation, route}) => {
                 console.log('備忘錄顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
                 tr.executeSql(
                     'SELECT * FROM Top_Note ORDER BY `DateTime`', [], function(tx, rs){
-                        if(rs.rows.length > 0) package_list = group_top(package_list);
+                        if(rs.rows.length > 0) package_list = group_top(package_list, rs);
                     }
                 );
             }, function(error){
@@ -223,7 +223,7 @@ const Note = ({navigation, route}) => {
     /* 自動滑動最新紀錄 */
     useEffect(() => {
         if(Data != null){
-            const index = Data.findIndex((item) => item.DateTime.getDate() === ShowDay.getDate());
+            const index = Data.findIndex((item) => item.dateTime != null && item.dateTime.getDate() === ShowDay.getDate());
             if(index > 0){
                 listRef.current.scrollToIndex({index: index});
             }
@@ -231,7 +231,9 @@ const Note = ({navigation, route}) => {
     }, [Data]);
 
     //debug
-    useEffect(() => console.log(route), [route])
+    useEffect(() => {
+        console.log(Data);
+    });
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -258,11 +260,11 @@ const Note = ({navigation, route}) => {
                     </View>
                 </TouchableOpacity>
 
-                <View>
+                <View style={{paddingTop: 5}}>
                     <FlatList
                         data={Data} ref={listRef} extraData={route}
                         onRefresh={() => null} refreshing={isRefresh}
-                        renderItem={({item}) => <NotePart data={item}/>}
+                        renderItem={({item}) => <NotePart data={item} route={route}/>}
                         onScrollToIndexFailed={(info) => {
                             setTimeout(() => {
                                 listRef.current.scrollToIndex({index: info.index});
@@ -288,7 +290,6 @@ const Note = ({navigation, route}) => {
 
 /* 備忘錄 */
 const NotePart = ({data, route}) => {
-    const {colors} = useTheme();
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;
 
@@ -300,7 +301,7 @@ const NotePart = ({data, route}) => {
             {data.dateTime != null ? <Caption style={{paddingHorizontal: 10}}>{moment(date).format('D.M (ddd)')}</Caption> : null}
             <View style={style.container}>
                 {data.note.map((item, index) => (
-                    <Animated.View key={index}>
+                    <Animated.View key={index} style={style.surfaceOut}>
                         <TouchableWithoutFeedback onPress={() => null}>
                             <Surface style={[style.surface, {backgroundColor: item.color ?? BG_color}]}>
                                 {item.title != null ? <Title>{item.title}</Title> : null}
@@ -343,8 +344,12 @@ const style = StyleSheet.create({
     container: {
         alignItems: 'center'
     },
+    surfaceOut: {
+        width: '100%',
+        paddingHorizontal: 10
+    },
     surface: {
-        width: '95%',
+        flex: 1,
         padding: 8,
         borderRadius: 10,
         marginBottom: 10

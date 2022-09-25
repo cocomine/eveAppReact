@@ -106,15 +106,16 @@ function grouping_note(package_list = [], ResultSet){
             });
         }else{
             //不存在
-            const index = package_list.findIndex((item) => item.DateTime < item_date.getDay());
+            const index = package_list.findIndex((item) => item.DateTime.getDate() < item_date.getDate());
             package_list.splice(index, 0, {
-                DataTime: item_date,
+                DateTime: item_date,
                 Mark: [{
                     ID: row.ID,
                     Color: row.color,
                     Title: row.Title || row.Contact
                 }],
-                Record: []
+                Record: [],
+                Total: 0
             });
         }
     }
