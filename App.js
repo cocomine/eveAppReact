@@ -28,6 +28,8 @@ import {ChangeSave} from './page/ChangeSave';
 import {Statistics} from './page/Statistics';
 import {Backup} from './page/Backup';
 import {Search} from './page/Search';
+import {Note} from './page/Note';
+import {AddNote} from './page/AddNote';
 
 const Stack = createNativeStackNavigator();
 
@@ -92,6 +94,16 @@ function App(){
                                 name="Search"
                                 component={Search}
                                 options={{title: '搜尋', headerShown: false}}
+                            />
+                            <Stack.Screen //備忘錄
+                                name="Note"
+                                component={Note}
+                                options={{title: '備忘錄', headerShown: false}}
+                            />
+                            <Stack.Screen //備忘錄
+                                name="AddNote"
+                                component={AddNote}
+                                options={{title: '備忘錄', headerShown: false}}
                             />
                         </Stack.Group>
                         <Stack.Screen //啟動介面

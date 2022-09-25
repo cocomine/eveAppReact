@@ -58,6 +58,9 @@ const checkUpdate = () => {
                 case '1.5':
                     doUpdate.To_1_5_1();
                     break;
+                case '1.5.1':
+                    doUpdate.To_1_5_5();
+                    break;
                 default:
                     console.log('DatabaseVer_Helper:', '已是最新');
                     break;
@@ -148,14 +151,30 @@ const doUpdate = {
             restartApp();
         });
     },
-    To_1_5_1: function(){
-        DB.transaction(function(tr){
+    To_1_5_1: function () {
+        DB.transaction(function (tr) {
             tr.executeSql('DELETE FROM Setting WHERE Target = \'Decimal_places\'', []);
             tr.executeSql('UPDATE Setting SET value = \'1.5.1\' WHERE Target = \'database_version\'', []);
-        }, function(e){
+        }, function (e) {
             console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
-        }, function(){
-            console.log('DatabaseVer_Helper:', '資料庫已更新至1.5');
+        }, function () {
+            console.log('DatabaseVer_Helper:', '資料庫已更新至1.5.1');
+            restartApp();
+        });
+    },
+    To_1_5_5: function () {
+        DB.transaction(function (tr) {
+            tr.executeSql('create table Note_dg_tmp(ID INTEGER not null primary key, `DateTime` DATETIME not null, Top BOOLEAN default FALSE not null, Color VARCHAR(9), Title VARCHAR(20), Contact VARCHAR(200))', []);
+            tr.executeSql('insert into Note_dg_tmp(ID, `DateTime`, Top, Color, Title, Contact) select ID, `DateTime`, Top, Color, Title, Contact from Note', []);
+            tr.executeSql('DROP VIEW Top_Note', []);
+            tr.executeSql('drop table Note', []);
+            tr.executeSql('alter table Note_dg_tmp rename to Note', []);
+            tr.executeSql('CREATE VIEW Top_Note AS SELECT * FROM Note WHERE Top = 1', []);
+            tr.executeSql('UPDATE Setting SET value = \'1.5.5\' WHERE Target = \'database_version\'', []);
+        }, function (e) {
+            console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
+        }, function () {
+            console.log('DatabaseVer_Helper:', '資料庫已更新至1.5.5');
             restartApp();
         });
     }
@@ -169,9 +188,9 @@ const startUp = () => {
         tr.executeSql('CREATE INDEX `DateTime` ON Record (`DateTime`)');
         //創建備忘錄table
         tr.executeSql(
-            'CREATE TABLE Note ( `ID` INTEGER NOT NULL, `DateTime` DATETIME NOT NULL , `Top` BOOLEAN NOT NULL DEFAULT FALSE, `Color` VARCHAR(9) NOT NULL ,`Title` VARCHAR(20) NULL , `Contact` VARCHAR(200) NULL , PRIMARY KEY (`ID`))');
+            'CREATE TABLE Note ( `ID` INTEGER NOT NULL, `DateTime` DATETIME NOT NULL , `Top` BOOLEAN NOT NULL DEFAULT FALSE, `Color` VARCHAR(9) ,`Title` VARCHAR(20) NULL , `Contact` VARCHAR(200) NULL , PRIMARY KEY (`ID`))');
         tr.executeSql('CREATE INDEX Note_DateTime ON Note(`DateTime`)');
-        tr.executeSql('CREATE VIEW Top_Note AS SELECT * FROM Note WHERE Top IS TRUE');
+        tr.executeSql('CREATE VIEW Top_Note AS SELECT * FROM Note WHERE Top = 1');
         //創建設定table
         tr.executeSql('CREATE TABLE Setting (Target VARCHAR(50) PRIMARY KEY, value VARCHAR(100))');
         //資料庫填充
@@ -180,10 +199,10 @@ const startUp = () => {
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'company-name-EN\', \'Company Name\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Driver-name\', \'陳大明\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Driver-license\', \'RT XXXX\')', []); //放入sql
-        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'database_version\', \'1.5\')', []); //放入sql
+        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'database_version\', \'1.5.5\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Email-to\', \'mail@example.com\')', []);
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup\', \'Off\')', []); //放入sql
-        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup_cycle\', \'day\')', []); //放入sql
+        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup_cycle\', \'Day\')', []); //放入sql
 
     }, function (error) {
         console.log('傳輸錯誤: ' + error.message);

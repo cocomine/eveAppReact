@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {DB, useSetting} from '../module/SQLite';
 import moment from 'moment/moment';
 import {FlatList, SafeAreaView, StatusBar, StyleSheet, TouchableWithoutFeedback, View} from 'react-native';
-import {Appbar, IconButton, Menu, Text, TextInput, useTheme} from 'react-native-paper';
+import {Appbar, IconButton, Menu, Text, TextInput} from 'react-native-paper';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import formatPrice from '../module/formatPrice';
@@ -21,9 +21,7 @@ const showModeList = [
     {label: '自訂', value: 4}
 ];
 
-const Search = ({navigation, route}) => {
-    const {colors} = useTheme();
-
+const Search = ({navigation}) => {
     const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(moment()); //顯示日期
@@ -123,7 +121,7 @@ const Search = ({navigation, route}) => {
         /* 頂部toolbar */
         <SafeAreaView style={{flex: 1, position: 'relative'}}>
             <StatusBar backgroundColor={'darkslateblue'} barStyle={'light-content'} animated={true}/>
-            <React.StrictMode>
+            {/*<React.StrictMode>*/}
                 <View style={{zIndex: 1, elevation: 1}}>
                     <Toolbar containerStyle={{backgroundColor: 'darkslateblue'}}>
                         <Appbar.BackAction onPress={navigation.goBack} color={Color.white}/>
@@ -252,7 +250,7 @@ const Search = ({navigation, route}) => {
                         </View>
                     }
                 />
-            </React.StrictMode>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };

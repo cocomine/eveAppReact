@@ -1,9 +1,11 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {StyleProp, StyleSheet, TextInput as NativeTextInput, TextStyle} from "react-native";
+import {StyleProp, StyleSheet, TextInput as NativeTextInput, TextInputProps, TextStyle} from "react-native";
 import {TextInput} from "react-native-paper";
 
 /* 輸入參數 */
-interface Props {
+
+// @ts-ignore
+interface Props extends TextInputProps {
     value?: string,
     style?: StyleProp<TextStyle>,
     onChangeText?: (text: string) => void,
@@ -88,6 +90,7 @@ const Input = forwardRef<Ref, Props>(({
     }));
 
     return (
+        // @ts-ignore
         <TextInput {...props} ref={inputRef} style={[style, styles.formInput]} value={value} maxLength={maxLength} onSubmitEditing={submitEditing} onChangeText={update} onBlur={blur} dense={true}/>
     )
 }) as InputComponent;

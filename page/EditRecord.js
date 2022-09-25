@@ -3,7 +3,8 @@ import {BackHandler, SafeAreaView, ScrollView, StatusBar, StyleSheet, useColorSc
 import moment from 'moment';
 import {Color} from '../module/Color';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
-import {DecimalInput, NumKeyboard} from '../module/NumInput';
+import {DecimalInput} from '../module/NumInput';
+import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
 import {Button, HelperText, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
@@ -380,6 +381,7 @@ const EditRecord = ({navigation, route}) => {
                             <LocalInput ref={(ref) => {inputs.current.local = ref;}} value={state.location}
                                         onChangeText={(text) => dispatch({type: UPDATE_LOCATION, payload: {location: text}})}
                                         onSubmitEditing={() => focusNextField('RMB')} error={state.error.location}
+                                        scrollOffset={scrollOffset}
                             />
                         </View>
                         {/* 人民幣 */}

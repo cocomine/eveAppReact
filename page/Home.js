@@ -21,14 +21,14 @@ import {Swipeable} from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {IconButton, Portal, Snackbar, Text, useTheme} from 'react-native-paper';
+import {IconButton, Portal, Snackbar, Text} from 'react-native-paper';
 import {DB, useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
 import SVGCargo from '../module/SVGCargo';
 import {Ripple} from '../module/Ripple';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ReAnimated, {FadeInUp, FadeOutUp} from 'react-native-reanimated';
+import {DateSelect} from '../module/DateSelect';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate, Total_callback){
@@ -179,7 +179,7 @@ const Home = () => {
                 tr.executeSql(
                     'SELECT * FROM Note WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime DESC ',
                     [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')], function(tx, rs){
-                        if(rs.rows.length > 0) package_list = grouping_note(package_list);
+                        if(rs.rows.length > 0) package_list = grouping_note(package_list, rs);
                     }
                 );
             }, function(error){
@@ -212,10 +212,10 @@ const Home = () => {
     const hideMonthSelect = useCallback(() => setMonthSelect(false), []);
 
     return (
-        /* 頂部toolbar */
         <SafeAreaView style={{flex: 1, position: 'relative'}}>
             {/*<React.StrictMode>*/}
             <Portal.Host>
+                {/* 頂部toolbar */}
                 <View style={{zIndex: 1, elevation: 1}}>
                     <Toolbar>
                         <ToolBarView>
@@ -263,6 +263,7 @@ const Home = () => {
                         </View>
                     </Toolbar>
                 </View>
+                {monthSelect ? <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={style.cover}/></TouchableWithoutFeedback> : null}
 
                 {/* 增加紀錄 */}
                 <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
@@ -271,7 +272,7 @@ const Home = () => {
                     </View>
                 </TouchableOpacity>
                 {/* 備忘錄 */}
-                <TouchableOpacity style={style.addMark} activeOpacity={0.8}>
+                <TouchableOpacity style={style.addMark} activeOpacity={0.8} onPress={() => navigation.navigate('Note')}>
                     <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
                 </TouchableOpacity>
 
@@ -305,111 +306,10 @@ const Home = () => {
     );
 };
 
-/* 直接選擇月份 */
-const DateSelect = ({visibility = false, onSelect = () => null, value = new Date(), onDismiss = () => null}) => {
-    const [date, setDate] = useState(value);
-    const {colors} = useTheme();
-    const correctMonth = date.getMonth();
-
-    /* 修改預設月份 */
-    useEffect(() => setDate(value), [value]);
-
-    /* 選擇顯示年份 */
-    const NextYear = () => {
-        let tmp = moment(date);
-        tmp.add(1, 'y').endOf('month');
-
-        setDate(tmp.toDate());
-    };
-    const LastYear = () => {
-        let tmp = moment(date);
-        tmp.subtract(1, 'y').endOf('month');
-
-        setDate(tmp.toDate());
-    };
-
-    /* 當前月份 */
-    const today = useCallback(() => {
-        onDismiss();
-        onSelect(new Date());
-    }, [onDismiss, onSelect]);
-
-    /* 月份選擇 */
-    const setMonth = (month) => {
-        let tmp = moment(date);
-        tmp.month(month).endOf('month');
-
-        onDismiss();
-        onSelect(tmp.toDate());
-    };
-
-    return (
-        visibility ?
-            <ReAnimated.View style={[style.dateSelect, {backgroundColor: colors.background}]} entering={FadeInUp} exiting={FadeOutUp}>
-                <View style={[style.row, {height: 45, paddingHorizontal: 10, backgroundColor: '#4596ff'}]}>
-                    <Text>選擇日期</Text>
-                    <View style={style.row}>
-                        <IconButton icon={'calendar-end'} iconColor={colors.text} onPress={today}/>
-                        <IconButton icon={'close'} iconColor={colors.text} onPress={onDismiss}/>
-                    </View>
-                </View>
-                <View style={style.row}>
-                    <IconButton icon={'chevron-left'} iconColor={colors.text} onPress={LastYear}/>
-                    <Text>{moment(date).format('yyyy')}</Text>
-                    <IconButton icon={'chevron-right'} iconColor={colors.text} onPress={NextYear}/>
-                </View>
-                <View style={{flex: 1}}>
-                    <View style={[style.row, {flex: 1}]}>
-                        <TouchableWithoutFeedback onPress={() => setMonth(0)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 0 ? Color.primaryColor : colors.text}}>1月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(1)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 1 ? Color.primaryColor : colors.text}}>2月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(2)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 2 ? Color.primaryColor : colors.text}}>3月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(3)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 3 ? Color.primaryColor : colors.text}}>4月</Text></View>
-                        </TouchableWithoutFeedback>
-                    </View>
-                    <View style={[style.row, {flex: 1}]}>
-                        <TouchableWithoutFeedback onPress={() => setMonth(4)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 4 ? Color.primaryColor : colors.text}}>5月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(5)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 5 ? Color.primaryColor : colors.text}}>6月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(6)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 6 ? Color.primaryColor : colors.text}}>7月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(7)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 7 ? Color.primaryColor : colors.text}}>8月</Text></View>
-                        </TouchableWithoutFeedback>
-                    </View>
-                    <View style={[style.row, {flex: 1}]}>
-                        <TouchableWithoutFeedback onPress={() => setMonth(8)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 8 ? Color.primaryColor : colors.text}}>9月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(9)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 9 ? Color.primaryColor : colors.text}}>10月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(11)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 10 ? Color.primaryColor : colors.text}}>11月</Text></View>
-                        </TouchableWithoutFeedback>
-                        <TouchableWithoutFeedback onPress={() => setMonth(11)}>
-                            <View style={style.dateSelect.button}><Text style={{color: correctMonth === 11 ? Color.primaryColor : colors.text}}>12月</Text></View>
-                        </TouchableWithoutFeedback>
-                    </View>
-                </View>
-            </ReAnimated.View> : null
-    );
-};
-
 /* 內容render */
 const DataPart = ({data, rate}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    let date = moment(data.DateTime).locale('zh-hk');
+    const date = moment(data.DateTime).locale('zh-hk');
     const navigation = useNavigation();
 
     /* 判斷週末 */
@@ -698,21 +598,14 @@ const DataPartMark = ({item, id}) => {
 
 /* Home style */
 const style = StyleSheet.create({
-    dateSelect: {
+    cover: {
         position: 'absolute',
-        top: '100%',
-        left: 10,
-        right: 10,
-        borderRadius: 10,
-        zIndex: 5,
-        elevation: 5,
-        height: 280,
-        overflow: 'hidden',
-        button: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center'
-        }
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        elevation: -1,
+        zIndex: -1
     },
     row: {
         justifyContent: 'space-between',

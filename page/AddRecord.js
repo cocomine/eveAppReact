@@ -16,7 +16,8 @@ import {
 import moment from 'moment';
 import {Color} from '../module/Color';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
-import {DecimalInput, NumKeyboard} from '../module/NumInput';
+import {DecimalInput} from '../module/NumInput';
+import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
 import {Button, HelperText, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
@@ -290,6 +291,11 @@ const AddRecord = ({navigation, route}) => {
     const scroll = useCallback(({nativeEvent}) => {
         setScrollOffset(nativeEvent.contentOffset.y);
     }, []);
+
+    //debug
+    // useEffect(() => {
+    //     console.log(setting);
+    // });
 
     return (
         <SafeAreaView style={{flex: 1}}>
