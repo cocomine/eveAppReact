@@ -75,27 +75,27 @@ function group_top(package_list = [], ResultSet){
 function convertColor(color){
     switch(color){
         case 'red':
-            return '#fd766c';
+            return '#c9837e';
         case 'orange':
-            return '#fdb34d';
+            return '#d3a25e';
         case 'yellow':
-            return '#fdea81';
+            return '#bdb060';
         case 'green':
-            return '#acfd7b';
+            return '#87bf65';
         case 'teal':
-            return '#54fdd7';
+            return '#6fbdad';
         case 'cyan':
-            return '#69e7fe';
+            return '#50b6c6';
         case 'blue':
-            return '#4aabfc';
+            return '#3b8dd0';
         case 'purple':
-            return '#c17afe';
+            return '#946db5';
         case 'pink':
-            return '#fda7de';
+            return '#d188b7';
         case 'brown':
-            return '#d4b889';
+            return '#b38e52';
         case 'gray':
-            return '#b9b9ba';
+            return '#89898e';
         default:
             return null;
     }
@@ -192,7 +192,7 @@ const Note = ({navigation, route}) => {
 
     return (
         <SafeAreaView style={{flex: 1}}>
-            <React.StrictMode>
+            {/*<React.StrictMode>*/}
                 <View style={{zIndex: 1, elevation: 1}}>
                     <Toolbar>
                         <Appbar.BackAction onPress={navigation.goBack} color={Color.white}/>
@@ -238,7 +238,7 @@ const Note = ({navigation, route}) => {
                         }
                     />
                 </View>
-            </React.StrictMode>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };

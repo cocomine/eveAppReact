@@ -8,6 +8,7 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import Animated, {SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {convertColor} from './Note';
 import {DB} from '../module/SQLite';
+import {hideKeyboard} from 'react-native-hide-keyboard/src';
 
 const initialState = {
     date: new Date(),
@@ -38,6 +39,11 @@ const AddNote = ({navigation, route}) => {
     //     console.log(state);
     //     console.log(route);
     // });
+
+    /* 開啟顏色選擇 */
+    const openColorSelector = useCallback(() => {
+        hideKeyboard().finally(() => setShowColorSelector(true));
+    }, []);
 
     /* 關閉顏色選擇 */
     const closeColorSelector = useCallback(() => {
@@ -117,17 +123,17 @@ const AddNote = ({navigation, route}) => {
 
     return (
         <SafeAreaView style={{flex: 1}}>
-            <React.StrictMode>
+            {/*<React.StrictMode>*/}
                 <View style={{flex: 1}}>
                     <Appbar style={{backgroundColor: Color.primaryColor}}>
                         <Appbar.BackAction onPress={navigation.goBack} color={Color.white}/>
                         <Appbar.Content title={'備忘錄'}/>
-                        <Appbar.Action icon={'palette-outline'} onPress={() => setShowColorSelector(prev => !prev)}/>
+                        <Appbar.Action icon={'palette-outline'} onPress={openColorSelector}/>
                         <Appbar.Action icon={state.top ? 'pin' : 'pin-outline'} onPress={() => dispatch({top: !state.top})}/>
                         {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={deleteNote}/> : null}
                     </Appbar>
                     <KeyboardAvoidingView style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}} behavior={'height'}>
-                        <Text style={style.date} onPress={() => null} onPressOut={() => {
+                        <Text style={[style.date, {borderColor: colors.text}]} onPress={() => null} onPressOut={() => {
                             DateTimePickerAndroid.open({
                                 value: state.date, onChange: (event, newDate) => {
                                     dispatch({date: newDate});
@@ -166,7 +172,7 @@ const AddNote = ({navigation, route}) => {
                         </View>
                     </TouchableWithoutFeedback>
                     : null}
-            </React.StrictMode>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };
@@ -197,9 +203,7 @@ const style = StyleSheet.create({
         borderRadius: 50
     },
     date: {
-        color: Color.darkColorLight,
         borderWidth: .7,
-        borderColor: Color.darkColorLight,
         borderRadius: 5,
         padding: 10,
         paddingVertical: 5,
