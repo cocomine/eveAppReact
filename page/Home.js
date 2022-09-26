@@ -590,10 +590,11 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
 /* 備忘錄 */
 const DataPartMark = ({item}) => {
     return (
-        <View style={{paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center', marginVertical: -7}}>
-            {item.Color === null ? <Text style={{color: Color.primaryColor, fontSize: 24}}>{' \u25e6 '}</Text> :
-                <Text style={{color: item.Color, fontSize: 25}}>{' \u2022 '}</Text>}
-            <Text style={{fontSize: 12}} numberOfLines={1} ellipsizeMode={'tail'}>{item.Title}</Text>
+        <View style={{paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center'}}>
+            {item.Color === null ?
+                <View style={{width: 8, height: 8, borderWidth: .7, borderColor: Color.primaryColor, borderRadius: 8 / 2, marginHorizontal: 10}}/> :
+                <View style={{width: 8, height: 8, borderRadius: 8 / 2, backgroundColor: item.Color, marginHorizontal: 10}}/>}
+            <Text style={{fontSize: 12, flex: 1}} numberOfLines={1} ellipsizeMode={'tail'}>{item.Title}</Text>
         </View>
     );
 };
@@ -658,7 +659,7 @@ const style = StyleSheet.create({
         borderBottomWidth: .7,
         borderStyle: 'solid',
         borderColor: Color.darkColorLight,
-        paddingBottom: 4
+        paddingVertical: 4
     },
     addRecord: {
         backgroundColor: Color.primaryColor,

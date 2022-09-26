@@ -268,7 +268,7 @@ const NotePart = ({data}) => {
                     withTiming('rgba(18,125,255,0.6)'),
                     withTiming('rgba(18,125,255,0)')
                 );
-            }, 200);
+            }, 300);
         }
 
         return () => clearTimeout(id); //清除計時器
@@ -299,7 +299,7 @@ const NotePart = ({data}) => {
                         withTiming('rgba(18,125,255,0.6)'),
                         withTiming('rgba(18,125,255,0)')
                     );
-                }, 200);
+                }, 300);
             }
 
             return () => clearTimeout(id); //清除計時器
@@ -319,7 +319,7 @@ const NotePart = ({data}) => {
 
     return (
         <Animated.View style={[style.notePart, animatedStyles]}>
-            {data.dateTime != null ? <Caption style={{paddingHorizontal: 10}}>{moment(date).format('D.M (ddd)')}</Caption> : null}
+            <Caption style={{paddingHorizontal: 10}}>{data.dateTime != null ? moment(date).format('D.M (ddd)') : '置頂'}</Caption>
             <View style={style.container}>
                 {data.note.map((item, index) => (
                     <NoteBody item={item} key={index}/>
