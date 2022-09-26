@@ -50,7 +50,7 @@ const Backup = ({navigation}) => {
 
                 const [folder, BackupDate] = await listAllBackup();
                 folderID.current = folder;
-                setNewBackupDate(BackupDate);
+                setNewBackupDate(BackupDate ? BackupDate : '');
             }else{
                 ToastAndroid.show('連接已斷開, 請重新連接', ToastAndroid.SHORT);
             }
@@ -99,8 +99,9 @@ const Backup = ({navigation}) => {
             }else if(error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE){
                 ToastAndroid.show('Google Play service不可用', ToastAndroid.SHORT);
             }else{
-                ToastAndroid.show('未知其他錯誤: ' + error.message, ToastAndroid.SHORT);
+                ToastAndroid.show('未知其他錯誤: ' + error.code, ToastAndroid.SHORT);
             }
+            await unlink();
         }
     }, []);
 
