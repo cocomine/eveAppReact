@@ -250,7 +250,7 @@ const NotePart = ({data}) => {
 
     const date = moment(data.dateTime).locale('zh-hk');
 
-    const bg = useSharedValue('rgba(236,99,99,0)');
+    const bg = useSharedValue('rgba(18,125,255,0)');
     const animatedStyles = useAnimatedStyle(() => {
         return {
             backgroundColor: bg.value

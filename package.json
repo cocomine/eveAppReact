@@ -1,6 +1,6 @@
 {
   "name": "eveapp",
-  "version": "0.0.1",
+  "version": "2.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -28,6 +28,7 @@
     "react": "18.0.0",
     "react-native": "^0.69.4",
     "react-native-auto-size-text": "^1.1.1",
+    "react-native-exception-handler": "^2.10.10",
     "react-native-file-viewer": "^2.1.5",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.5.0",
