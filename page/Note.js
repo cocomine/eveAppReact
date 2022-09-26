@@ -10,6 +10,7 @@ import {DB} from '../module/SQLite';
 import Animated from 'react-native-reanimated';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {DateSelect} from '../module/DateSelect';
+import {useNavigation} from '@react-navigation/native';
 
 const record = [{
     dateTime: null,
@@ -262,9 +263,9 @@ const Note = ({navigation, route}) => {
 
                 <View style={{paddingTop: 5}}>
                     <FlatList
-                        data={Data} ref={listRef} extraData={route}
+                        data={Data} ref={listRef}
                         onRefresh={() => null} refreshing={isRefresh}
-                        renderItem={({item}) => <NotePart data={item} route={route}/>}
+                        renderItem={({item}) => <NotePart data={item}/>}
                         onScrollToIndexFailed={(info) => {
                             setTimeout(() => {
                                 listRef.current.scrollToIndex({index: info.index});
@@ -289,12 +290,12 @@ const Note = ({navigation, route}) => {
 };
 
 /* 備忘錄 */
-const NotePart = ({data, route}) => {
+const NotePart = ({data}) => {
+    const navigation = useNavigation();
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;
 
     const date = moment(data.dateTime).locale('zh-hk');
-    console.log(route) //debug
 
     return (
         <Animated.View style={style.notePart}>
@@ -302,7 +303,7 @@ const NotePart = ({data, route}) => {
             <View style={style.container}>
                 {data.note.map((item, index) => (
                     <Animated.View key={index} style={style.surfaceOut}>
-                        <TouchableWithoutFeedback onPress={() => null}>
+                        <TouchableWithoutFeedback onPress={() => navigation.navigate('AddNote', {id: item.id})}>
                             <Surface style={[style.surface, {backgroundColor: item.color ?? BG_color}]}>
                                 {item.title != null ? <Title>{item.title}</Title> : null}
                                 {item.content != null ? <Paragraph>{item.content}</Paragraph> : null}

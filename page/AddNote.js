@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {KeyboardAvoidingView, SafeAreaView, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
+import {Alert, KeyboardAvoidingView, SafeAreaView, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
 import {Appbar, Text, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import moment from 'moment';
@@ -34,9 +34,10 @@ const AddNote = ({navigation, route}) => {
     const contentInput = useRef(null);
 
     //debug
-    useEffect(() => {
-        console.log(state);
-    });
+    // useEffect(() => {
+    //     console.log(state);
+    //     console.log(route);
+    // });
 
     /* 關閉顏色選擇 */
     const closeColorSelector = useCallback(() => {
@@ -67,6 +68,46 @@ const AddNote = ({navigation, route}) => {
         });
     }, [navigation, state]);
 
+    /* 讀取備忘錄 */
+    useEffect(() => {
+        if(route.params){
+            DB.transaction(function(tr){
+                //編輯備忘錄
+                tr.executeSql('SELECT * FROM Note WHERE ID = ?', [route.params.id], function(rx, rs){
+                    const row = rs.rows.item(0);
+                    dispatch({
+                        date: new Date(row.DateTime),
+                        id: row.ID,
+                        top: row.Top,
+                        title: row.Title,
+                        content: row.Contact,
+                        color: row.Color
+                    });
+                });
+            }, function(error){
+                console.log('傳輸錯誤: ' + error.message);
+            }, function(){
+                console.log('已取得資料');
+            });
+        }
+    }, [route]);
+
+    /* 刪除備忘錄 */
+    const deleteNote = useCallback(() => {
+        const sql = () => {
+            DB.transaction(function(tr){
+                tr.executeSql('DELETE FROM Note WHERE Note.ID = ?', [state.id]);
+            }, function(error){
+                console.log('傳輸錯誤: ' + error.message);
+            }, function(){
+                ToastAndroid.show('備忘錄已刪除', ToastAndroid.SHORT);
+                navigation.goBack();
+            });
+        };
+
+        Alert.alert('刪除', '確認刪除?', [{text: '確認', onPress: sql}, {text: '取消'}], {cancelable: true});
+    }, [state]);
+
     return (
         <SafeAreaView style={{flex: 1}}>
             <React.StrictMode>
@@ -76,7 +117,7 @@ const AddNote = ({navigation, route}) => {
                         <Appbar.Content title={'備忘錄'}/>
                         <Appbar.Action icon={'palette-outline'} onPress={() => setShowColorSelector(prev => !prev)}/>
                         <Appbar.Action icon={state.top ? 'pin' : 'pin-outline'} onPress={() => dispatch({top: !state.top})}/>
-                        {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={() => null}/> : null}
+                        {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={deleteNote}/> : null}
                     </Appbar>
                     <KeyboardAvoidingView style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}} behavior={'height'}>
                         <Text style={style.date} onPress={() => null} onPressOut={() => {
