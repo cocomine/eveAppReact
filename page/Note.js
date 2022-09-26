@@ -263,10 +263,10 @@ const NotePart = ({data}) => {
         if(route.params && new Date(route.params.ShowDay).getDate() === date.toDate().getDate()){
             id = setTimeout(() => {
                 bg.value = withSequence(
-                    withTiming('rgba(236,99,99,0.6)'),
-                    withTiming('rgba(236,99,99,0.3)'),
-                    withTiming('rgba(236,99,99,0.6)'),
-                    withTiming('rgba(236,99,99,0)')
+                    withTiming('rgba(18,125,255,0.6)'),
+                    withTiming('rgba(18,125,255,0.3)'),
+                    withTiming('rgba(18,125,255,0.6)'),
+                    withTiming('rgba(18,125,255,0)')
                 );
             }, 200);
         }
@@ -281,7 +281,7 @@ const NotePart = ({data}) => {
         const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
         const BG_color = isDarkMode ? Color.darkBlock : Color.white;
 
-        const bg = useSharedValue('rgba(236,99,99,0)');
+        const bg = useSharedValue('rgba(18,125,255,0)');
         const animatedStyles = useAnimatedStyle(() => {
             return {
                 backgroundColor: bg.value
@@ -294,10 +294,10 @@ const NotePart = ({data}) => {
             if(route.params && route.params.id === item.id){
                 id = setTimeout(() => {
                     bg.value = withSequence(
-                        withTiming('rgba(236,99,99,0.6)'),
-                        withTiming('rgba(236,99,99,0.3)'),
-                        withTiming('rgba(236,99,99,0.6)'),
-                        withTiming('rgba(236,99,99,0)')
+                        withTiming('rgba(18,125,255,0.6)'),
+                        withTiming('rgba(18,125,255,0.3)'),
+                        withTiming('rgba(18,125,255,0.6)'),
+                        withTiming('rgba(18,125,255,0)')
                     );
                 }, 200);
             }
