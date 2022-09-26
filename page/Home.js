@@ -29,6 +29,7 @@ import SVGCargo from '../module/SVGCargo';
 import {Ripple} from '../module/Ripple';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DateSelect} from '../module/DateSelect';
+import {convertColor} from './Note';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate, Total_callback){
@@ -101,18 +102,18 @@ function grouping_note(package_list = [], ResultSet){
             //存在
             match_item.Mark.push({
                 ID: row.ID,
-                Color: row.color,
-                Title: row.Title || row.Contact
+                Color: convertColor(row.Color),
+                Title: row.Title ?? row.Contact
             });
         }else{
             //不存在
             const index = package_list.findIndex((item) => item.DateTime.getDate() < item_date.getDate());
-            package_list.splice(index, 0, {
+            package_list.splice(index < 0 ? package_list.length : index, 0, { //如果尋找不到(-1), 側放到最後
                 DateTime: item_date,
                 Mark: [{
                     ID: row.ID,
-                    Color: row.color,
-                    Title: row.Title || row.Contact
+                    Color: convertColor(row.Color),
+                    Title: row.Title ?? row.Contact
                 }],
                 Record: [],
                 Total: 0
@@ -329,7 +330,7 @@ const DataPart = ({data, rate}) => {
 
     return (
         /* 內容包裝 */
-        <View style={[style.dataPart, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]} key={data.DataTime}>
+        <View style={[style.dataPart, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
             <Ripple.Default onPress={press}>
                 <View style={[style.row, style.dataPartHeard]}>
                     <View style={style.row}>
@@ -345,10 +346,10 @@ const DataPart = ({data, rate}) => {
 
             {/* 備忘錄 */
                 data.Mark.length > 0 ?
-                    <Ripple.Default>
+                    <Ripple.Default onPress={() => navigation.navigate('Note', {ShowDay: date.toISOString()})}>
                         <View style={style.dataPartMark}>
                             {data.Mark.map((item, index) => (
-                                <DataPartMark key={index} item={item} id={item.MarkID}/>
+                                <DataPartMark key={index} item={item}/>
                             ))}
                         </View>
                     </Ripple.Default> : null
@@ -587,12 +588,12 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
 };
 
 /* 備忘錄 */
-const DataPartMark = ({item, id}) => {
+const DataPartMark = ({item}) => {
     return (
         <View style={{paddingHorizontal: 5, flexDirection: 'row', alignItems: 'center', marginVertical: -7}}>
-            {item.color === 'none' ? <Text style={{color: Color.primaryColor, fontSize: 24}}>{' \u25e6 '}</Text> :
-                <Text style={{color: item.color, fontSize: 24}}>{' \u2022 '}</Text>}
-            <Text style={{fontSize: 10}}>{item.title}</Text>
+            {item.Color === null ? <Text style={{color: Color.primaryColor, fontSize: 24}}>{' \u25e6 '}</Text> :
+                <Text style={{color: item.Color, fontSize: 25}}>{' \u2022 '}</Text>}
+            <Text style={{fontSize: 12}} numberOfLines={1} ellipsizeMode={'tail'}>{item.Title}</Text>
         </View>
     );
 };

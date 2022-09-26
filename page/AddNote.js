@@ -51,18 +51,25 @@ const AddNote = ({navigation, route}) => {
                 DB.transaction(function(tr){
                     if(state.id === null){
                         //增加備忘錄
-                        tr.executeSql("INSERT INTO Note (DateTime, Top, Color, Title, Contact) VALUES (?,?,?,?,?)",
-                            [moment(state.date).format('yyyy-MM-DD'), state.top, state.color, state.title === '' ? null : state.title, state.content === '' ? null : state.content]);
+                        tr.executeSql('INSERT INTO Note (DateTime, Top, Color, Title, Contact) VALUES (?,?,?,?,?);',
+                            [moment(state.date).format('yyyy-MM-DD'), state.top, state.color, state.title === '' ? null : state.title,
+                             state.content === '' ? null : state.content], function(tr, rs){
+                                navigation.navigate('Note', {ShowDay: state.date.toString(), id: rs.insertId}); //go back notePage
+                            }
+                        );
                     }else{
                         //修改備忘錄
-                        tr.executeSql("UPDATE Note SET DateTime = ?, Top = ?, Color = ?, Title = ?, Contact = ? WHERE ID = ?",
-                            [moment(state.date).format('yyyy-MM-DD'), state.top, state.color, state.title === '' ? null : state.title, state.content === '' ? null : state.content, state.id]);
+                        tr.executeSql('UPDATE Note SET DateTime = ?, Top = ?, Color = ?, Title = ?, Contact = ? WHERE ID = ?',
+                            [moment(state.date).format('yyyy-MM-DD'), state.top, state.color, state.title === '' ? null : state.title,
+                             state.content === '' ? null : state.content, state.id], function(tr, rs){
+                                navigation.navigate('Note', {ShowDay: state.date.toString(), id: state.id}); //go back notePage
+                            }
+                        );
                     }
                 }, function(e){
                     console.log('傳輸錯誤: ' + e.message);
                 }, function(){
                     ToastAndroid.show('備忘錄已儲存', ToastAndroid.SHORT);
-                    navigation.navigate('Note', {ShowDay: state.date.toString()}); //go back notePage
                 });
             }
         });

@@ -7,56 +7,10 @@ import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import moment from 'moment';
 import {DB} from '../module/SQLite';
-import Animated from 'react-native-reanimated';
+import Animated, {useAnimatedStyle, useSharedValue, withSequence, withTiming} from 'react-native-reanimated';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {DateSelect} from '../module/DateSelect';
-import {useNavigation} from '@react-navigation/native';
-
-const record = [{
-    dateTime: null,
-    note: [{
-        id: 0,
-        title: 'abc',
-        content: 'abcde',
-        color: Color.red
-    }, {
-        id: 1,
-        title: null,
-        content: 'abcde',
-        color: Color.blue
-    }, {
-        id: 2,
-        title: 'abc',
-        content: null,
-        color: Color.cyan
-    }]
-}, {
-    dateTime: new Date(2022, 9, 24),
-    note: [{
-        id: 3,
-        title: 'abc',
-        content: null,
-        color: null
-    }, {
-        id: 4,
-        title: null,
-        content: 'abcde',
-        color: Color.purple
-    }]
-}, {
-    dateTime: new Date(2022, 9, 25),
-    note: [{
-        id: 5,
-        title: 'abc',
-        content: null,
-        color: Color.green
-    }, {
-        id: 6,
-        title: null,
-        content: 'abcde',
-        color: Color.orange
-    }]
-}];
+import {useNavigation, useRoute} from '@react-navigation/native';
 
 /* 備忘錄分組 */
 function group_note(ResultSet){
@@ -123,25 +77,25 @@ function convertColor(color){
         case 'red':
             return '#fd766c';
         case 'orange':
-            return  '#fdb34d';
+            return '#fdb34d';
         case 'yellow':
-            return  '#fdea81';
+            return '#fdea81';
         case 'green':
-            return  '#acfd7b';
+            return '#acfd7b';
         case 'teal':
-            return  '#54fdd7';
+            return '#54fdd7';
         case 'cyan':
-            return  '#69e7fe';
+            return '#69e7fe';
         case 'blue':
-            return  '#4aabfc';
+            return '#4aabfc';
         case 'purple':
-            return  '#c17afe';
+            return '#c17afe';
         case 'pink':
-            return  '#fda7de';
+            return '#fda7de';
         case 'brown':
-            return  '#d4b889';
+            return '#d4b889';
         case 'gray':
-            return  '#b9b9ba';
+            return '#b9b9ba';
         default:
             return null;
     }
@@ -232,9 +186,9 @@ const Note = ({navigation, route}) => {
     }, [Data]);
 
     //debug
-    useEffect(() => {
-        console.log(Data);
-    });
+    // useEffect(() => {
+    //     console.log(Data);
+    // });
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -253,7 +207,7 @@ const Note = ({navigation, route}) => {
                         <DateSelect visibility={monthSelect} value={ShowDay} onSelect={setMonth} onDismiss={hideMonthSelect}/>
                     </Toolbar>
                 </View>
-                {monthSelect ? <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={style.cover}/></TouchableWithoutFeedback>: null}
+                {monthSelect ? <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={style.cover}/></TouchableWithoutFeedback> : null}
 
                 <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddNote')}>
                     <View>
@@ -291,30 +245,90 @@ const Note = ({navigation, route}) => {
 
 /* 備忘錄 */
 const NotePart = ({data}) => {
-    const navigation = useNavigation();
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const BG_color = isDarkMode ? Color.darkBlock : Color.white;
+    const route = useRoute();
 
     const date = moment(data.dateTime).locale('zh-hk');
 
+    const bg = useSharedValue('rgba(236,99,99,0)');
+    const animatedStyles = useAnimatedStyle(() => {
+        return {
+            backgroundColor: bg.value
+        };
+    });
+
+    /* 播放動畫 */
+    useEffect(() => {
+        let id;
+        if(route.params && new Date(route.params.ShowDay).getDate() === date.toDate().getDate()){
+            id = setTimeout(() => {
+                bg.value = withSequence(
+                    withTiming('rgba(236,99,99,0.6)'),
+                    withTiming('rgba(236,99,99,0.3)'),
+                    withTiming('rgba(236,99,99,0.6)'),
+                    withTiming('rgba(236,99,99,0)')
+                );
+            }, 200);
+        }
+
+        return () => clearTimeout(id); //清除計時器
+    }, []);
+
+    /* 備忘錄卡片 */
+    const NoteBody = ({item}) => {
+        const navigation = useNavigation();
+        const route = useRoute();
+        const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+        const BG_color = isDarkMode ? Color.darkBlock : Color.white;
+
+        const bg = useSharedValue('rgba(236,99,99,0)');
+        const animatedStyles = useAnimatedStyle(() => {
+            return {
+                backgroundColor: bg.value
+            };
+        });
+
+        /* 播放動畫 */
+        useEffect(() => {
+            let id;
+            if(route.params && route.params.id === item.id){
+                id = setTimeout(() => {
+                    bg.value = withSequence(
+                        withTiming('rgba(236,99,99,0.6)'),
+                        withTiming('rgba(236,99,99,0.3)'),
+                        withTiming('rgba(236,99,99,0.6)'),
+                        withTiming('rgba(236,99,99,0)')
+                    );
+                }, 200);
+            }
+
+            return () => clearTimeout(id); //清除計時器
+        }, []);
+
+        return (
+            <Animated.View style={[style.surfaceOut, animatedStyles]}>
+                <TouchableWithoutFeedback onPress={() => navigation.navigate('AddNote', {id: item.id})}>
+                    <Surface style={[style.surface, {backgroundColor: item.color ?? BG_color}]}>
+                        {item.title != null ? <Title>{item.title}</Title> : null}
+                        {item.content != null ? <Paragraph>{item.content}</Paragraph> : null}
+                    </Surface>
+                </TouchableWithoutFeedback>
+            </Animated.View>
+        );
+    };
+
     return (
-        <Animated.View style={style.notePart}>
+        <Animated.View style={[style.notePart, animatedStyles]}>
             {data.dateTime != null ? <Caption style={{paddingHorizontal: 10}}>{moment(date).format('D.M (ddd)')}</Caption> : null}
             <View style={style.container}>
                 {data.note.map((item, index) => (
-                    <Animated.View key={index} style={style.surfaceOut}>
-                        <TouchableWithoutFeedback onPress={() => navigation.navigate('AddNote', {id: item.id})}>
-                            <Surface style={[style.surface, {backgroundColor: item.color ?? BG_color}]}>
-                                {item.title != null ? <Title>{item.title}</Title> : null}
-                                {item.content != null ? <Paragraph>{item.content}</Paragraph> : null}
-                            </Surface>
-                        </TouchableWithoutFeedback>
-                    </Animated.View>
+                    <NoteBody item={item} key={index}/>
                 ))}
             </View>
         </Animated.View>
     );
 };
+
 
 const style = StyleSheet.create({
     cover: {
@@ -347,13 +361,13 @@ const style = StyleSheet.create({
     },
     surfaceOut: {
         width: '100%',
-        paddingHorizontal: 10
+        paddingHorizontal: 10,
+        paddingVertical: 5
     },
     surface: {
         flex: 1,
         padding: 8,
         borderRadius: 10,
-        marginBottom: 10
     }
 });
 
