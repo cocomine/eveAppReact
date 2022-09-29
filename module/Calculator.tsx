@@ -122,9 +122,11 @@ const Calculator: React.FC<{
 
     /* delete */
     const onBack = useCallback(() => {
-        let pop = array.current.pop() as string;
-        pop = pop.slice(0, -1);
-        if (pop.length > 0) array.current.push(pop);
+        let pop = array.current.pop();
+        if (pop) {
+            pop = pop.slice(0, -1);
+            if (pop.length > 0) array.current.push(pop);
+        }
 
         setRow1(array.current.join(''));
     }, []);

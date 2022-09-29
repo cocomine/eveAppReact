@@ -352,7 +352,7 @@ const listAllBackup = async() => {
     // 設置最新日期
     const backup_list = await backupList(folderID);
     let CreateTime = backup_list.files[0] ? backup_list.files[0].name.match(
-        /[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4}-[0-9]{1,2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}/g) : [null];
+        /[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4}-[0-9]{1,2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}/g) : [''];
 
     return [folderID, CreateTime[0]];
 };
