@@ -193,7 +193,7 @@ const Note = ({navigation, route}) => {
     return (
         <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-                <View style={{zIndex: 1, elevation: 1}}>
+                <View style={{zIndex: 7, elevation: 7}}>
                     <Toolbar>
                         <Appbar.BackAction onPress={navigation.goBack} color={Color.white}/>
                         <Appbar.Content title={'備忘錄'}/>
@@ -337,8 +337,9 @@ const style = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: -1,
-        elevation: -1
+        zIndex: 6,
+        elevation: 6
+
     },
     addRecord: {
         backgroundColor: Color.primaryColor,

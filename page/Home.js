@@ -218,7 +218,7 @@ const Home = () => {
             {/*<React.StrictMode>*/}
             <Portal.Host>
                 {/* 頂部toolbar */}
-                <View style={{zIndex: 1, elevation: 1}}>
+                <View style={{zIndex: 7, elevation: 7}}>
                     <Toolbar>
                         <ToolBarView>
                             <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth}/>
@@ -607,8 +607,8 @@ const style = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        elevation: -1,
-        zIndex: -1
+        elevation: 6,
+        zIndex: 6
     },
     row: {
         justifyContent: 'space-between',
