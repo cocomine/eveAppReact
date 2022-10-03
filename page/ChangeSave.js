@@ -196,7 +196,7 @@ const ListItem = ({title, description, onSwipe, ...props}) => {
     }, [onSwipe]);
 
     return (
-        <Swipeable ref={ref} leftThreshold={120} rightThreshold={120} renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} overshootFriction={8}>
+        <Swipeable ref={ref} leftThreshold={120} rightThreshold={120} renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} overshootFriction={20}>
             <List.Item style={[style.list, {backgroundColor: colors.background}]}
                        title={title ?? '建立新存檔'} description={description}
                        titleStyle={{fontStyle: title === null ? 'italic' : undefined}}

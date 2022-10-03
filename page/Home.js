@@ -526,7 +526,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
 
     return (
         <Animated.View style={{height: height.current}} onLayout={onLayout}>
-            <Swipeable ref={ref} renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} leftThreshold={120} rightThreshold={120} renderLeftActions={swipeLeft} overshootFriction={8}>
+            <Swipeable ref={ref} renderRightActions={swipeRight} onSwipeableOpen={swipeOpen} leftThreshold={120} rightThreshold={120} renderLeftActions={swipeLeft} overshootFriction={20}>
                 <Ripple.Default onPress={switchRMBShow}>
                     <Animated.View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
 
