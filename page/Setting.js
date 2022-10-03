@@ -1,11 +1,10 @@
 import React, {useCallback, useEffect, useReducer, useState} from 'react';
-import {Appbar, Button, Dialog, Divider, IconButton, List, Portal, Provider as PaperProvider, useTheme} from 'react-native-paper';
+import {Appbar, Divider, IconButton, List, Provider as PaperProvider, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import {ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import {DB, updateSetting} from '../module/SQLite';
-import TextInput from '../module/TextInput';
-import ErrorHelperText from '../module/ErrorHelperText';
 import {useNavigation} from '@react-navigation/native';
+import prompt from 'react-native-prompt-android';
 
 const initialState = {
     'Rate': '0.836',
@@ -66,8 +65,6 @@ const Setting = ({route}) => {
     const navigation = useNavigation();
 
     const [state, dispatch] = useReducer(reducer, initialState); //setting value
-    const [DialogState, DialogDispatch] = useReducer(reducer, Dialog_initialState); //Dialog
-    const [DialogVisible, setDialogVisible] = useState(false); //彈出視窗
     const [onlineRate_load, set_onlineRate_load] = useState(false);
 
     /* get setting value */
@@ -89,15 +86,56 @@ const Setting = ({route}) => {
 
     /* 彈出窗口 */
     const showDialog = useCallback((type) => {
-        setDialogVisible(true);
+        /* 確認修改 */
+        const confirm = (value) => {
+            //輸入檢查
+            switch(type){
+                case UPDATE_RATE:
+                    if(!/^[0-9]+(\.[0-9]{0,3})?$/g.test(value)){
+                        ToastAndroid.show('輸入格式不正確 必須是數字', ToastAndroid.SHORT);
+                        return;
+                    }
+                    break;
+                case UPDATE_NAME_ZH:
+                    if(!/^.+[\u4e00-\u9fa5]$/g.test(value)){
+                        ToastAndroid.show('只能夠輸入中文', ToastAndroid.SHORT);
+                        return;
+                    }
+                    break;
+                case UPDATE_NAME_EN:
+                    if(!/^.+[a-zA-Z]$/g.test(value)){
+                        ToastAndroid.show('只能夠輸入英文', ToastAndroid.SHORT);
+                        return;
+                    }
+                    break;
+                case UPDATE_DRIVER:
+                    if(!/^.+[a-zA-Z\u4e00-\u9fa5]$/g.test(value)){
+                        ToastAndroid.show('只能夠輸入英文或中文', ToastAndroid.SHORT);
+                        return;
+                    }
+                    break;
+                case UPDATE_LICENSE:
+                    if(!/^.+[A-Z0-9]$/g.test(value)){
+                        ToastAndroid.show('只能夠輸入大楷英文和數字', ToastAndroid.SHORT);
+                        return;
+                    }
+                    break;
+                case UPDATE_EMAIL:
+                    if(!/^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/g.test(value)){
+                        ToastAndroid.show('只能夠輸入電郵地址', ToastAndroid.SHORT);
+                        return;
+                    }
+                    break;
+            }
+
+            dispatch({type: type, payload: value});
+        };
+
         let payload = {
             title: '',
             placeholder: '',
-            updatingField: type,
-            value: null,
-            error: null
+            value: null
         };
-
         switch(type){
             case UPDATE_RATE:
                 payload.title = '人民幣匯率';
@@ -131,59 +169,16 @@ const Setting = ({route}) => {
                 break;
         }
 
-        DialogDispatch({payload});
+        //彈出視窗
+        prompt(
+            payload.title,
+            payload.placeholder,
+            [
+                {text: '取消'},
+                {text: '確認', onPress: confirm}],
+            {cancelable: true, defaultValue: payload.value}
+        );
     }, [state]);
-
-    /* 隱藏彈出窗口 */
-    const hideDialog = useCallback(() => {
-        setDialogVisible(false);
-    }, []);
-
-    /* 確認修改 */
-    const confirm = useCallback(() => {
-        //輸入檢查
-        switch(DialogState.updatingField){
-            case UPDATE_RATE:
-                if(!/^[0-9]+(\.[0-9]{0,3})?$/g.test(DialogState.value)){
-                    DialogDispatch({type: UPDATE_ERROR, payload: '輸入格式不正確 必須是數字'});
-                    return;
-                }
-                break;
-            case UPDATE_NAME_ZH:
-                if(!/^.+[\u4e00-\u9fa5]$/g.test(DialogState.value)){
-                    DialogDispatch({type: UPDATE_ERROR, payload: '只能夠輸入中文'});
-                    return;
-                }
-                break;
-            case UPDATE_NAME_EN:
-                if(!/^.+[a-zA-Z]$/g.test(DialogState.value)){
-                    DialogDispatch({type: UPDATE_ERROR, payload: '只能夠輸入英文'});
-                    return;
-                }
-                break;
-            case UPDATE_DRIVER:
-                if(!/^.+[a-zA-Z\u4e00-\u9fa5]$/g.test(DialogState.value)){
-                    DialogDispatch({type: UPDATE_ERROR, payload: '只能夠輸入英文或中文'});
-                    return;
-                }
-                break;
-            case UPDATE_LICENSE:
-                if(!/^.+[A-Z0-9]$/g.test(DialogState.value)){
-                    DialogDispatch({type: UPDATE_ERROR, payload: '只能夠輸入英文和數字'});
-                    return;
-                }
-                break;
-            case UPDATE_EMAIL:
-                if(!/^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/g.test(DialogState.value)){
-                    DialogDispatch({type: UPDATE_ERROR, payload: '只能夠輸入電郵地址'});
-                    return;
-                }
-                break;
-        }
-
-        dispatch({type: DialogState.updatingField, payload: DialogState.value});
-        hideDialog();
-    }, [DialogState]);
 
     /* 線上更新匯率 */
     const onlineRate = useCallback(() => {
@@ -211,6 +206,11 @@ const Setting = ({route}) => {
         });
     }, [state]);
 
+    //debug
+    // useEffect(() => {
+    //     console.log(DialogState, state)
+    // })
+
     return (
         <PaperProvider theme={theme}>
             <SafeAreaView style={{flex: 1}}>
@@ -218,8 +218,8 @@ const Setting = ({route}) => {
                     <Appbar.Content title={route.title} color={Color.white}/>
                 </Appbar.Header>
                 {/*<React.StrictMode>*/}
-                    <ScrollView>
-                        <List.Section>
+                <ScrollView>
+                    <List.Section>
                             <List.Subheader style={style.header}>匯率</List.Subheader>
                             <View style={[style.Section, {backgroundColor: BG_color}]}>
                                 <List.Item onPress={() => showDialog(UPDATE_RATE)} style={style.item}
@@ -266,20 +266,6 @@ const Setting = ({route}) => {
                             </View>
                         </List.Section>
                     </ScrollView>
-                    <Portal>
-                        <Dialog visible={DialogVisible} onDismiss={hideDialog}>
-                            <Dialog.Title>{DialogState.title}</Dialog.Title>
-                            <Dialog.Content>
-                                <TextInput placeholder={DialogState.placeholder} dense={true} value={DialogState.value} error={DialogState.error != null}
-                                           onChangeText={(text) => DialogDispatch({type: UPDATE_VALUE, payload: text})} onSubmitEditing={confirm}/>
-                                <ErrorHelperText visible={DialogState.error != null}>{DialogState.error}</ErrorHelperText>
-                            </Dialog.Content>
-                            <Dialog.Actions>
-                                <Button onPress={confirm}>確認</Button>
-                                <Button onPress={hideDialog}>取消</Button>
-                            </Dialog.Actions>
-                        </Dialog>
-                    </Portal>
                 {/*</React.StrictMode>*/}
             </SafeAreaView>
         </PaperProvider>

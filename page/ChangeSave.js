@@ -64,7 +64,14 @@ const ChangeSave = () => {
             await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
         };
 
-        prompt('存檔名稱', '請輸入名稱', [{text: '取消'}, {text: '確認', onPress: change}], {cancelable: true, defaultValue: dbname[db]});
+        prompt(
+            '存檔名稱',
+            '請輸入名稱',
+            [
+                {text: '取消'},
+                {text: '確認', onPress: change}],
+            {cancelable: true, defaultValue: dbname[db]}
+        );
     };
 
     /* 刪除 */

@@ -5,7 +5,6 @@ import {Color} from '../module/Color';
 import {Picker} from '@react-native-picker/picker';
 import {useFocusEffect} from '@react-navigation/native';
 import {DB, useSetting} from '../module/SQLite';
-import TextInput from '../module/TextInput';
 import moment from 'moment';
 import formatPrice from '../module/formatPrice';
 import HTMLtoPDF from 'react-native-html-to-pdf';
@@ -16,6 +15,7 @@ import Lottie from 'lottie-react-native';
 import Sound from 'react-native-sound';
 import RNFS, {CachesDirectoryPath, DownloadDirectoryPath} from 'react-native-fs';
 import FileViewer from 'react-native-file-viewer';
+import prompt from 'react-native-prompt-android';
 
 /* Done sound */
 const sound = new Sound('done.mp3', Sound.MAIN_BUNDLE, (error) => {
@@ -40,10 +40,9 @@ const Export = ({route}) => {
     const [month, setMonth] = useState(''); //選擇月份
     const [YearOpt, setYearOpt] = useState([]); //年份選項
     const [MonthOpt, setMonthOpt] = useState([]); //月份選項
-    const [DialogVisible, setDialogVisible] = useState(false); //致... 公司名稱
     const [okDialogVisible, setOkDialogVisible] = useState(false); //成功動畫
     const choseType = useRef(null); //匯出類型
-    const [toCompany, setToCompany] = useState(null); //致... 公司名稱
+    const toCompany = useRef(null);
 
     /* 取得 致... 公司名稱 */
     useEffect(() => {
@@ -56,22 +55,9 @@ const Export = ({route}) => {
         };
 
         get_toCompanyName().then((toCompanyName) => {
-            if(toCompanyName != null) setToCompany(toCompanyName);
+            if(toCompanyName != null) toCompany.current = toCompanyName;
         });
     }, []);
-
-    /* 儲存 致... 公司名稱 */
-    useEffect(() => {
-        const store_toCompanyName = async() => {
-            try{
-                await AsyncStorage.setItem('toCompanyName', toCompany);
-            }catch(e){
-                console.log('Save Daft error: ', e);
-            }
-        };
-
-        if(toCompany != null) store_toCompanyName().then(() => null);
-    }, [toCompany]);
 
     /* 取得有資料的年份 */
     useFocusEffect(useCallback(() => {
@@ -128,105 +114,122 @@ const Export = ({route}) => {
 
     /* 彈出窗口 */
     const Export = useCallback((type) => {
-        setDialogVisible(true);
-        choseType.current = type;
-    }, []);
+        /* 確認匯出 */
+        const output = () => {
+            if(month === '' || year === ''){
+                ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
+                return;
+            }
 
-    /* 隱藏彈出窗口 */
-    const hideDialog = useCallback(() => {
-        setDialogVisible(false);
-    }, []);
+            getRecordHTML(remark, month, year, setting['Rate'], (html, total) => {
+                const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany.current + ')';
 
-    /* 確認匯出 */
-    const confirm = useCallback(() => {
-        if(month === '' || year === ''){
-            ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
-            return;
-        }
+                /* 生成pdf */
+                const printPDF = async() => {
+                    return await HTMLtoPDF.convert({
+                        html: HTMLData(month + '月 ' + year, total, html, toCompany.current, setting),
+                        fileName: fileName,
+                        directory: 'Documents',
+                        width: 842,
+                        height: 595
+                    });
+                };
 
-        getRecordHTML(remark, month, year, setting['Rate'], (html, total) => {
-            hideDialog();
-            const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany + ')';
+                setOkDialogVisible(true); //成功動畫 start
+                sound.play(); // Play the sound with an onEnd callback
 
-            /* 生成pdf */
-            const printPDF = async() => {
-                return await HTMLtoPDF.convert({
-                    html: HTMLData(month + '月 ' + year, total, html, 'abc', setting),
-                    fileName: fileName,
-                    directory: 'Documents',
-                    width: 842,
-                    height: 595
-                });
-            };
+                printPDF().then(results => {
+                    setTimeout(() => {
+                        setOkDialogVisible(false); //成功動畫 end
 
-            setOkDialogVisible(true); //成功動畫 start
-            sound.play(); // Play the sound with an onEnd callback
+                        if(choseType.current === 1){
+                            //以電郵傳送
+                            let savePath = CachesDirectoryPath + '/' + fileName + '.pdf';
 
-            printPDF().then(results => {
-                setTimeout(() => {
-                    setOkDialogVisible(false); //成功動畫 end
+                            RNFS.copyFile(results.filePath, savePath).then(() => { //先複製度暫存目錄
+                                RNFS.unlink(results.filePath).then(() => null); //delete tmp file
 
-                    if(choseType.current === 1){
-                        //以電郵傳送
-                        let savePath = CachesDirectoryPath + '/' + fileName + '.pdf';
+                                Mailer.mail({
+                                    subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                                    recipients: [setting['Email-to']],
+                                    body: `致 ${toCompany.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                    attachments: [{
+                                        path: savePath, // The absolute path of the file from which to read data.
+                                        type: 'pdf' // Mime Type: jpg, png, doc, ppt, html, pdf, csv
+                                    }]
+                                }, (error) => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT));
+                            });
 
-                        RNFS.copyFile(results.filePath, savePath).then(() => { //先複製度暫存目錄
-                            RNFS.unlink(results.filePath).then(() => null); //delete tmp file
+                        }else if(choseType.current === 2){
+                            //匯出儲存
+                            let savePath = DownloadDirectoryPath + '/' + fileName + '.pdf';
 
-                            Mailer.mail({
-                                subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
-                                recipients: [setting['Email-to']],
-                                body: `致 ${toCompany}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                                attachments: [{
-                                    path: savePath, // The absolute path of the file from which to read data.
-                                    type: 'pdf' // Mime Type: jpg, png, doc, ppt, html, pdf, csv
-                                }]
-                            }, (error) => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT));
-                        });
+                            /* 複製到下載資料夾 */
+                            const saveFile = async() => {
+                                try{
+                                    let is_exists = await RNFS.exists(savePath);
+                                    let verser = 0;
+                                    if(is_exists){
+                                        //已存在檔案
+                                        do{
+                                            verser++;
+                                            savePath = DownloadDirectoryPath + '/' + fileName + ' (' + verser + ') ' + '.pdf';
+                                            is_exists = await RNFS.exists(savePath);
+                                        }while(is_exists);
+                                    }
 
-                    }else if(choseType.current === 2){
-                        //匯出儲存
-                        let savePath = DownloadDirectoryPath + '/' + fileName + '.pdf';
-
-                        /* 複製到下載資料夾 */
-                        const saveFile = async() => {
-                            try{
-                                let is_exists = await RNFS.exists(savePath);
-                                let verser = 0;
-                                if(is_exists){
-                                    //已存在檔案
-                                    do{
-                                        verser++;
-                                        savePath = DownloadDirectoryPath + '/' + fileName + ' (' + verser + ') ' + '.pdf';
-                                        is_exists = await RNFS.exists(savePath);
-                                    }while(is_exists);
+                                    await RNFS.copyFile(results.filePath, savePath); //copy
+                                    return true;
+                                }catch(e){
+                                    return false;
                                 }
+                            };
 
-                                await RNFS.copyFile(results.filePath, savePath); //copy
-                                return true;
-                            }catch(e){
-                                return false;
-                            }
-                        };
+                            saveFile().then((e) => {
+                                if(e) FileViewer.open(savePath, {showOpenWithDialog: true})
+                                                .then(() => ToastAndroid.show('已儲存在下載資料夾中', ToastAndroid.SHORT));
+                                else ToastAndroid.show('出現錯誤', ToastAndroid.SHORT);
 
-                        saveFile().then((e) => {
-                            if(e) FileViewer.open(savePath, {showOpenWithDialog: true})
-                                            .then(() => ToastAndroid.show('已儲存在下載資料夾中', ToastAndroid.SHORT));
-                            else ToastAndroid.show('出現錯誤', ToastAndroid.SHORT);
+                                RNFS.unlink(results.filePath).then(() => null); //delete tmp file
+                            });
+                        }else if(choseType.current === 3){
+                            //打印
+                            RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() =>
+                                RNFS.unlink(results.filePath).then(() => null) //delete tmp file
+                            );
+                        }
 
-                            RNFS.unlink(results.filePath).then(() => null); //delete tmp file
-                        });
-                    }else if(choseType.current === 3){
-                        //打印
-                        RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() =>
-                            RNFS.unlink(results.filePath).then(() => null) //delete tmp file
-                        );
-                    }
-
-                }, 1000);
+                    }, 1000);
+                });
             });
-        });
-    }, [remark, month, year, setting, toCompany]);
+        };
+
+        /* save toCompanyName */
+        const store_toCompanyName = async(text) => {
+            try{
+                toCompany.current = text;
+                await AsyncStorage.setItem('toCompanyName', text);
+                output();
+            }catch(e){
+                console.log('Save Daft error: ', e);
+            }
+        };
+
+        choseType.current = type;
+        prompt(
+            '存檔名稱',
+            '請輸入名稱',
+            [
+                {text: '取消'},
+                {text: '確認', onPress: store_toCompanyName}],
+            {cancelable: true, defaultValue: toCompany.current}
+        );
+    }, [month, year, remark, setting]);
+
+    //debug
+    // useEffect(() => {
+    //     console.log(month, year)
+    // })
 
     return (
         <PaperProvider theme={theme}>
@@ -235,10 +238,10 @@ const Export = ({route}) => {
                     <Appbar.Content title={route.title} color={Color.white}/>
                 </Appbar.Header>
                 {/*<React.StrictMode>*/}
-                    <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
-                        <Title>選擇匯出月份</Title>
+                <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
+                    <Title>選擇匯出月份</Title>
                         <View style={{flexDirection: 'row'}}>
-                            <Picker style={{flex: 1}} selectedValue={year} mode={'dropdown'}
+                            <Picker style={{flex: 1}} selectedValue={year}
                                     onValueChange={(itemValue) => setYear(itemValue)}
                                     dropdownIconColor={theme.colors.text} prompt={'選擇年份'}>
                                 {YearOpt}
@@ -250,7 +253,7 @@ const Export = ({route}) => {
                             </Picker>
                         </View>
                         <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
-                            <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => Export(1)} style={style.button}>以電郵傳送</Button>
+                            <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => Export(1)} style={style.button}>電郵傳送</Button>
                             <Button icon={'export'} mode={'outlined'} onPress={() => Export(2)} style={style.button}>匯出儲存</Button>
                             <Button icon={'printer'} mode={'contained'} onPress={() => Export(3)} style={{flex: 1}}>打印</Button>
                         </View>
@@ -260,16 +263,6 @@ const Export = ({route}) => {
                         </View>
                     </View>
                     <Portal>
-                        <Dialog visible={DialogVisible} dismissable={false}>
-                            <Dialog.Title>致...</Dialog.Title>
-                            <Dialog.Content>
-                                <TextInput placeholder={'請輸入公司名稱'} dense={true} value={toCompany} onChangeText={(text) => setToCompany(text)}/>
-                            </Dialog.Content>
-                            <Dialog.Actions>
-                                <Button onPress={confirm}>確認</Button>
-                                <Button onPress={hideDialog}>取消</Button>
-                            </Dialog.Actions>
-                        </Dialog>
                         <Dialog visible={okDialogVisible} dismissable={false}>
                             <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                                 <Lottie source={require('../resource/89101-confirmed-tick.json')} autoPlay={true} loop={false} style={{

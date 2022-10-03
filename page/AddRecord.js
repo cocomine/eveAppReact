@@ -222,6 +222,7 @@ const AddRecord = ({navigation, route}) => {
             console.log('傳輸錯誤: ' + error.message); //debug
         }, function(){
             needSaveDraft.current = false;
+            AsyncStorage.removeItem('Draft').then();
             navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
         });
     }, [state]);
