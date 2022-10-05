@@ -214,11 +214,11 @@ const Home = () => {
     const hideMonthSelect = useCallback(() => setMonthSelect(false), []);
 
     return (
-        <SafeAreaView style={{flex: 1, position: 'relative'}}>
+        <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
             <Portal.Host>
                 {/* 頂部toolbar */}
-                <View style={{zIndex: 7, elevation: 7}}>
+                <View style={{zIndex: 2, elevation: 2}}>
                     <Toolbar>
                         <ToolBarView>
                             <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth}/>
@@ -265,7 +265,8 @@ const Home = () => {
                         </View>
                     </Toolbar>
                 </View>
-                {monthSelect ? <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={style.cover}/></TouchableWithoutFeedback> : null}
+                <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={[style.cover,
+                    {display: monthSelect ? undefined : 'none'}]}/></TouchableWithoutFeedback>
 
                 {/* 增加紀錄 */}
                 <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddRecord')}>
@@ -278,7 +279,7 @@ const Home = () => {
                     <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18}/>
                 </TouchableOpacity>
 
-                <View>
+                <View style={{flex: 1}}>
                     {/* 內容 */}
                     <FlatList
                         data={Data} ref={listRef}
@@ -607,8 +608,8 @@ const style = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        elevation: 6,
-        zIndex: 6
+        elevation: 1,
+        zIndex: 1
     },
     row: {
         justifyContent: 'space-between',

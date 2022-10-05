@@ -193,7 +193,7 @@ const Note = ({navigation, route}) => {
     return (
         <SafeAreaView style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-                <View style={{zIndex: 7, elevation: 7}}>
+                <View style={{zIndex: 2, elevation: 2}}>
                     <Toolbar>
                         <Appbar.BackAction onPress={navigation.goBack} color={Color.white}/>
                         <Appbar.Content title={'備忘錄'}/>
@@ -207,7 +207,8 @@ const Note = ({navigation, route}) => {
                         <DateSelect visibility={monthSelect} value={ShowDay} onSelect={setMonth} onDismiss={hideMonthSelect}/>
                     </Toolbar>
                 </View>
-                {monthSelect ? <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={style.cover}/></TouchableWithoutFeedback> : null}
+            <TouchableWithoutFeedback onPress={hideMonthSelect}><View style={[style.cover,
+                {display: monthSelect ? undefined : 'none'}]}/></TouchableWithoutFeedback>
 
                 <TouchableOpacity style={style.addRecord} activeOpacity={0.8} onPress={() => navigation.navigate('AddNote')}>
                     <View>
@@ -215,17 +216,17 @@ const Note = ({navigation, route}) => {
                     </View>
                 </TouchableOpacity>
 
-                <View style={{paddingTop: 5}}>
-                    <FlatList
-                        data={Data} ref={listRef}
-                        onRefresh={() => null} refreshing={isRefresh}
-                        renderItem={({item}) => <NotePart data={item}/>}
-                        onScrollToIndexFailed={(info) => {
-                            setTimeout(() => {
-                                listRef.current.scrollToIndex({index: info.index});
-                            }, 500);
-                        }}
-                        ListFooterComponent={
+            <View style={{paddingTop: 5, flex: 1}}>
+                <FlatList
+                    data={Data} ref={listRef}
+                    onRefresh={() => null} refreshing={isRefresh}
+                    renderItem={({item}) => <NotePart data={item}/>}
+                    onScrollToIndexFailed={(info) => {
+                        setTimeout(() => {
+                            listRef.current.scrollToIndex({index: info.index});
+                        }, 500);
+                    }}
+                    ListFooterComponent={
                             <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
                                 <SVGCargo height="60" width="180"/>
                                 <Text>已經到底喇~~ （￣︶￣）↗ </Text>
@@ -337,8 +338,8 @@ const style = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 6,
-        elevation: 6
+        zIndex: 1,
+        elevation: 1
 
     },
     addRecord: {
