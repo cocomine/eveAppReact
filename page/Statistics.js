@@ -1,13 +1,17 @@
 import React, {useCallback, useState} from 'react';
 import {IconButton, Menu, Provider as PaperProvider, Text, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
-import {SafeAreaView, StyleSheet, TouchableWithoutFeedback, View} from 'react-native';
+import {Dimensions, SafeAreaView, StyleSheet, TouchableWithoutFeedback, View} from 'react-native';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import moment from 'moment';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSetting} from '../module/SQLite';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
+import {TypeStatistics} from './TypeStatistics';
+import {IncomeStatistics} from './IncomeStatistics';
+
+const Tab = createMaterialTopTabNavigator();
 
 /* 顯示模式List */
 const showModeList = [
@@ -17,8 +21,6 @@ const showModeList = [
     {label: '年', value: 3},
     {label: '自訂', value: 4}
 ];
-
-const Tab = createMaterialTopTabNavigator();
 
 const Statistics = ({route}) => {
     let theme = useTheme();
@@ -141,29 +143,26 @@ const Statistics = ({route}) => {
                         </Menu>
                     </ToolBarView>
                 </Toolbar>
-                <Tab.Navigator>
-                    <Tab.Screen name="TypeStatistics" component={TypeStatistics} options={{title: '尺寸'}}/>
-                    <Tab.Screen name="IncomeStatistics" component={IncomeStatistics} options={{title: '收入'}}/>
+                <Tab.Navigator screenOptions={{
+                    tabBarStyle: {backgroundColor: route.color},
+                    tabBarLabelStyle: {color: Color.white},
+                    tabBarIndicatorStyle: {backgroundColor: Color.white},
+                    tabBarPressColor: Color.white
+                }}
+                               initialLayout={{width: Dimensions.get('window').width}}>
+                    <Tab.Screen name="TypeStatistics" component={TypeStatistics} options={{title: '尺寸'}} initialParams={{
+                        ShowDay: ShowDay.toISOString(),
+                        ShowDayEnd: ShowDayEnd.toISOString(),
+                        setting
+                    }}/>
+                    <Tab.Screen name="IncomeStatistics" component={IncomeStatistics} options={{title: '收入'}} initialParams={{
+                        ShowDay: ShowDay.toISOString(),
+                        ShowDayEnd: ShowDayEnd.toISOString(),
+                        setting
+                    }}/>
                 </Tab.Navigator>
             </SafeAreaView>
         </PaperProvider>
-    );
-};
-
-const TypeStatistics = ({navigation, route}) => {
-
-    return (
-        <View style={{flex: 1}}>
-
-        </View>
-    );
-};
-
-const IncomeStatistics = ({navigation, route}) => {
-    return (
-        <View style={{flex: 1}}>
-
-        </View>
     );
 };
 

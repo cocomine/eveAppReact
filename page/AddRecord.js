@@ -623,7 +623,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
             }]}>
                 <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
                     {autoComplete.map((data, index) =>
-                        <TouchableWithoutFeedback onPress={() => setInputText(data)}>
+                        <TouchableWithoutFeedback onPress={() => onChange(data)}>
                             <View key={index} style={{flex: 1, paddingVertical: 8}}>
                                 <ListText item={data}/>
                             </View>
