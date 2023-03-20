@@ -7,14 +7,14 @@ import {
     DarkTheme as NavigationDarkTheme,
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
-    useFocusEffect
+    useFocusEffect,
 } from '@react-navigation/native';
 import {
     Appbar,
     BottomNavigation,
     MD2DarkTheme as PaperDarkTheme,
     MD2LightTheme as PaperDefaultTheme,
-    Provider as PaperProvider
+    Provider as PaperProvider,
 } from 'react-native-paper';
 import merge from 'deepmerge';
 import {Home} from './page/Home';
@@ -38,7 +38,7 @@ let CombinedDarkTheme = merge(PaperDarkTheme, NavigationDarkTheme);
 CombinedDarkTheme = {...CombinedDarkTheme, colors: {...CombinedDarkTheme.colors, background: Color.darkColor}};
 
 /* 進入介面 */
-function App(){
+function App() {
     /* DarkMode */
     const isDarkMode = useColorScheme() === 'dark';
     let theme = isDarkMode ? CombinedDarkTheme : CombinedDefaultTheme;
@@ -46,15 +46,15 @@ function App(){
         ...theme,
         colors: {
             ...theme.colors,
-            primary: Color.primaryColor
-        }
+            primary: Color.primaryColor,
+        },
     };
 
-    function CustomNavigationBar({navigation, back, options}){
+    function CustomNavigationBar({navigation, back, options}) {
         return (
             <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
-                {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack}/>}
-                <Appbar.Content title={options.title}/>
+                {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack} />}
+                <Appbar.Content title={options.title} />
             </Appbar.Header>
         );
     }
@@ -63,7 +63,9 @@ function App(){
         <GestureHandlerRootView style={{flex: 1}}>
             <PaperProvider theme={theme}>
                 <NavigationContainer theme={theme}>
-                    <Stack.Navigator initialRouteName={'StartUp'} screenOptions={{header: (props) => <CustomNavigationBar {...props} />}}>
+                    <Stack.Navigator
+                        initialRouteName={'StartUp'}
+                        screenOptions={{header: props => <CustomNavigationBar {...props} />}}>
                         <Stack.Group>
                             <Stack.Screen //主要介面
                                 name="Main"
@@ -132,27 +134,29 @@ const MainScreen = ({navigation}) => {
         {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
         {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
         {key: 'Statistics', title: '統計', focusedIcon: 'chart-bar', color: Color.success},
-        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo}
+        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo},
     ]);
 
     const renderScene = BottomNavigation.SceneMap({
         Home: Home,
         Export: Export,
         Statistics: Statistics,
-        Setting: Setting
+        Setting: Setting,
     });
 
-    useFocusEffect(useCallback(() => {
-        StatusBar.setBarStyle('light-content');
-        StatusBar.setBackgroundColor(routes[index].color, true);
-    }, [index]));
+    useFocusEffect(
+        useCallback(() => {
+            StatusBar.setBarStyle('light-content');
+            StatusBar.setBackgroundColor(routes[index].color, true);
+        }, [index, routes]),
+    );
 
     useEffect(() => {
         StatusBar.setBarStyle('light-content');
         StatusBar.setBackgroundColor(routes[index].color, true);
-    }, [index]);
+    }, [index, routes]);
 
-    const indexChange = (index) => {
+    const indexChange = index => {
         setIndex(index);
     };
 
