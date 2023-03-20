@@ -1,6 +1,16 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {SafeAreaView, StyleSheet, ToastAndroid, View} from 'react-native';
-import {Appbar, Button, Checkbox, Dialog, Portal, Provider as PaperProvider, Text, Title, useTheme} from 'react-native-paper';
+import {
+    Appbar,
+    Button,
+    Checkbox,
+    Dialog,
+    Portal,
+    Provider as PaperProvider,
+    Text,
+    Title,
+    useTheme,
+} from 'react-native-paper';
 import {Color} from '../module/Color';
 import {Picker} from '@react-native-picker/picker';
 import {useFocusEffect} from '@react-navigation/native';
@@ -18,8 +28,8 @@ import FileViewer from 'react-native-file-viewer';
 import prompt from 'react-native-prompt-android';
 
 /* Done sound */
-const sound = new Sound('done.mp3', Sound.MAIN_BUNDLE, (error) => {
-    if(error){
+const sound = new Sound('done.mp3', Sound.MAIN_BUNDLE, error => {
+    if (error) {
         console.log('failed to load the sound', error);
     }
 });
@@ -30,8 +40,8 @@ const Export = ({route}) => {
         ...theme,
         colors: {
             ...theme.colors,
-            primary: route.color
-        }
+            primary: route.color,
+        },
     };
 
     const [setting] = useSetting();
@@ -46,185 +56,229 @@ const Export = ({route}) => {
 
     /* 取得 致... 公司名稱 */
     useEffect(() => {
-        const get_toCompanyName = async() => {
-            try{
+        const get_toCompanyName = async () => {
+            try {
                 return await AsyncStorage.getItem('toCompanyName');
-            }catch(e){
+            } catch (e) {
                 console.log('Read toCompanyName error: ', e);
             }
         };
 
-        get_toCompanyName().then((toCompanyName) => {
-            if(toCompanyName != null) toCompany.current = toCompanyName;
+        get_toCompanyName().then(toCompanyName => {
+            if (toCompanyName != null) {
+                toCompany.current = toCompanyName;
+            }
         });
     }, []);
 
     /* 取得有資料的年份 */
-    useFocusEffect(useCallback(() => {
-        DB.transaction(function(tr){
-            tr.executeSql('SELECT DISTINCT STRFTIME(\'%Y\', DateTime) AS Year FROM Record ORDER BY Year DESC', [], function(tx, rs){
-                let tmp = [];
-                for(let i = 0 ; i < rs.rows.length ; i++){
-                    const row = rs.rows.item(i);
-                    tmp.push(<Picker.Item label={row.Year + '年'} value={row.Year} color={theme.colors.text}/>);
-                }
+    useFocusEffect(
+        useCallback(() => {
+            DB.transaction(
+                function (tr) {
+                    tr.executeSql(
+                        "SELECT DISTINCT STRFTIME('%Y', DateTime) AS Year FROM Record ORDER BY Year DESC",
+                        [],
+                        function (tx, rs) {
+                            let tmp = [];
+                            for (let i = 0; i < rs.rows.length; i++) {
+                                const row = rs.rows.item(i);
+                                tmp.push(
+                                    <Picker.Item label={row.Year + '年'} value={row.Year} color={theme.colors.text} />,
+                                );
+                            }
 
-                //填充選項
-                setYearOpt(tmp);
-                setYear(rs.rows.item(0).Year);
-                getMonth(rs.rows.item(0).Year);
-            }, function(tx, error){
-                console.log('取得資料錯誤: ' + error.message);
-            });
-        }, function(error){
-            console.log('傳輸錯誤: ' + error.message);
-        }, function(){
-            console.log('已取得有資料的年份');
-        });
-    }, []));
+                            //填充選項
+                            setYearOpt(tmp);
+                            setYear(rs.rows.item(0).Year);
+                            getMonth(rs.rows.item(0).Year);
+                        },
+                        function (tx, error) {
+                            console.log('取得資料錯誤: ' + error.message);
+                        },
+                    );
+                },
+                function (error) {
+                    console.log('傳輸錯誤: ' + error.message);
+                },
+                function () {
+                    console.log('已取得有資料的年份');
+                },
+            );
+        }, []),
+    );
 
     /* 取得有資料的月份 */
-    const getMonth = useCallback((year) => {
-        DB.transaction(function(tr){
-            tr.executeSql(
-                'SELECT DISTINCT STRFTIME(\'%m\', DateTime) AS Month FROM Record WHERE STRFTIME(\'%Y\', DateTime) = ? ORDER BY Month DESC', [year],
-                function(tx, rs){
-                    let tmp = [];
-                    for(let i = 0 ; i < rs.rows.length ; i++){
-                        const row = rs.rows.item(i);
-                        tmp.push(<Picker.Item label={row.Month + '月'} value={row.Month} color={theme.colors.text} key={i}/>);
-                    }
+    const getMonth = useCallback(year => {
+        DB.transaction(
+            function (tr) {
+                tr.executeSql(
+                    "SELECT DISTINCT STRFTIME('%m', DateTime) AS Month FROM Record WHERE STRFTIME('%Y', DateTime) = ? ORDER BY Month DESC",
+                    [year],
+                    function (tx, rs) {
+                        let tmp = [];
+                        for (let i = 0; i < rs.rows.length; i++) {
+                            const row = rs.rows.item(i);
+                            tmp.push(
+                                <Picker.Item
+                                    label={row.Month + '月'}
+                                    value={row.Month}
+                                    color={theme.colors.text}
+                                    key={i}
+                                />,
+                            );
+                        }
 
-                    //填充選項
-                    setMonthOpt(tmp);
-                    setMonth(rs.rows.item(0).Month);
-                }, function(tx, error){
-                    console.log('取得資料錯誤: ' + error.message);
-                }
-            );
-        }, function(error){
-            console.log('傳輸錯誤: ' + error.message);
-        }, function(){
-            console.log('已取得有資料的月份');
-        });
+                        //填充選項
+                        setMonthOpt(tmp);
+                        setMonth(rs.rows.item(0).Month);
+                    },
+                    function (tx, error) {
+                        console.log('取得資料錯誤: ' + error.message);
+                    },
+                );
+            },
+            function (error) {
+                console.log('傳輸錯誤: ' + error.message);
+            },
+            function () {
+                console.log('已取得有資料的月份');
+            },
+        );
     }, []);
 
     /* 更新月份選項 */
     useEffect(() => getMonth(year), [year]);
 
     /* 彈出窗口 */
-    const Export = useCallback((type) => {
-        /* 確認匯出 */
-        const output = () => {
-            if(month === '' || year === ''){
-                ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
-                return;
-            }
+    const Export = useCallback(
+        type => {
+            /* 確認匯出 */
+            const output = () => {
+                if (month === '' || year === '') {
+                    ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
+                    return;
+                }
 
-            getRecordHTML(remark, month, year, setting['Rate'], (html, total) => {
-                const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany.current + ')';
+                getRecordHTML(remark, month, year, setting.Rate, (html, total) => {
+                    const fileName =
+                        setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany.current + ')';
 
-                /* 生成pdf */
-                const printPDF = async() => {
-                    return await HTMLtoPDF.convert({
-                        html: HTMLData(month + '月 ' + year, total, html, toCompany.current, setting),
-                        fileName: fileName,
-                        directory: 'Documents',
-                        width: 842,
-                        height: 595
-                    });
-                };
+                    /* 生成pdf */
+                    const printPDF = async () => {
+                        return await HTMLtoPDF.convert({
+                            html: HTMLData(month + '月 ' + year, total, html, toCompany.current, setting),
+                            fileName: fileName,
+                            directory: 'Documents',
+                            width: 842,
+                            height: 595,
+                        });
+                    };
 
-                setOkDialogVisible(true); //成功動畫 start
-                sound.play(); // Play the sound with an onEnd callback
+                    setOkDialogVisible(true); //成功動畫 start
+                    sound.play(); // Play the sound with an onEnd callback
 
-                printPDF().then(results => {
-                    setTimeout(() => {
-                        setOkDialogVisible(false); //成功動畫 end
+                    printPDF().then(results => {
+                        setTimeout(() => {
+                            setOkDialogVisible(false); //成功動畫 end
 
-                        if(choseType.current === 1){
-                            //以電郵傳送
-                            let savePath = CachesDirectoryPath + '/' + fileName + '.pdf';
+                            if (choseType.current === 1) {
+                                //以電郵傳送
+                                let savePath = CachesDirectoryPath + '/' + fileName + '.pdf';
 
-                            RNFS.copyFile(results.filePath, savePath).then(() => { //先複製度暫存目錄
-                                RNFS.unlink(results.filePath).then(() => null); //delete tmp file
+                                RNFS.copyFile(results.filePath, savePath).then(() => {
+                                    //先複製度暫存目錄
+                                    RNFS.unlink(results.filePath).then(() => null); //delete tmp file
 
-                                Mailer.mail({
-                                    subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
-                                    recipients: [setting['Email-to']],
-                                    body: `致 ${toCompany.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                                    attachments: [{
-                                        path: savePath, // The absolute path of the file from which to read data.
-                                        type: 'pdf' // Mime Type: jpg, png, doc, ppt, html, pdf, csv
-                                    }]
-                                }, (error) => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT));
-                            });
+                                    Mailer.mail(
+                                        {
+                                            subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                                            recipients: [setting['Email-to']],
+                                            body: `致 ${toCompany.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                            attachments: [
+                                                {
+                                                    path: savePath, // The absolute path of the file from which to read data.
+                                                    type: 'pdf', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
+                                                },
+                                            ],
+                                        },
+                                        error => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT),
+                                    );
+                                });
+                            } else if (choseType.current === 2) {
+                                //匯出儲存
+                                let savePath = DownloadDirectoryPath + '/' + fileName + '.pdf';
 
-                        }else if(choseType.current === 2){
-                            //匯出儲存
-                            let savePath = DownloadDirectoryPath + '/' + fileName + '.pdf';
+                                /* 複製到下載資料夾 */
+                                const saveFile = async () => {
+                                    try {
+                                        let is_exists = await RNFS.exists(savePath);
+                                        let verser = 0;
+                                        if (is_exists) {
+                                            //已存在檔案
+                                            do {
+                                                verser++;
+                                                savePath =
+                                                    DownloadDirectoryPath +
+                                                    '/' +
+                                                    fileName +
+                                                    ' (' +
+                                                    verser +
+                                                    ') ' +
+                                                    '.pdf';
+                                                is_exists = await RNFS.exists(savePath);
+                                            } while (is_exists);
+                                        }
 
-                            /* 複製到下載資料夾 */
-                            const saveFile = async() => {
-                                try{
-                                    let is_exists = await RNFS.exists(savePath);
-                                    let verser = 0;
-                                    if(is_exists){
-                                        //已存在檔案
-                                        do{
-                                            verser++;
-                                            savePath = DownloadDirectoryPath + '/' + fileName + ' (' + verser + ') ' + '.pdf';
-                                            is_exists = await RNFS.exists(savePath);
-                                        }while(is_exists);
+                                        await RNFS.copyFile(results.filePath, savePath); //copy
+                                        return true;
+                                    } catch (e) {
+                                        console.log(e);
+                                        return false;
+                                    }
+                                };
+
+                                saveFile().then(e => {
+                                    if (e) {
+                                        FileViewer.open(savePath, {showOpenWithDialog: true}).then(() =>
+                                            ToastAndroid.show('已儲存在下載資料夾中', ToastAndroid.SHORT),
+                                        );
+                                    } else {
+                                        ToastAndroid.show('出現錯誤', ToastAndroid.SHORT);
                                     }
 
-                                    await RNFS.copyFile(results.filePath, savePath); //copy
-                                    return true;
-                                }catch(e){
-                                    return false;
-                                }
-                            };
-
-                            saveFile().then((e) => {
-                                if(e) FileViewer.open(savePath, {showOpenWithDialog: true})
-                                                .then(() => ToastAndroid.show('已儲存在下載資料夾中', ToastAndroid.SHORT));
-                                else ToastAndroid.show('出現錯誤', ToastAndroid.SHORT);
-
-                                RNFS.unlink(results.filePath).then(() => null); //delete tmp file
-                            });
-                        }else if(choseType.current === 3){
-                            //打印
-                            RNPrint.print({filePath: results.filePath, isLandscape: true}).then(() =>
-                                RNFS.unlink(results.filePath).then(() => null) //delete tmp file
-                            );
-                        }
-
-                    }, 1000);
+                                    RNFS.unlink(results.filePath).then(() => null); //delete tmp file
+                                });
+                            } else if (choseType.current === 3) {
+                                //打印
+                                RNPrint.print({filePath: results.filePath, isLandscape: true}).then(
+                                    () => RNFS.unlink(results.filePath).then(() => null), //delete tmp file
+                                );
+                            }
+                        }, 1000);
+                    });
                 });
+            };
+
+            /* save toCompanyName */
+            const store_toCompanyName = async text => {
+                try {
+                    toCompany.current = text;
+                    await AsyncStorage.setItem('toCompanyName', text);
+                    output();
+                } catch (e) {
+                    console.log('Save Daft error: ', e);
+                }
+            };
+
+            choseType.current = type;
+            prompt('存檔名稱', '請輸入名稱', [{text: '取消'}, {text: '確認', onPress: store_toCompanyName}], {
+                cancelable: true,
+                defaultValue: toCompany.current,
             });
-        };
-
-        /* save toCompanyName */
-        const store_toCompanyName = async(text) => {
-            try{
-                toCompany.current = text;
-                await AsyncStorage.setItem('toCompanyName', text);
-                output();
-            }catch(e){
-                console.log('Save Daft error: ', e);
-            }
-        };
-
-        choseType.current = type;
-        prompt(
-            '存檔名稱',
-            '請輸入名稱',
-            [
-                {text: '取消'},
-                {text: '確認', onPress: store_toCompanyName}],
-            {cancelable: true, defaultValue: toCompany.current}
-        );
-    }, [month, year, remark, setting]);
+        },
+        [month, year, remark, setting],
+    );
 
     //debug
     // useEffect(() => {
@@ -235,43 +289,70 @@ const Export = ({route}) => {
         <PaperProvider theme={theme}>
             <SafeAreaView style={{flex: 1}}>
                 <Appbar.Header style={{backgroundColor: route.color}}>
-                    <Appbar.Content title={route.title} color={Color.white}/>
+                    <Appbar.Content title={route.title} color={Color.white} />
                 </Appbar.Header>
                 {/*<React.StrictMode>*/}
                 <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
                     <Title>選擇匯出月份</Title>
-                        <View style={{flexDirection: 'row'}}>
-                            <Picker style={{flex: 1}} selectedValue={year}
-                                    onValueChange={(itemValue) => setYear(itemValue)}
-                                    dropdownIconColor={theme.colors.text} prompt={'選擇年份'}>
-                                {YearOpt}
-                            </Picker>
-                            <Picker style={{flex: 1}} selectedValue={month}
-                                    onValueChange={(itemValue) => setMonth(itemValue)}
-                                    dropdownIconColor={theme.colors.text} prompt={'選擇月份'}>
-                                {MonthOpt}
-                            </Picker>
-                        </View>
-                        <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
-                            <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => Export(1)} style={style.button}>電郵傳送</Button>
-                            <Button icon={'export'} mode={'outlined'} onPress={() => Export(2)} style={style.button}>匯出儲存</Button>
-                            <Button icon={'printer'} mode={'contained'} onPress={() => Export(3)} style={{flex: 1}}>打印</Button>
-                        </View>
-                        <View style={{flexDirection: 'row', alignItems: 'center', width: '100%'}}>
-                            <Checkbox status={remark ? 'checked' : 'unchecked'} onPress={() => {setRemark(!remark);}} color={theme.colors.primary}/>
-                            <Text>包含備註</Text>
-                        </View>
+                    <View style={{flexDirection: 'row'}}>
+                        <Picker
+                            style={{flex: 1}}
+                            selectedValue={year}
+                            onValueChange={itemValue => setYear(itemValue)}
+                            dropdownIconColor={theme.colors.text}
+                            prompt={'選擇年份'}>
+                            {YearOpt}
+                        </Picker>
+                        <Picker
+                            style={{flex: 1}}
+                            selectedValue={month}
+                            onValueChange={itemValue => setMonth(itemValue)}
+                            dropdownIconColor={theme.colors.text}
+                            prompt={'選擇月份'}>
+                            {MonthOpt}
+                        </Picker>
                     </View>
-                    <Portal>
-                        <Dialog visible={okDialogVisible} dismissable={false}>
-                            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                                <Lottie source={require('../resource/89101-confirmed-tick.json')} autoPlay={true} loop={false} style={{
+                    <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
+                        <Button
+                            icon={'email-send-outline'}
+                            mode={'outlined'}
+                            onPress={() => Export(1)}
+                            style={style.button}>
+                            電郵傳送
+                        </Button>
+                        <Button icon={'export'} mode={'outlined'} onPress={() => Export(2)} style={style.button}>
+                            匯出儲存
+                        </Button>
+                        <Button icon={'printer'} mode={'contained'} onPress={() => Export(3)} style={{flex: 1}}>
+                            打印
+                        </Button>
+                    </View>
+                    <View style={{flexDirection: 'row', alignItems: 'center', width: '100%'}}>
+                        <Checkbox
+                            status={remark ? 'checked' : 'unchecked'}
+                            onPress={() => {
+                                setRemark(!remark);
+                            }}
+                            color={theme.colors.primary}
+                        />
+                        <Text>包含備註</Text>
+                    </View>
+                </View>
+                <Portal>
+                    <Dialog visible={okDialogVisible} dismissable={false}>
+                        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                            <Lottie
+                                source={require('../resource/89101-confirmed-tick.json')}
+                                autoPlay={true}
+                                loop={false}
+                                style={{
                                     width: 200,
-                                    height: 200
-                                }}/>
-                            </View>
-                        </Dialog>
-                    </Portal>
+                                    height: 200,
+                                }}
+                            />
+                        </View>
+                    </Dialog>
+                </Portal>
                 {/*</React.StrictMode>*/}
             </SafeAreaView>
         </PaperProvider>
@@ -281,13 +362,13 @@ const Export = ({route}) => {
 const style = StyleSheet.create({
     button: {
         flex: 1,
-        marginRight: 5
-    }
+        marginRight: 5,
+    },
 });
 export {Export};
 
 /* 套入html模板 */
-function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
+function HTMLData(Date, Total, HTML_body, toCompanyName, setting) {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -323,16 +404,16 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
             text-align: center
         }
         #head{
-            display: flex; 
-            background-color: #a7d086; 
+            display: flex;
+            background-color: #a7d086;
             align-content: center
         }
         #head > div{
             font-size: 1.2em
         }
         #s{
-            border-left: 1px solid lightgray; 
-            border-right: 1px solid lightgray; 
+            border-left: 1px solid lightgray;
+            border-right: 1px solid lightgray;
             text-align: center;
         }
     </style>
@@ -374,7 +455,7 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
     </tbody>
     <tfoot>
     <tr>
-        <td colspan="5">匯率: 1 港幣 = ${setting['Rate']} 人民幣</td>
+        <td colspan="5">匯率: 1 港幣 = ${setting.Rate} 人民幣</td>
         <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${Total}</td>
     </tr>
     </tfoot>
@@ -388,67 +469,78 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting){
 }
 
 /* 數字0替換為空白 */
-function blankNum(num, sign){
-    if(num === 0){
+function blankNum(num, sign) {
+    if (num === 0) {
         return '';
-    }else{
+    } else {
         return sign + ' ' + formatPrice(num.toFixed(2));
     }
 }
 
 /* 取得當月紀錄*/
-function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, rate, output, error){
-    DB.transaction(function(tr){
-        console.log('顯示: ', outputDateMonth, outputDateYear);
-        tr.executeSql(
-            'SELECT * FROM Record WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime',
-            [outputDateMonth, outputDateYear], function(tx, rs){
-                if(rs.rows.length <= 0){
-                    error('沒有資料');
-                    return false;
-                }
-                let Total = {
-                    Month: 0.0,
-                    RMB: 0.0,
-                    HKD: 0.0,
-                    ADD: 0.0,
-                    Shipping: 0.0,
-                    Change: 0.0
-                };
-                let html = '';
+function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, rate, output, error) {
+    DB.transaction(
+        function (tr) {
+            console.log('顯示: ', outputDateMonth, outputDateYear);
+            tr.executeSql(
+                "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime",
+                [outputDateMonth, outputDateYear],
+                function (tx, rs) {
+                    if (rs.rows.length <= 0) {
+                        error('沒有資料');
+                        return false;
+                    }
+                    let Total = {
+                        Month: 0.0,
+                        RMB: 0.0,
+                        HKD: 0.0,
+                        ADD: 0.0,
+                        Shipping: 0.0,
+                        Change: 0.0,
+                    };
+                    let html = '';
 
-                /* 打印紀錄 */
-                for(let i = 0 ; i < rs.rows.length ; i++){
-                    const row = rs.rows.item(i);
-                    //console.log(row); //debug
-                    row.DateTime = moment(row.DateTime);
-                    row.CargoNum = '<b>' + row.CargoNum.slice(0, 4) + '</b>' + row.CargoNum.slice(4, 10) + '(' + row.CargoNum.slice(10) + ')';
+                    /* 打印紀錄 */
+                    for (let i = 0; i < rs.rows.length; i++) {
+                        const row = rs.rows.item(i);
+                        //console.log(row); //debug
+                        row.DateTime = moment(row.DateTime);
+                        row.CargoNum =
+                            '<b>' +
+                            row.CargoNum.slice(0, 4) +
+                            '</b>' +
+                            row.CargoNum.slice(4, 10) +
+                            '(' +
+                            row.CargoNum.slice(10) +
+                            ')';
 
-                    //進行計算
-                    let Change = parseFloat((row.RMB / rate).toFixed(2));
-                    let rowTotal = Change + row.HKD + row.Add + row.Shipping;
-                    Total.Month += rowTotal;
-                    rowTotal = blankNum(rowTotal, '$');
-                    Total.RMB += row.RMB;
-                    row.RMB = blankNum(row.RMB, 'CN¥');
-                    Total.Change += Change;
-                    Change = blankNum(Change, '$');
-                    Total.HKD += row.HKD;
-                    row.HKD = blankNum(row.HKD, '$');
-                    Total.ADD += row.Add;
-                    row.Add = blankNum(row.Add, '$');
-                    Total.Shipping += row.Shipping;
-                    row.Shipping = blankNum(row.Shipping, '$');
-                    //console.log(Total); //debug
+                        //進行計算
+                        let Change = parseFloat((row.RMB / rate).toFixed(2));
+                        let rowTotal = Change + row.HKD + row.Add + row.Shipping;
+                        Total.Month += rowTotal;
+                        rowTotal = blankNum(rowTotal, '$');
+                        Total.RMB += row.RMB;
+                        row.RMB = blankNum(row.RMB, 'CN¥');
+                        Total.Change += Change;
+                        Change = blankNum(Change, '$');
+                        Total.HKD += row.HKD;
+                        row.HKD = blankNum(row.HKD, '$');
+                        Total.ADD += row.Add;
+                        row.Add = blankNum(row.Add, '$');
+                        Total.Shipping += row.Shipping;
+                        row.Shipping = blankNum(row.Shipping, '$');
+                        //console.log(Total); //debug
 
-                    //放入html
-                    html += `
+                        //放入html
+                        html += `
                     <tr>
                         <th scope="row">${row.DateTime.format('D')}</th>
                         <td>${row.OrderNum}</td>
                         <td>${row.CargoNum}</td>
                         <td>${row.Type}</td>
-                        <td>${row.Local}<br><span style="color: gray">${isOutputRemark ? (row.Remark === null ? '' : row.Remark) : ''}</span></td>
+                        <td>${row.Local}<br><span style="color: gray">${
+                            isOutputRemark ? (row.Remark === null ? '' : row.Remark) : ''
+                        }</span></td>
                         <td>${row.RMB}</td>
                         <td>${Change}</td>
                         <td>${row.HKD}</td>
@@ -456,8 +548,8 @@ function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, rate, ou
                         <td>${row.Shipping}</td>
                         <td>${rowTotal}</td>
                     </tr>`;
-                }
-                html += `
+                    }
+                    html += `
                 <tr style="font-size: 1.1em; background-color: lightskyblue">
                     <th scope="row" colspan="5" style="text-align: center">各項總計</th>
                     <td style="border-left: 1px solid lightgray">CN¥ ${formatPrice(Total.RMB.toFixed(2))}</td>
@@ -467,13 +559,16 @@ function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, rate, ou
                     <td style="border-width: 0">$ ${formatPrice(Total.Shipping.toFixed(2))}</td>
                     <td> </td>
                 </tr>`;
-                output(html, Total.Month.toFixed(2));
-                return false;
-            }, function(tx, error){
-                error('取得資料錯誤: ' + error.message);
-            }
-        );
-    }, function(error){
-        error('傳輸錯誤: ' + error.message);
-    });
+                    output(html, Total.Month.toFixed(2));
+                    return false;
+                },
+                function (tx, error) {
+                    error('取得資料錯誤: ' + error.message);
+                },
+            );
+        },
+        function (error) {
+            error('傳輸錯誤: ' + error.message);
+        },
+    );
 }
