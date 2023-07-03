@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {SafeAreaView, StyleSheet, ToastAndroid, View} from 'react-native';
+import {Platform, SafeAreaView, StyleSheet, ToastAndroid, View} from 'react-native';
 import {
     Appbar,
     Button,
@@ -202,7 +202,10 @@ const Export = ({route}) => {
                                                 },
                                             ],
                                         },
-                                        error => ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT),
+                                        (error, event) => {
+                                            console.log(error, event);
+                                            ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
+                                        },
                                     );
                                 });
                             } else if (choseType.current === 2) {
@@ -284,7 +287,6 @@ const Export = ({route}) => {
     // useEffect(() => {
     //     console.log(month, year)
     // })
-
     return (
         <PaperProvider theme={theme}>
             <SafeAreaView style={{flex: 1}}>
@@ -313,13 +315,15 @@ const Export = ({route}) => {
                         </Picker>
                     </View>
                     <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
-                        <Button
-                            icon={'email-send-outline'}
-                            mode={'outlined'}
-                            onPress={() => Export(1)}
-                            style={style.button}>
-                            電郵傳送
-                        </Button>
+                        {Platform.Version >= 33 && Platform.OS === 'android' ? null : (
+                            <Button
+                                icon={'email-send-outline'}
+                                mode={'outlined'}
+                                onPress={() => Export(1)}
+                                style={style.button}>
+                                電郵傳送
+                            </Button>
+                        )}
                         <Button icon={'export'} mode={'outlined'} onPress={() => Export(2)} style={style.button}>
                             匯出儲存
                         </Button>
@@ -455,7 +459,7 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting) {
     </tbody>
     <tfoot>
     <tr>
-        <td colspan="5">匯率: 1 港幣 = ${setting.Rate} 人民幣</td>
+        <td colspan="5">匯率: 100 港幣 = ${(100 * setting.Rate).toFixed(2)} 人民幣</td>
         <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${Total}</td>
     </tr>
     </tfoot>

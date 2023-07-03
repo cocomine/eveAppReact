@@ -26,6 +26,7 @@ import {Ripple} from '../module/Ripple';
 import SVGLostCargo from '../module/SVGLostCargo';
 import {base64ToBytes, bytesToBase64} from 'byte-base64';
 import PushNotification from 'react-native-push-notification';
+import RNRestart from 'react-native-restart';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
@@ -164,7 +165,10 @@ const Backup = ({navigation}) => {
         setFileList(null);
         closeDB();
         doRestore(fileID)
-            .then(() => ToastAndroid.show('恢復成功', ToastAndroid.SHORT))
+            .then(() => {
+                ToastAndroid.show('恢復成功', ToastAndroid.SHORT);
+                RNRestart.Restart();
+            })
             //.catch(() => ToastAndroid.show('恢復失敗', ToastAndroid.SHORT))
             .finally(() => {
                 openDB().then(() => {

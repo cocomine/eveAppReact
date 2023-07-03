@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     TouchableWithoutFeedback,
     useColorScheme,
-    View
+    View,
 } from 'react-native';
 import {Color} from '../module/Color';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
@@ -555,7 +555,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                                 <View style={{overflow: 'hidden', height: 22 * PixelRatio.getFontScale()}}>
                                     <Animated.View style={{flex: 1, transform: [{translateY}]}}>
                                         <Text><SmailText color={Color.textGary}>折算</SmailText>$ {formatPrice((item.RMB / rate).toFixed(2))}</Text>
-                                        <Text><SmailText color={Color.textGary}>人民幣</SmailText>$ {formatPrice(item.RMB.toFixed(2))}</Text>
+                                        <Text><SmailText color={Color.textGary}>人民幣</SmailText>¥ {formatPrice(item.RMB.toFixed(2))}</Text>
                                     </Animated.View>
                                 </View>
                                 <Text><SmailText color={Color.textGary}>港幣</SmailText>$ {formatPrice(item.HKD.toFixed(2))}</Text>
