@@ -89,6 +89,11 @@ project.ext.vectoricons = [
 ]
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
+def localPropertiesFile = new Properties()
+if(project.rootProject.file("local.properties").exists()) {
+    localPropertiesFile.load(new FileInputStream(project.rootProject.file("local.properties")))
+}
+
 /**
  * Set this to true to create two separate APKs instead of one:
  *   - An APK that only works on ARM devices
@@ -231,9 +236,6 @@ android {
             keyPassword 'android'
         }
         release {
-            def localPropertiesFile = new Properties()
-            localPropertiesFile.load(project.rootProject.file('local.properties').newDataInputStream())
-
             if (localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_FILE")) {
                 storeFile file(localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_FILE"))
                 storePassword localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_PASSWORD")
