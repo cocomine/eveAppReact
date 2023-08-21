@@ -62,6 +62,9 @@ buck-out/
 /ios/Pods/
 /vendor/bundle/
 
+# testing
+/coverage
+
 # 项目排除路径
 /.github/
 /android/app/google-services.json
