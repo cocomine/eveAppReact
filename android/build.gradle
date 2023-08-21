@@ -3,9 +3,15 @@
 buildscript {
     ext {
         buildToolsVersion = "33.0.0"
-        minSdkVersion = 21
+        minSdkVersion = 24
         compileSdkVersion = 33
         targetSdkVersion = 33
+
+        /* @react-native-google-signin/google-signin start */
+        googlePlayServicesAuthVersion = "19.2.0"
+        googlePlayServicesVersion = "+"
+        firebaseMessagingVersion = "21.1.0"
+        /* @react-native-google-signin/google-signin end */
 
         // We use NDK 23 which has both M1 support and is the side-by-side NDK version from AGP.
         ndkVersion = "23.1.7779620"
@@ -17,5 +23,20 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath 'com.google.gms:google-services:4.3.14' // <--- @react-native-google-signin/google-signin
     }
 }
+
+/* @react-native-google-signin/google-signin start */
+allprojects {
+    repositories {
+        mavenLocal()
+        google() // <--- make sure this is included
+        jcenter()
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url "$rootDir/../node_modules/react-native/android"
+        }
+    }
+}
+/* @react-native-google-signin/google-signin end */
