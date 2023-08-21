@@ -89,9 +89,6 @@ project.ext.vectoricons = [
 ]
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
-def localPropertiesFile = new Properties()
-localPropertiesFile.load(project.rootProject.file('local.properties').newDataInputStream())
-
 /**
  * Set this to true to create two separate APKs instead of one:
  *   - An APK that only works on ARM devices
@@ -146,8 +143,8 @@ android {
         applicationId "com.cocomine.eveapp2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 207
-        versionName "2.0.7"
+        versionCode 208
+        versionName "2.0.8"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
 
         if (isNewArchitectureEnabled()) {
@@ -234,6 +231,9 @@ android {
             keyPassword 'android'
         }
         release {
+            def localPropertiesFile = new Properties()
+            localPropertiesFile.load(project.rootProject.file('local.properties').newDataInputStream())
+
             if (localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_FILE")) {
                 storeFile file(localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_FILE"))
                 storePassword localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_PASSWORD")
