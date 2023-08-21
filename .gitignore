@@ -4,7 +4,7 @@
 
 # Xcode
 #
-ios/build/
+build/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -24,7 +24,7 @@ ios/.xcode.env.local
 
 # Android/IntelliJ
 #
-/android/build/
+build/
 .idea
 .gradle
 local.properties
@@ -63,9 +63,7 @@ buck-out/
 /vendor/bundle/
 
 # 项目排除路径
-/android/
-/ios/
 /.github/
 /android/app/google-services.json
-/android/gradle.properties
 /eveApp1_1_9_2022-9_29_49.716.db
+/android/app/src/main/assets/appcenter-config.json
