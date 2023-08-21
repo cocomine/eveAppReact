@@ -1,20 +1,19 @@
-import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {BackHandler, SafeAreaView, ScrollView, StatusBar, StyleSheet, useColorScheme, View} from 'react-native';
-import moment from 'moment';
-import {Color} from '../module/Color';
-import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
-import {DecimalInput} from '../module/NumInput';
-import {NumKeyboard} from '../module/NumKeyboard';
-import TextInput from '../module/TextInput';
-import {Button, HelperText, Text} from 'react-native-paper';
-import TextInputMask from 'react-native-text-input-mask';
-import {RadioButton, RadioGroup} from '../module/RadioButton';
-import {hideKeyboard} from 'react-native-hide-keyboard/src';
-import CargoNumCheck from '../module/CargoNumCheck';
-import {DB, useSetting} from '../module/SQLite';
-import ErrorHelperText from '../module/ErrorHelperText';
-import {LocalInput} from './AddRecord';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { BackHandler, SafeAreaView, ScrollView, StatusBar, StyleSheet, useColorScheme, View } from "react-native";
+import moment from "moment";
+import { Color } from "../module/Color";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { DecimalInput } from "../module/NumInput";
+import { NumKeyboard } from "../module/NumKeyboard";
+import TextInput from "../module/TextInput";
+import { Button, HelperText, Text } from "react-native-paper";
+import TextInputMask from "react-native-text-input-mask";
+import { RadioButton, RadioGroup } from "../module/RadioButton";
+import CargoNumCheck from "../module/CargoNumCheck";
+import { DB, useSetting } from "../module/SQLite";
+import ErrorHelperText from "../module/ErrorHelperText";
+import { LocalInput } from "./AddRecord";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //預設狀態
 const initialState = {
@@ -152,7 +151,7 @@ const EditRecord = ({navigation, route}) => {
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback((id) => {
-        hideKeyboard().then();
+        Keyboard.dismiss();
         focusingDecInput.current = id;
         NumKeyboard_refs.current.openKeyBoard();
     }, []);
@@ -303,7 +302,7 @@ const EditRecord = ({navigation, route}) => {
                     <View style={style.formGroup}>
                         <Text style={{flex: 1 / 5}}>日期</Text>
                         <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
-                            hideKeyboard().then();
+                            Keyboard.dismiss();
                             DateTimePickerAndroid.open({
                                 value: state.date, onChange: (event, newDate) => {
                                     focusNextField('orderID');

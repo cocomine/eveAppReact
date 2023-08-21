@@ -11,7 +11,7 @@ import {
     TouchableWithoutFeedback,
     useColorScheme,
     useWindowDimensions,
-    View
+    View,
 } from 'react-native';
 import moment from 'moment';
 import {Color} from '../module/Color';
@@ -22,7 +22,6 @@ import TextInput from '../module/TextInput';
 import {Button, HelperText, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
-import {hideKeyboard} from 'react-native-hide-keyboard/src';
 import CargoNumCheck from '../module/CargoNumCheck';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
@@ -44,8 +43,8 @@ const initialState = {
     error: {
         cargo: null,
         location: null,
-        orderID: null
-    }
+        orderID: null,
+    },
 };
 //更新類型
 const [UPDATE_DATE, UPDATE_ORDER_ID, UPDATE_TYPE, UPDATE_CARGO_LETTER,
@@ -163,7 +162,7 @@ const AddRecord = ({navigation, route}) => {
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback((id) => {
-        hideKeyboard().then();
+        Keyboard.dismiss();
         focusingDecInput.current = id;
         NumKeyboard_refs.current.openKeyBoard();
     }, []);
@@ -308,7 +307,7 @@ const AddRecord = ({navigation, route}) => {
                     <View style={style.formGroup}>
                         <Text style={{flex: 1 / 5}}>日期</Text>
                         <TextInput caretHidden={true} showSoftInputOnFocus={false} contextMenuHidden={true} onPressOut={() => {
-                            hideKeyboard().then();
+                            Keyboard.dismiss();
                             DateTimePickerAndroid.open({
                                 value: state.date, onChange: (event, newDate) => {
                                     focusNextField('orderID');

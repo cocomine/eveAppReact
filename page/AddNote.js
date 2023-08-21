@@ -1,5 +1,13 @@
 import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {Alert, KeyboardAvoidingView, SafeAreaView, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
+import {
+    Alert,
+    KeyboardAvoidingView,
+    SafeAreaView,
+    StyleSheet,
+    ToastAndroid,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
 import {Appbar, Text, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import moment from 'moment';
@@ -8,7 +16,6 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import Animated, {SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {convertColor} from './Note';
 import {DB} from '../module/SQLite';
-import {hideKeyboard} from 'react-native-hide-keyboard/src';
 
 const initialState = {
     date: new Date(),
@@ -16,7 +23,7 @@ const initialState = {
     top: false,
     title: '',
     content: '',
-    color: null
+    color: null,
 };
 
 /* 顏色列表 */
@@ -42,7 +49,8 @@ const AddNote = ({navigation, route}) => {
 
     /* 開啟顏色選擇 */
     const openColorSelector = useCallback(() => {
-        hideKeyboard().finally(() => setShowColorSelector(true));
+        Keyboard.dismiss();
+        setShowColorSelector(true);
     }, []);
 
     /* 關閉顏色選擇 */
