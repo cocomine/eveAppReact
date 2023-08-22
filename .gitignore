@@ -66,7 +66,5 @@ buck-out/
 /coverage
 
 # 项目排除路径
-/.github/
-/android/app/google-services.json
-/eveApp1_1_9_2022-9_29_49.716.db
 /android/app/src/main/assets/appcenter-config.json
+/android/app/google-services.json
