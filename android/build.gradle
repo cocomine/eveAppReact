@@ -30,8 +30,9 @@ buildscript {
 /* @react-native-google-signin/google-signin start */
 allprojects {
     repositories {
-        mavenLocal()
         google() // @react-native-google-signin/google-signin
+        mavenCentral()
+        mavenLocal()
         jcenter()
         maven {
             // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
