@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "Injecting secrets..."
 echo "Updating Google JSON"
 touch "$APPCENTER_SOURCE_DIRECTORY/android/app/google-services.json"
