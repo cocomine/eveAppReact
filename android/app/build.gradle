@@ -1,15 +1,20 @@
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
 
+// react-native-vector-icons plugin is used to load and configure the fonts
 project.ext.vectoricons = [
         iconFontNames: [ 'MaterialIcons.ttf', 'FontAwesome.ttf', 'AntDesign.ttf', 'FontAwesome5_Regular.ttf', 'MaterialCommunityIcons.ttf', 'Feather.ttf', 'Ionicons.ttf' ] // Name of the font files you want to copy
 ]
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
+// localPropertiesFile is used to load the local.properties file that contains the keystore information
 def localPropertiesFile = new Properties()
 if(project.rootProject.file("local.properties").exists()) {
     localPropertiesFile.load(new FileInputStream(project.rootProject.file("local.properties")))
 }
+
+// codepush.gradle is used to load the codepush information
+apply from: "../../node_modules/react-native-code-push/android/codepush.gradle"
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -63,7 +68,7 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -88,8 +93,8 @@ android {
         applicationId "com.cocomine.eveapp2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 208
-        versionName "2.1.0"
+        versionCode 209
+        versionName "2.1.1"
     }
     signingConfigs {
         debug {
@@ -110,6 +115,14 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            resValue "string", "CodePushDeploymentKey", '""'
+        }
+        releaseStaging{
+            signingConfig signingConfigs.release
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            matchingFallbacks = ['release']
+            resValue "string", "CodePushDeploymentKey", '"ptByrlszwXgZQ6_lHScWjjMDBBa1paJzPajkE"'
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
@@ -117,6 +130,7 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            resValue "string", "CodePushDeploymentKey", '"ptByrlszwXgZQ6_lHScWjjMDBBa1paJzPajkE"'
         }
     }
 }
@@ -124,7 +138,7 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0' // @react-native-google-signin/google-signin
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0' // @react-native-google-signin/google-signin
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {

@@ -30,6 +30,7 @@
     "react": "18.2.0",
     "react-native": "^0.72.4",
     "react-native-auto-size-text": "^1.1.1",
+    "react-native-code-push": "^8.1.0",
     "react-native-file-viewer": "^2.1.5",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.12.1",
