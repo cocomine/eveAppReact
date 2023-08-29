@@ -22,7 +22,6 @@ import TextInput from '../module/TextInput';
 import {Button, HelperText, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
-import CargoNumCheck from '../module/CargoNumCheck';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -199,9 +198,9 @@ const AddRecord = ({navigation, route}) => {
             error.cargo = '必須填寫';
         }else if(state.cargoLetter.length < 4 || state.cargoNum.length < 6 || state.cargoCheckNum.length < 1){
             error.cargo = '未完成填寫';
-        }else if(!CargoNumCheck(state.cargoLetter, state.cargoNum, parseInt(state.cargoCheckNum))){
+        }/*else if(!CargoNumCheck(state.cargoLetter, state.cargoNum, parseInt(state.cargoCheckNum))){
             error.cargo = '填寫錯誤';
-        }
+        }*/
         if(state.location.length <= 0){
             error.location = '必須填寫';
         }

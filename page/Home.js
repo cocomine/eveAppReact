@@ -254,14 +254,14 @@ const Home = () => {
                                 color: Color.white,
                                 fontSize: 12,
                                 textAlign: 'center'
-                            }}>{'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}</Text>
+                            }}>{'加收\n$ ' + formatPrice(Total.Add.toFixed(2))}</Text>
                         </View>
                         <View style={{flex: 1}}>
                             <Text style={{
                                 color: Color.white,
                                 fontSize: 12,
                                 textAlign: 'center'
-                            }}>{'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}</Text>
+                            }}>{'運費\n$ ' + formatPrice(Total.Shipping.toFixed(2))}</Text>
                         </View>
                     </Toolbar>
                 </View>
