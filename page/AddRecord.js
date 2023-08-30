@@ -161,7 +161,6 @@ const AddRecord = ({navigation, route}) => {
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback((id) => {
-        Keyboard.dismiss();
         focusingDecInput.current = id;
         NumKeyboard_refs.current.openKeyBoard();
     }, []);
@@ -398,7 +397,7 @@ const AddRecord = ({navigation, route}) => {
                                               symbol={'¥ '} keyboardRef={NumKeyboard_refs} onFocus={() => DecimalInput_Focus('RMB')}
                                               onBlur={DecimalInput_Blur} value={state.RMB}
                                 />
-                                <HelperText>匯率: 1 港幣 = {Rate} 人民幣</HelperText>
+                                <HelperText type={'info'}>匯率: 100 港幣 = {(100 * Rate).toFixed(2)} 人民幣</HelperText>
                             </View>
                             <Text>折算 HK$ {(state.RMB / Rate).toFixed(2)}</Text>
                         </View>

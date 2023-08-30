@@ -1,7 +1,7 @@
-import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from 'react';
-import {StyleProp, StyleSheet, TextInput as NativeTextInput, TextStyle, View, ViewStyle,} from "react-native";
-import {Color} from "./Color";
-import {TextInput, TextInputProps} from "react-native-paper";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { StyleProp, StyleSheet, TextInput as NativeTextInput, TextStyle, View, ViewStyle } from "react-native";
+import { Color } from "./Color";
+import { TextInput, TextInputProps } from "react-native-paper";
 
 /* 輸入參數 */
 interface InputProps {
@@ -125,7 +125,7 @@ const DecimalInput = forwardRef<InputRef, InputProps>(({
 
     return (
         <View style={[containerStyle, {position: 'relative'}]}>
-            <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined}/>
+            <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined} showSoftInputOnFocus={false}/>
             <TextInput {...inputProps} caretHidden={true} contextMenuHidden={true} ref={inputRef} style={style.coverInput} keyboardType='numeric' value={real_value} onChangeText={onChange} dense={true} onFocus={Focus} onBlur={Blur} selectTextOnFocus={true}/>
         </View>
     );
@@ -214,7 +214,7 @@ const NumberInput = forwardRef<InputRef, InputProps>(({
 
     return (
         <View style={[containerStyle, {position: 'relative'}]}>
-            <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined}/>
+            <TextInput style={style.inputStyle} value={displayValue} placeholder={placeholder} dense={true} underlineColor={isFocus ? Color.primaryColor : undefined} showSoftInputOnFocus={false}/>
             <TextInput {...inputProps} caretHidden={true} contextMenuHidden={true} ref={inputRef} style={style.coverInput} keyboardType='numeric' value={real_value} onChangeText={onChange} dense={true} onFocus={focus} onBlur={blur} selectTextOnFocus={true}/>
         </View>
     );
