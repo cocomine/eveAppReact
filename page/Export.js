@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Platform, SafeAreaView, StyleSheet, ToastAndroid, View} from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Platform, SafeAreaView, StyleSheet, ToastAndroid, View } from "react-native";
 import {
     Appbar,
     Button,
@@ -10,22 +10,22 @@ import {
     Text,
     Title,
     useTheme,
-} from 'react-native-paper';
-import {Color} from '../module/Color';
-import {Picker} from '@react-native-picker/picker';
-import {useFocusEffect} from '@react-navigation/native';
-import {DB, useSetting} from '../module/SQLite';
-import moment from 'moment';
-import formatPrice from '../module/formatPrice';
-import HTMLtoPDF from 'react-native-html-to-pdf';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Mailer from 'react-native-mail';
-import RNPrint from 'react-native-print';
-import Lottie from 'lottie-react-native';
-import Sound from 'react-native-sound';
-import RNFS, {CachesDirectoryPath, DownloadDirectoryPath} from 'react-native-fs';
-import FileViewer from 'react-native-file-viewer';
-import prompt from 'react-native-prompt-android';
+} from "react-native-paper";
+import { Color } from "../module/Color";
+import { Picker } from "@react-native-picker/picker";
+import { useFocusEffect } from "@react-navigation/native";
+import { DB, useSetting } from "../module/SQLite";
+import moment from "moment";
+import formatPrice from "../module/formatPrice";
+import HTMLtoPDF from "react-native-html-to-pdf";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Mailer from "react-native-mail";
+import RNPrint from "react-native-print";
+import Lottie from "lottie-react-native";
+import Sound from "react-native-sound";
+import RNFS, { CachesDirectoryPath, DownloadDirectoryPath } from "react-native-fs";
+import FileViewer from "react-native-file-viewer";
+import prompt from "react-native-prompt-android";
 
 /* Done sound */
 const sound = new Sound('done.mp3', Sound.MAIN_BUNDLE, error => {
@@ -315,7 +315,7 @@ const Export = ({route}) => {
                         </Picker>
                     </View>
                     <View style={{flexDirection: 'row', paddingHorizontal: 5}}>
-                        {Platform.Version >= 33 && Platform.OS === 'android' ? null : (
+                        {Platform.Version >= 34 && Platform.OS === 'android' ? null : (
                             <Button
                                 icon={'email-send-outline'}
                                 mode={'outlined'}
