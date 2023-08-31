@@ -148,7 +148,7 @@ const Calculator: React.FC<{
     const onDone = useCallback(() => {
         onCalculator();
         // @ts-ignore
-        navigation.navigate(route.params.pageID, {value: array.current[0], inputID: route.params.inputID});
+        navigation.navigate(route.params.pageID, {value: array.current[0], ...route.params});
     }, [navigation]);
 
     return (

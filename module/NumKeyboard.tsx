@@ -1,11 +1,11 @@
 /* 輸入參數 */
-import React, {forwardRef, useCallback, useImperativeHandle, useState} from "react";
-import {StyleSheet, useColorScheme, View} from "react-native";
-import {IconButton, Text, useTheme} from "react-native-paper";
-import {Color} from "./Color";
+import React, { forwardRef, useCallback, useImperativeHandle, useState } from "react";
+import { StyleSheet, useColorScheme, View } from "react-native";
+import { IconButton, MD2Theme, Text, useTheme } from "react-native-paper";
+import { Color } from "./Color";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
-import Animated, {SlideInDown, SlideOutDown} from "react-native-reanimated";
-import {Ripple} from "./Ripple";
+import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
+import { Ripple } from "./Ripple";
 
 interface NumKeyboardProps {
     onKeyPress: (value: string) => void
@@ -21,7 +21,7 @@ type NumKeyboardRef = {
 /* 數字鍵盤 */
 const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(({onKeyPress = () => null,}, ref) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const {colors} = useTheme();
+    const {colors} = useTheme<MD2Theme>();
     const [display, setDisplay] = useState<boolean>(false);
     const BG_color = isDarkMode ? Color.darkBlock : Color.white
 
