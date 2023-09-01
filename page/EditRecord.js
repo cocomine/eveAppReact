@@ -20,29 +20,9 @@ import TextInputMask from "react-native-text-input-mask";
 import { RadioButton, RadioGroup } from "../module/RadioButton";
 import { DB, useSetting } from "../module/SQLite";
 import ErrorHelperText from "../module/ErrorHelperText";
-import { LocalInput } from "./AddRecord";
+import { ImagePicker, LocalInput, recordInitialState } from "./AddRecord";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-//預設狀態
-const initialState = {
-    date: new Date(),
-    orderID: '',
-    type: '40',
-    cargoLetter: '',
-    cargoNum: '',
-    cargoCheckNum: '',
-    location: '',
-    RMB: 0,
-    HKD: 0,
-    ADD: 0,
-    shipping: 0,
-    remark: '',
-    error: {
-        cargo: null,
-        location: null,
-        orderID: null,
-    },
-};
 //更新類型
 const [
     UPDATE_DATE,
@@ -58,7 +38,8 @@ const [
     UPDATE_SHIPPING,
     UPDATE_REMARK,
     SET_ERROR,
-] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    UPDATE_IMAGE,
+] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /* 更新處理器 */
 const reducer = (state, action) => {
@@ -130,6 +111,11 @@ const reducer = (state, action) => {
                     ...action.payload.error,
                 },
             };
+        case UPDATE_IMAGE:
+            return {
+                ...state,
+                image: action.payload.image,
+            };
         default:
             return {
                 ...state,
@@ -141,7 +127,7 @@ const reducer = (state, action) => {
 /* 增加紀錄 */
 const EditRecord = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [state, dispatch] = useReducer(reducer, initialState); //輸入資料
+    const [state, dispatch] = useReducer(reducer, recordInitialState); //輸入資料
     const [recordID] = useState(route.params.recordID); //recordID
     const focusingDecInput = useRef(null); //目前聚焦銀碼輸入框
     const [setting] = useSetting(); //設定
@@ -220,9 +206,7 @@ const EditRecord = ({navigation, route}) => {
             error.cargo = '必須填寫';
         } else if (state.cargoLetter.length < 4 || state.cargoNum.length < 6 || state.cargoCheckNum.length < 1) {
             error.cargo = '未完成填寫';
-        } /*else if(!CargoNumCheck(state.cargoLetter, state.cargoNum, parseInt(state.cargoCheckNum))){
-            error.cargo = '填寫錯誤';
-        }*/
+        }
         if (state.location.length <= 0) {
             error.location = '必須填寫';
         }
@@ -235,7 +219,7 @@ const EditRecord = ({navigation, route}) => {
         DB.transaction(
             function (tr) {
                 tr.executeSql(
-                    'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ? WHERE RecordID = ?',
+                    'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ?, Images = ? WHERE RecordID = ?',
                     [
                         moment(state.date).format('yyyy-MM-DD'),
                         state.orderID,
@@ -247,6 +231,7 @@ const EditRecord = ({navigation, route}) => {
                         state.ADD,
                         state.shipping,
                         state.remark,
+                        JSON.stringify(state.image),
                         recordID,
                     ],
                 );
@@ -274,11 +259,6 @@ const EditRecord = ({navigation, route}) => {
         //儲存後跳轉頁面
         storeDraft().then(() => navigation.replace('AddRecord'));
     }, [navigation, state]);
-
-    //debug
-    /*useEffect(() => {
-     console.log(state);
-     });*/
 
     /* route 處理 */
     useEffect(() => {
@@ -311,6 +291,7 @@ const EditRecord = ({navigation, route}) => {
                                         ADD: row.Add,
                                         shipping: row.Shipping,
                                         remark: row.Remark,
+                                        image: JSON.parse(row.Images),
                                     },
                                 });
                             },
@@ -625,6 +606,17 @@ const EditRecord = ({navigation, route}) => {
                             value={state.remark}
                             onChangeText={text => dispatch({type: UPDATE_REMARK, payload: {remark: text}})}
                             style={{flex: 1}}
+                        />
+                    </View>
+                    <View style={style.formGroup}>
+                        <ImagePicker
+                            assets={state.image}
+                            onSelectedImage={img =>
+                                dispatch({
+                                    action: UPDATE_IMAGE,
+                                    payload: {image: img},
+                                })
+                            }
                         />
                     </View>
                 </View>

@@ -1,8 +1,8 @@
-import SQLite from 'react-native-sqlite-storage';
-import {ToastAndroid} from 'react-native';
-import RNRestart from 'react-native-restart';
-import {useEffect, useState} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SQLite from "react-native-sqlite-storage";
+import { ToastAndroid } from "react-native";
+import RNRestart from "react-native-restart";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /* 連接sql */
 let DB: SQLite.SQLiteDatabase;
@@ -61,6 +61,9 @@ const checkUpdate = () => {
                 case '1.5.1':
                     doUpdate.To_1_5_5();
                     break;
+                case '1.5.5':
+                    doUpdate.To_1_5_6();
+                    break;
                 default:
                     console.log('DatabaseVer_Helper:', '已是最新');
                     break;
@@ -68,8 +71,6 @@ const checkUpdate = () => {
         }, function (e) {
             console.log('DatabaseVer_Helper:', '檢查資料庫發現錯誤', e.message);
             startUp();//初始化資料庫
-        }, function () {
-            console.log('DatabaseVer_Helper:', '檢查資料庫完成');
         });
     });
 };
@@ -177,6 +178,17 @@ const doUpdate = {
             console.log('DatabaseVer_Helper:', '資料庫已更新至1.5.5');
             restartApp();
         });
+    },
+    To_1_5_6: function () {
+        DB.transaction(function (tr) {
+            tr.executeSql('ALTER TABLE Record ADD COLUMN Images TEXT NOT NULL DEFAULT \'[]\'', []);
+            tr.executeSql('UPDATE Setting SET value = \'1.5.6\' WHERE Target = \'database_version\'', []);
+        }, function (e) {
+            console.log('DatabaseVer_Helper:', '資料庫更新失敗', e.message);
+        }, function () {
+            console.log('DatabaseVer_Helper:', '資料庫已更新至1.5.6');
+            restartApp();
+        });
     }
 };
 const startUp = () => {
@@ -184,7 +196,7 @@ const startUp = () => {
     DB.transaction(function(tr){
         //創建紀錄table
         tr.executeSql(
-            'CREATE TABLE Record ( `RecordID` INTEGER NOT NULL , `DateTime` DATETIME NOT NULL, `OrderNum` CHAR(9) NOT NULL , `Type` CHAR(2) NOT NULL , `CargoNum` CHAR(11) NOT NULL , `Local` VARCHAR(50) NOT NULL , `RMB` DOUBLE NOT NULL DEFAULT \'0\' , `HKD` DOUBLE NOT NULL DEFAULT \'0\' , `Add` DOUBLE NOT NULL DEFAULT \'0\' , `Shipping` DOUBLE NOT NULL DEFAULT \'0\' , `Remark` VARCHAR(50) DEFAULT NULL, PRIMARY KEY (`RecordID`))');
+            'CREATE TABLE Record ( `RecordID` INTEGER NOT NULL , `DateTime` DATETIME NOT NULL, `OrderNum` CHAR(9) NOT NULL , `Type` CHAR(2) NOT NULL , `CargoNum` CHAR(11) NOT NULL , `Local` VARCHAR(50) NOT NULL , `RMB` DOUBLE NOT NULL DEFAULT \'0\' , `HKD` DOUBLE NOT NULL DEFAULT \'0\' , `Add` DOUBLE NOT NULL DEFAULT \'0\' , `Shipping` DOUBLE NOT NULL DEFAULT \'0\' , `Remark` VARCHAR(50) DEFAULT NULL, `Images` TEXT NOT NULL DEFAULT \'[]\', PRIMARY KEY (`RecordID`))');
         tr.executeSql('CREATE INDEX `DateTime` ON Record (`DateTime`)');
         //創建備忘錄table
         tr.executeSql(
@@ -199,7 +211,7 @@ const startUp = () => {
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'company-name-EN\', \'Company Name\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Driver-name\', \'陳大明\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Driver-license\', \'RT XXXX\')', []); //放入sql
-        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'database_version\', \'1.5.5\')', []); //放入sql
+        tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'database_version\', \'1.5.6\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'Email-to\', \'mail@example.com\')', []);
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup\', \'Off\')', []); //放入sql
         tr.executeSql('INSERT INTO Setting (Target, value) VALUES (\'AutoBackup_cycle\', \'Day\')', []); //放入sql

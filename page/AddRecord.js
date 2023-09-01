@@ -31,7 +31,7 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import REAnimated, {Layout, StretchInX} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
 
-const initialState = {
+const recordInitialState = {
     date: new Date(),
     orderID: '',
     type: '40',
@@ -44,6 +44,7 @@ const initialState = {
     ADD: 0,
     shipping: 0,
     remark: '',
+    image: [],
     error: {
         cargo: null,
         location: null,
@@ -65,7 +66,8 @@ const [
     UPDATE_SHIPPING,
     UPDATE_REMARK,
     SET_ERROR,
-] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    UPDATE_IMAGE,
+] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /* 更新處理器 */
 const reducer = (state, action) => {
@@ -137,6 +139,11 @@ const reducer = (state, action) => {
                     ...action.payload.error,
                 },
             };
+        case UPDATE_IMAGE:
+            return {
+                ...state,
+                image: action.payload.image,
+            };
         default:
             return {
                 ...state,
@@ -148,7 +155,7 @@ const reducer = (state, action) => {
 /* 增加紀錄 */
 const AddRecord = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [state, dispatch] = useReducer(reducer, initialState); //輸入資料
+    const [state, dispatch] = useReducer(reducer, recordInitialState); //輸入資料
     const focusingDecInput = useRef(null); //目前聚焦銀碼輸入框
     const needSaveDraft = useRef(true); //是否儲存草稿
     const [setting] = useSetting(); //設定
@@ -244,7 +251,7 @@ const AddRecord = ({navigation, route}) => {
         DB.transaction(
             function (tr) {
                 tr.executeSql(
-                    'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark, Images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         moment(state.date).format('yyyy-MM-DD'),
                         state.orderID,
@@ -256,6 +263,7 @@ const AddRecord = ({navigation, route}) => {
                         state.ADD,
                         state.shipping,
                         state.remark,
+                        JSON.stringify(state.image),
                     ],
                 );
             },
@@ -340,11 +348,6 @@ const AddRecord = ({navigation, route}) => {
     const scroll = useCallback(({nativeEvent}) => {
         setScrollOffset(nativeEvent.contentOffset.y);
     }, []);
-
-    //debug
-    // useEffect(() => {
-    //     console.log(setting);
-    // });
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -629,7 +632,15 @@ const AddRecord = ({navigation, route}) => {
                         />
                     </View>
                     <View style={style.formGroup}>
-                        <ImagePicker onSelectedImage={() => {}} />
+                        <ImagePicker
+                            assets={state.image}
+                            onSelectedImage={img =>
+                                dispatch({
+                                    action: UPDATE_IMAGE,
+                                    payload: {image: img},
+                                })
+                            }
+                        />
                     </View>
                 </View>
                 {/* 儲存 */}
@@ -855,9 +866,9 @@ const imagePickerOptions = {
 };
 
 /* 圖片選擇器 */
-const ImagePicker = ({onSelectedImage}) => {
+const ImagePicker = ({onSelectedImage, assets = []}) => {
     const [showModeDropdown, setShowModeDropdown] = useState(false);
-    const [images, setImages] = useState([]); //圖片
+    const [images, setImages] = useState(assets); //圖片
     const [bigImage, setBigImage] = useState(null); //大圖
 
     /* 處理結果 */
@@ -875,7 +886,7 @@ const ImagePicker = ({onSelectedImage}) => {
             }
 
             //處理圖片
-            const imgBase64 = result.assets.map(img => img.base64);
+            const imgBase64 = [...result.assets];
             imgBase64.push(...images);
             imgBase64.splice(3);
 
@@ -899,14 +910,22 @@ const ImagePicker = ({onSelectedImage}) => {
         [images],
     );
 
+    /* 圖片檢視器列表 */
     const imagesViewerList = useMemo(() => {
-        return images.map((img, index) => ({
-            url: 'data:image/jpeg;base64,' + img,
+        return images.map((assets, index) => ({
+            url: 'data:image/jpeg;base64,' + assets.base64,
+            width: assets.width,
+            height: assets.height,
             props: {
                 key: index,
             },
         }));
     }, [images]);
+
+    /* 參數更新 */
+    useEffect(() => {
+        setImages(assets);
+    }, [assets]);
 
     return (
         <View style={{flex: 1}}>
@@ -918,18 +937,22 @@ const ImagePicker = ({onSelectedImage}) => {
                         選擇圖片
                     </Button>
                 }>
-                <Menu.Item onPress={() => openPicker(0)} title={'相機'} leadingIcon={'camera'} />
-                <Menu.Item onPress={() => openPicker(1)} title={'相簿'} leadingIcon={'image-album'} />
+                <Menu.Item onPress={() => openPicker(0)} title={'相機'} leadingIcon={'camera'} key={1}/>
+                <Menu.Item onPress={() => openPicker(1)} title={'相簿'} leadingIcon={'image-album'} key={2}/>
             </Menu>
             <View style={[style.formGroup]}>
-                {images.map((img, index) => (
+                {images.map((assets, index) => (
                     <REAnimated.View
                         style={[style.img, {marginLeft: index !== 0 && 5}]}
                         entering={StretchInX}
                         layout={Layout.duration(300).delay(300)}
                         key={index}>
                         <TouchableWithoutFeedback onPress={() => setBigImage(index)}>
-                            <Image key={index} source={{uri: 'data:image/jpeg;base64,' + img}} style={{flex: 1}} />
+                            <Image
+                                key={index}
+                                source={{uri: 'data:image/jpeg;base64,' + assets.base64}}
+                                style={{flex: 1}}
+                            />
                         </TouchableWithoutFeedback>
                         <IconButton
                             icon={'close'}
@@ -960,7 +983,13 @@ const ImagePicker = ({onSelectedImage}) => {
                     footerContainerStyle={{width: '100%', position: 'absolute', bottom: 20, zIndex: 9999}}
                     renderFooter={() => (
                         <View style={[style.Flex_row, {justifyContent: 'center'}]}>
-                            <IconButton icon={'close'} size={30} iconColor={Color.white} style={style.imageViewerCloseBtn} onPress={() => setBigImage(null)} />
+                            <IconButton
+                                icon={'close'}
+                                size={30}
+                                iconColor={Color.white}
+                                style={style.imageViewerCloseBtn}
+                                onPress={() => setBigImage(null)}
+                            />
                         </View>
                     )}
                 />
@@ -1015,4 +1044,4 @@ const style = StyleSheet.create({
     },
 });
 
-export {AddRecord, LocalInput, ImagePicker};
+export {AddRecord, LocalInput, ImagePicker, recordInitialState};
