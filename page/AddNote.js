@@ -41,12 +41,6 @@ const AddNote = ({navigation, route}) => {
     const [showColorSelector, setShowColorSelector] = useState(false);
     const contentInput = useRef(null);
 
-    //debug
-    // useEffect(() => {
-    //     console.log(state);
-    //     console.log(route);
-    // });
-
     /* 開啟顏色選擇 */
     const openColorSelector = useCallback(() => {
         Keyboard.dismiss();

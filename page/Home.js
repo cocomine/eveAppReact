@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Animated,
     FlatList,
+    Modal,
     PixelRatio,
     SafeAreaView,
     StyleSheet,
@@ -21,7 +22,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { IconButton, Portal, Snackbar, Text } from "react-native-paper";
+import { ActivityIndicator, IconButton, Portal, Snackbar, Text } from "react-native-paper";
 import { DB, useSetting } from "../module/SQLite";
 import formatPrice from "../module/formatPrice";
 import SVGLostCargo from "../module/SVGLostCargo";
@@ -30,6 +31,7 @@ import { Ripple } from "../module/Ripple";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DateSelect } from "../module/DateSelect";
 import { convertColor } from "./Note";
+import ImageViewer from "react-native-image-zoom-viewer";
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate) {
@@ -64,6 +66,7 @@ function group_data(ResultSet, Rate) {
                 Add: row.Add,
                 Shipping: row.Shipping,
                 haveImage: JSON.parse(row.Images).length > 0,
+                Images: JSON.parse(row.Images),
             });
         } else {
             //不存在 & 不相同的日期
@@ -84,6 +87,7 @@ function group_data(ResultSet, Rate) {
                         Add: row.Add,
                         Shipping: row.Shipping,
                         haveImage: JSON.parse(row.Images).length > 0,
+                        Images: JSON.parse(row.Images),
                     },
                 ],
             });
@@ -425,6 +429,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
     const isRMBShow = useRef(false); //人民幣顯示
     const canHaptic = useRef(true); //可否震動
     const [confirmMSG, setConfirmMSG] = useState(false); //確認刪除訊息
+    const [showBigImage, setShowBigImage] = useState(false); //大圖
     const ref = useRef(null);
 
     /* 向左滑動 */
@@ -572,11 +577,28 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
         [id],
     );
 
+    /* 顯示圖片 */
+    const showImages = useCallback(() => {
+        setShowBigImage(true);
+    }, []);
+
+    /* 圖片檢視器列表 */
+    const imagesViewerList = useMemo(() => {
+        return item.Images.map((assets, index) => ({
+            url: 'data:image/jpeg;base64,' + assets.base64,
+            width: assets.width,
+            height: assets.height,
+            props: {
+                key: index,
+            },
+        }));
+    }, [item.Images]);
+
     /* 取消刪除 */
     const undo = useCallback(() => {
         DB.transaction(
             function (tr) {
-                tr.executeSql('INSERT INTO Record VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                tr.executeSql('INSERT INTO Record VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                     id,
                     moment(dateTime).format('yyyy-MM-DD'),
                     item.OrderNum,
@@ -588,6 +610,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                     item.Add,
                     item.Shipping,
                     item.Remark,
+                    item.Images
                 ]);
             },
             function (error) {
@@ -610,7 +633,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 rightThreshold={120}
                 renderLeftActions={swipeLeft}
                 overshootFriction={20}>
-                <Ripple.Default onPress={switchRMBShow}>
+                <Ripple.Default onPress={switchRMBShow} onLongPress={showImages}>
                     <Animated.View
                         style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.row, {justifyContent: 'flex-start'}]}>
@@ -688,6 +711,31 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 </Ripple.Default>
             </Swipeable>
             <Portal>
+                <Modal
+                    visible={showBigImage}
+                    transparent={true}
+                    animationType={'fade'}
+                    onRequestClose={() => setShowBigImage(false)}>
+                    <ImageViewer
+                        backgroundColor={'rgba(0,0,0,0.6)'}
+                        imageUrls={imagesViewerList}
+                        onCancel={() => setShowBigImage(false)}
+                        loadingRender={() => <ActivityIndicator animating={true} />}
+                        enableSwipeDown={true}
+                        footerContainerStyle={{width: '100%', position: 'absolute', bottom: 20, zIndex: 9999}}
+                        renderFooter={() => (
+                            <View style={[style.row, {justifyContent: 'center'}]}>
+                                <IconButton
+                                    icon={'close'}
+                                    size={30}
+                                    iconColor={Color.white}
+                                    style={style.imageViewerCloseBtn}
+                                    onPress={() => setShowBigImage(false)}
+                                />
+                            </View>
+                        )}
+                    />
+                </Modal>
                 <Snackbar
                     visible={confirmMSG}
                     onDismiss={() => setConfirmMSG(false)}
@@ -737,6 +785,11 @@ const DataPartMark = ({item}) => {
 
 /* Home style */
 const style = StyleSheet.create({
+    imageViewerCloseBtn: {
+        borderColor: Color.white,
+        borderStyle: 'solid',
+        borderWidth: 1,
+    },
     cover: {
         position: 'absolute',
         top: 0,

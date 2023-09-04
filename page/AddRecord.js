@@ -2,7 +2,6 @@ import React, {forwardRef, useCallback, useEffect, useMemo, useReducer, useRef, 
 import {
     Animated,
     BackHandler,
-    Image,
     Keyboard,
     Modal,
     SafeAreaView,
@@ -21,7 +20,7 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DecimalInput} from '../module/NumInput';
 import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
-import {ActivityIndicator, Button, HelperText, IconButton, Menu, Text} from 'react-native-paper';
+import {ActivityIndicator, Button, HelperText, IconButton as PaperIconButton, Menu, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
@@ -30,6 +29,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import REAnimated, {Layout, StretchInX} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
+
+const IconButton = REAnimated.createAnimatedComponent(PaperIconButton);
 
 const recordInitialState = {
     date: new Date(),
@@ -946,12 +947,12 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                         style={[style.img, {marginLeft: index !== 0 && 5}]}
                         entering={StretchInX}
                         layout={Layout.duration(300).delay(300)}
-                        key={index}>
+                        key={assets.base64}>
                         <TouchableWithoutFeedback onPress={() => setBigImage(index)}>
-                            <Image
-                                key={index}
+                            <REAnimated.Image
                                 source={{uri: 'data:image/jpeg;base64,' + assets.base64}}
                                 style={{flex: 1}}
+                                layout={Layout.duration(300).delay(300)}
                             />
                         </TouchableWithoutFeedback>
                         <IconButton
@@ -964,6 +965,7 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                                 setImages(images.filter((_, i) => i !== index));
                                 onSelectedImage(images.filter((_, i) => i !== index));
                             }}
+                            layout={Layout.duration(300).delay(300)}
                         />
                     </REAnimated.View>
                 ))}
