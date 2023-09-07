@@ -5,7 +5,9 @@ import {openDB} from '../module/SQLite';
 import Lottie from 'lottie-react-native';
 import {autoBackup} from './Backup';
 import PushNotification, {Importance} from 'react-native-push-notification';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SpInAppUpdates, {IAUUpdateKind} from 'sp-react-native-in-app-updates';
+
+const inAppUpdates = new SpInAppUpdates(false);
 
 const StartUp = ({navigation}) => {
     const {colors} = useTheme();
@@ -13,12 +15,12 @@ const StartUp = ({navigation}) => {
 
     useEffect(() => {
         createChannel();
+        inAppUpdate().then();
 
         openDB().then(() => {
             autoBackup().then();
 
             setTimeout(() => {
-                alertNewFunction().then();
                 navigation.reset({index: 0, routes: [{name: 'Main'}]});
             }, 2500);
         });
@@ -39,18 +41,26 @@ const StartUp = ({navigation}) => {
         );
     };
 
-    /* 宣傳新功能 */
-    const alertNewFunction = async () => {
-        if ((await AsyncStorage.getItem('newFunction')) === '209.2') return;
-        Alert.alert(
-            '新功能!!',
-            '現在長按紀錄可以直接查看圖片囉!!',
-            [
-                {text: '了解(不再顯示)', onPress: () => AsyncStorage.setItem('newFunction', '209.2')},
-                {text: '了解', onPress: () => {}},
-            ],
-            {cancelable: true},
-        );
+    /* Google play 程式更新 */
+    const inAppUpdate = async () => {
+        const result = await inAppUpdates.checkNeedsUpdate({curVersion: '2.1.11'});
+        if (result.shouldUpdate) {
+            Alert.alert(
+                'Google Play上有新版本可用!!',
+                '我們建議您將程式更新至最新版本',
+                [
+                    {
+                        text: '立即更新',
+                        onPress: () => inAppUpdates.startUpdate({updateType: IAUUpdateKind.IMMEDIATE}),
+                    },
+                    {
+                        text: '稍後更新',
+                        onPress: () => {},
+                    },
+                ],
+                {cancelable: true},
+            );
+        }
     };
 
     return (

@@ -22,7 +22,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ActivityIndicator, IconButton, Portal, Snackbar, Text } from "react-native-paper";
+import { ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text } from "react-native-paper";
 import { DB, useSetting } from "../module/SQLite";
 import formatPrice from "../module/formatPrice";
 import SVGLostCargo from "../module/SVGLostCargo";
@@ -324,6 +324,7 @@ const Home = () => {
                 </TouchableOpacity>
 
                 <View style={{flex: 1}}>
+                    <NewFunctionBanner />
                     {/* 內容 */}
                     <FlatList
                         data={Data}
@@ -780,6 +781,43 @@ const DataPartMark = ({item}) => {
                 {item.Title}
             </Text>
         </View>
+    );
+};
+
+/* 宣傳新功能 */
+const NewFunctionBanner = () => {
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        AsyncStorage.getItem('newFunction').then((value) => {
+            if (value !== '213') {
+                setVisible(true);
+            }
+        })
+    }, []);
+
+    return (
+        <Banner
+            visible={visible}
+            actions={[
+                {
+                    label: '了解(不再顯示)',
+                    onPress: () => {
+                        setVisible(false);
+                        AsyncStorage.setItem('newFunction', '211');
+                    },
+                },
+                {
+                    label: '了解',
+                    onPress: () => setVisible(false),
+                },
+            ]}
+            icon={'new-box'}>
+            <View>
+                <Text style={{fontSize: 18}}>新功能!!</Text>
+                <Text>現在除了可以匯出pdf亦可以匯出excel囉!!</Text>
+            </View>
+        </Banner>
     );
 };
 

@@ -520,9 +520,8 @@ function getRecordArray(rate, sql, args) {
                         for (let i = 0; i < rs.rows.length; i++) {
                             const row = rs.rows.item(i);
 
-                            //
+                            // 檢查是否要換月份
                             const currentDate = moment(row.DateTime);
-                            console.log(currentDate.isSame(lastDate, 'month'), lastDate); //debug
                             if (!currentDate.isSame(lastDate, 'month') || i >= rs.rows.length - 1) {
                                 recordArray.push({date: lastDate.format("yyyy-M"), record: tmp});
                                 tmp = [];
