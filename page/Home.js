@@ -815,7 +815,7 @@ const NewFunctionBanner = () => {
             icon={'new-box'}>
             <View>
                 <Text style={{fontSize: 18}}>新功能!!</Text>
-                <Text>現在除了可以匯出pdf亦可以匯出excel囉!!</Text>
+                <Text style={{flex: 1}}>現在除了可以匯出pdf亦可以匯出excel囉!!</Text>
             </View>
         </Banner>
     );
