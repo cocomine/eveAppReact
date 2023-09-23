@@ -804,7 +804,7 @@ const NewFunctionBanner = () => {
                     label: '了解(不再顯示)',
                     onPress: () => {
                         setVisible(false);
-                        AsyncStorage.setItem('newFunction', '211');
+                        AsyncStorage.setItem('newFunction', '213');
                     },
                 },
                 {
