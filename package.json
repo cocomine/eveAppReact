@@ -19,7 +19,7 @@
     "@react-navigation/native": "^6.1.7",
     "@react-navigation/native-stack": "^6.9.13",
     "@robinbobin/react-native-google-drive-api-wrapper": "^1.2.3",
-    "appcenter": "5.0.0",
+    "appcenter": "5.0.1",
     "appcenter-analytics": "5.0.1",
     "appcenter-crashes": "5.0.1",
     "base-64": "^1.0.0",
