@@ -184,7 +184,7 @@ let codePushOptions = { updateDialog: {
         descriptionPrefix: "\n\n更新內容：\n",
         mandatoryUpdateMessage: "有新版本，請更新",
         mandatoryContinueButtonLabel: "更新",
-    }, installMode: codePush.InstallMode.IMMEDIATE };
+    }, installMode: codePush.InstallMode.ON_NEXT_RESTART };
 App = codePush(codePushOptions)(App);
 
 export default App;
