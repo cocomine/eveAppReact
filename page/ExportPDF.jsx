@@ -9,7 +9,7 @@ import HTMLtoPDF from 'react-native-html-to-pdf';
 import RNFS, {CachesDirectoryPath} from 'react-native-fs';
 import Mailer from 'react-native-mail';
 import FileViewer from 'react-native-file-viewer';
-import RNPrint from 'react-native-print';
+import RNPrint from '@cocomine/react-native-print';
 import prompt from 'react-native-prompt-android';
 import Lottie from 'lottie-react-native';
 import formatPrice from '../module/formatPrice';

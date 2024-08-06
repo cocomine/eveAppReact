@@ -23,7 +23,6 @@
     "appcenter": "5.0.1",
     "appcenter-analytics": "5.0.1",
     "appcenter-crashes": "5.0.1",
-    "base-64": "^1.0.0",
     "byte-base64": "^1.1.0",
     "deepmerge": "^4.3.1",
     "lottie-react-native": "^6.2.0",
