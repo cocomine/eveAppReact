@@ -69,3 +69,7 @@ buck-out/
 /android/app/src/main/assets/appcenter-config.json
 /android/app/google-services.json
 /test.db
+
+#Expo
+/.expo
+/.expo-shared
