@@ -93,7 +93,7 @@ function App() {
                                 component={Backup}
                                 options={{title: '備份', headerShown: false}}
                             />
-                            <Stack.Screen //備份
+                            <Stack.Screen //搜尋
                                 name="Search"
                                 component={Search}
                                 options={{title: '搜尋', headerShown: false}}

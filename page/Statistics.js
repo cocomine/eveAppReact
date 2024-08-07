@@ -138,7 +138,7 @@ const Statistics = ({route}) => {
                                     <MaterialCommunityIcons name={'chevron-down'} size={10}/>
                                 </Text>}>
                             {showModeList.map((item, index) =>
-                                <Menu.Item onPress={() => setShowMode(item.value)} title={item.label}/>
+                                <Menu.Item onPress={() => setShowMode(item.value)} title={item.label} key={index}/>
                             )}
                         </Menu>
                     </ToolBarView>

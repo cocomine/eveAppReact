@@ -1,7 +1,6 @@
 /* 收入 統計 */
-import React, {useEffect} from 'react';
-import {View} from 'react-native';
-import {Text} from 'react-native-paper';
+import React, { useEffect } from "react";
+import { View } from "react-native";
 
 const IncomeStatistics = ({navigation, route}) => {
     useEffect(() => {
@@ -10,7 +9,7 @@ const IncomeStatistics = ({navigation, route}) => {
 
     return (
         <View style={{flex: 1}}>
-            <Text>ada</Text>
+
         </View>
     );
 };
