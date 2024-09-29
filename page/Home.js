@@ -138,7 +138,7 @@ const Home = () => {
     const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
-    const [isRefresh, setIsRefresh] = useState(false); //是否重新更新
+    const [isRefresh, setIsRefresh] = useState(true); //是否重新更新
     const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
     const [setting] = useSetting(); //設定
     const listRef = useRef(null); //FlatList Ref
@@ -197,6 +197,7 @@ const Home = () => {
                             [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')],
                             function (tx, rs) {
                                 if (rs.rows.length > 0) package_list = grouping_note(package_list, rs);
+                                setData(package_list);
                             },
                         );
                     },
@@ -205,7 +206,6 @@ const Home = () => {
                     },
                     function () {
                         console.log('已取得資料');
-                        setData(package_list);
                         setIsRefresh(false);
                     },
                 );
