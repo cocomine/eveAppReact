@@ -69,7 +69,7 @@ buck-out/
 # 项目排除路径
 /android/app/src/main/assets/appcenter-config.json
 /android/app/google-services.json
-/test.db
+*.db
 
 #Expo
 /.expo

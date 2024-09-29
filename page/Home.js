@@ -50,6 +50,15 @@ function group_data(ResultSet, Rate) {
         total.Shipping += row.Shipping;
         total.Total += row.RMB / Rate + row.HKD + row.Add + row.Shipping;
 
+        //圖片
+        let images = []
+        // catch error if not a valid JSON
+        try{
+            images = JSON.parse(row.Images);
+        }catch (e) {
+            console.error(e)
+        }
+
         //資料
         if (last_item && last_item.DateTime.getDate() === item_date.getDate()) {
             //存在 & 相同日期
@@ -65,8 +74,8 @@ function group_data(ResultSet, Rate) {
                 HKD: row.HKD,
                 Add: row.Add,
                 Shipping: row.Shipping,
-                haveImage: JSON.parse(row.Images).length > 0,
-                Images: JSON.parse(row.Images),
+                haveImage: images.length > 0 ,
+                Images: images,
             });
         } else {
             //不存在 & 不相同的日期
@@ -86,8 +95,8 @@ function group_data(ResultSet, Rate) {
                         HKD: row.HKD,
                         Add: row.Add,
                         Shipping: row.Shipping,
-                        haveImage: JSON.parse(row.Images).length > 0,
-                        Images: JSON.parse(row.Images),
+                        haveImage: images.length > 0 ,
+                        Images: images,
                     },
                 ],
             });
@@ -159,16 +168,9 @@ const Home = () => {
         setIsRefresh(true);
     }, [ShowDay]);
 
-    /* 自動跳轉顯示月份 */
-    useEffect(() => {
-        if (RNroute.params) {
-            setShowDay(new Date(RNroute.params.ShowDay));
-        }
-    }, [RNroute]);
-
     /* 更新資料 */
-    useEffect(() => {
-        let package_list;
+    const updateData = useCallback(() => {
+        setIsRefresh(true);
 
         /* 讀取紀錄 */
         DB.transaction(
@@ -178,40 +180,61 @@ const Home = () => {
                     "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
                     [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')],
                     function (tx, rs) {
+                        console.log('已取得資料', rs.rows.length);
                         const [data, total] = group_data(rs, setting['Rate']);
                         setTotal(total);
-                        package_list = data;
+                        setData(data);
+
+                        /* 讀取備忘錄 */
+                        DB.transaction(
+                            function (tr) {
+                                console.log('備忘錄顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
+                                tr.executeSql(
+                                    "SELECT * FROM Note WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
+                                    [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')],
+                                    function (tx, rs) {
+                                        console.log('已取得資料', rs.rows.length);
+                                        const data_have_note = rs.rows.length > 0 ? grouping_note(data, rs) : data;
+                                        setData(data_have_note);
+                                    },
+                                );
+                            },
+                            function (error) {
+                                console.log('傳輸錯誤: ' + error.message);
+                            },
+                            function () {
+                                setIsRefresh(false);
+                            },
+                        );
                     },
                 );
             },
             function (error) {
                 console.log('傳輸錯誤: ' + error.message);
             },
-            function () {
-                /* 讀取備忘錄 */
-                DB.transaction(
-                    function (tr) {
-                        console.log('備忘錄顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
-                        tr.executeSql(
-                            "SELECT * FROM Note WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC ",
-                            [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')],
-                            function (tx, rs) {
-                                if (rs.rows.length > 0) package_list = grouping_note(package_list, rs);
-                                setData(package_list);
-                            },
-                        );
-                    },
-                    function (error) {
-                        console.log('傳輸錯誤: ' + error.message);
-                    },
-                    function () {
-                        console.log('已取得資料');
-                        setIsRefresh(false);
-                    },
-                );
-            },
         );
-    }, [ShowDay, setting, DB]);
+    },[ShowDay, setting, DB]);
+
+    /* 直接選擇月份 */
+    const setMonth = useCallback(date => {
+        setShowDay(date);
+        setIsRefresh(true);
+    }, []);
+
+    /* 隱藏直接選擇月份 */
+    const hideMonthSelect = useCallback(() => setMonthSelect(false), []);
+
+    /* 自動跳轉顯示月份 */
+    useEffect(() => {
+        if (RNroute.params) {
+            setShowDay(new Date(RNroute.params.ShowDay));
+        }
+    }, [RNroute]);
+
+    /* first time 更新資料 */
+    useEffect(() => {
+        updateData();
+    }, [updateData]);
 
     /* 自動滑動最新紀錄 */
     useEffect(() => {
@@ -222,15 +245,6 @@ const Home = () => {
             }
         }
     }, [Data]);
-
-    /* 直接選擇月份 */
-    const setMonth = useCallback(date => {
-        setShowDay(date);
-        setIsRefresh(true);
-    }, []);
-
-    /* 隱藏直接選擇月份 */
-    const hideMonthSelect = useCallback(() => setMonthSelect(false), []);
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -329,7 +343,7 @@ const Home = () => {
                     <FlatList
                         data={Data}
                         ref={listRef}
-                        onRefresh={() => null}
+                        onRefresh={updateData}
                         refreshing={isRefresh}
                         renderItem={({item}) => <DataPart data={item} rate={setting['Rate']} />}
                         onScrollToIndexFailed={info => {

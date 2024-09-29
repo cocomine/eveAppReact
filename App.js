@@ -1,36 +1,36 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {AddRecord} from './page/AddRecord';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {StatusBar, useColorScheme} from 'react-native';
+import React, { useCallback, useEffect, useState } from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { AddRecord } from "./page/AddRecord";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { StatusBar, useColorScheme } from "react-native";
 import {
     DarkTheme as NavigationDarkTheme,
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
     useFocusEffect,
-} from '@react-navigation/native';
+} from "@react-navigation/native";
 import {
     Appbar,
     BottomNavigation,
     MD2DarkTheme as PaperDarkTheme,
     MD2LightTheme as PaperDefaultTheme,
     Provider as PaperProvider,
-} from 'react-native-paper';
-import merge from 'deepmerge';
-import {Home} from './page/Home';
-import {Color} from './module/Color';
-import Calculator from './module/Calculator';
-import {EditRecord} from './page/EditRecord';
-import {Export} from './page/Export';
-import {Setting} from './page/Setting';
-import {StartUp} from './page/StartUp';
-import {ChangeSave} from './page/ChangeSave';
-import {Statistics} from './page/Statistics';
-import {Backup} from './page/Backup';
-import {Search} from './page/Search';
-import {Note} from './page/Note';
-import {AddNote} from './page/AddNote';
-import codePush from 'react-native-code-push';
+} from "react-native-paper";
+import merge from "deepmerge";
+import { Home } from "./page/Home";
+import { Color } from "./module/Color";
+import Calculator from "./module/Calculator";
+import { EditRecord } from "./page/EditRecord";
+import { Export } from "./page/Export";
+import { Setting } from "./page/Setting";
+import { StartUp } from "./page/StartUp";
+import { ChangeSave } from "./page/ChangeSave";
+import { Statistics } from "./page/Statistics";
+import { Backup } from "./page/Backup";
+import { Search } from "./page/Search";
+import { Note } from "./page/Note";
+import { AddNote } from "./page/AddNote";
+import codePush from "react-native-code-push";
 
 const Stack = createNativeStackNavigator();
 
@@ -184,7 +184,7 @@ let codePushOptions = { updateDialog: {
         descriptionPrefix: "\n\n更新內容：\n",
         mandatoryUpdateMessage: "有新版本，請更新",
         mandatoryContinueButtonLabel: "更新",
-    }, installMode: codePush.InstallMode.ON_NEXT_RESTART };
+    }, installMode: codePush.InstallMode.IMMEDIATE };
 App = codePush(codePushOptions)(App);
 
 export default App;
