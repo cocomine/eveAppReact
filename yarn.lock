@@ -1050,10 +1050,10 @@
     deepmerge "^3.2.0"
     hoist-non-react-statics "^3.3.0"
 
-"@cocomine/react-native-print@^0.11.4":
-  version "0.11.4"
-  resolved "https://registry.yarnpkg.com/@cocomine/react-native-print/-/react-native-print-0.11.4.tgz#130dc7a3072fb1ece91c98d13e512cbf53e9de6c"
-  integrity sha512-5BztP/EAiHD5DPQrsAkFxnvSFyQg2lKhvNvVVU7StN8BlWnP/9hK+eVJnQx9MGLFoKbbbwtGd+v9QUIRTFGsag==
+"@cocomine/react-native-print@^0.11.6":
+  version "0.11.6"
+  resolved "https://registry.yarnpkg.com/@cocomine/react-native-print/-/react-native-print-0.11.6.tgz#de637c2d1fab4e71c19e563ff31d4f9c83ff53a8"
+  integrity sha512-z8j6iYApQAae/loKprxZGlElHzLprnWAR/59snvygH0HSw7P3hi2CqS9bgzwysJNiQjDPMQOSyNOkp7LXHn0Ww==
 
 "@egjs/hammerjs@^2.0.17":
   version "2.0.17"

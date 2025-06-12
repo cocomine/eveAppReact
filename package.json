@@ -10,7 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@cocomine/react-native-print": "^0.11.4",
+    "@cocomine/react-native-print": "^0.11.6",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.0.0",
     "@react-native-google-signin/google-signin": "^14.0.1",
