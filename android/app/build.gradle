@@ -14,9 +14,6 @@ if(project.rootProject.file("local.properties").exists()) {
     localPropertiesFile.load(new FileInputStream(project.rootProject.file("local.properties")))
 }
 
-// codepush.gradle is used to load the codepush information
-apply from: "../../node_modules/react-native-code-push/android/codepush.gradle"
-
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.

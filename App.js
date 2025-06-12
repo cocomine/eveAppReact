@@ -30,7 +30,6 @@ import { Backup } from "./page/Backup";
 import { Search } from "./page/Search";
 import { Note } from "./page/Note";
 import { AddNote } from "./page/AddNote";
-import codePush from "react-native-code-push";
 
 const Stack = createNativeStackNavigator();
 
@@ -172,19 +171,5 @@ const MainScreen = ({navigation}) => {
         />
     );
 };
-
-// code push
-let codePushOptions = { updateDialog: {
-        title: "有新版本",
-        optionalUpdateMessage: "有新版本，是否更新?",
-        optionalIgnoreButtonLabel: "忽略",
-        optionalInstallButtonLabel: "安裝",
-        optionalUpdateTitle: "有新版本",
-        appendReleaseDescription: true,
-        descriptionPrefix: "\n\n更新內容：\n",
-        mandatoryUpdateMessage: "有新版本，請更新",
-        mandatoryContinueButtonLabel: "更新",
-    }, installMode: codePush.InstallMode.IMMEDIATE };
-App = codePush(codePushOptions)(App);
 
 export default App;
