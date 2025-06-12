@@ -1,12 +1,13 @@
 import React from "react";
-import {Text, useTheme} from "react-native-paper";
+import {MD2Theme, Text, useTheme} from 'react-native-paper';
+import {ColorValue} from 'react-native';
 
 /* 細小文字 */
-const SmailText: React.FC<{ color?: string | number, children: React.ReactNode }> = ({color, children}) => {
-    const {colors} = useTheme();
+const SmailText: React.FC<{ color?: string, children: React.ReactNode }> = ({color, children}) => {
+    const {colors} = useTheme<MD2Theme>();
 
     return (
-        <Text style={{fontSize: 10, color: color || colors.text, marginTop: 3}}>{children}</Text>
+        <Text style={{fontSize: 10, color: (color || colors.text), marginTop: 3}}>{children}</Text>
     );
 }
 

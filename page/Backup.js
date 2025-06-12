@@ -25,7 +25,6 @@ import {FoldIn, FoldOut} from '../module/Fold';
 import {Ripple} from '../module/Ripple';
 import SVGLostCargo from '../module/SVGLostCargo';
 import {base64ToBytes, bytesToBase64} from 'byte-base64';
-import PushNotification from 'react-native-push-notification';
 import RNRestart from 'react-native-restart';
 
 /* google設定 */
@@ -571,7 +570,7 @@ const autoBackup = async () => {
                             (setting.cycle === 'Month' && diff >= 1000 * 60 * 60 * 24 * 30)
                         ) {
                             //推出通知
-                            PushNotification.localNotification({
+                            /*PushNotification.localNotification({
                                 channelId: 'backingup',
                                 id: 1,
                                 title: '備份進行中', // (optional)
@@ -579,7 +578,7 @@ const autoBackup = async () => {
                                 largeIcon: 'ic_launcher',
                                 smallIcon: 'ic_notification',
                                 ongoing: true,
-                            });
+                            });*/
                             console.log('正在進行自動備份');
 
                             //進行備份
@@ -587,7 +586,7 @@ const autoBackup = async () => {
                             await doBackup(folderID);
 
                             //取消通知
-                            PushNotification.cancelLocalNotification(1);
+                            /*PushNotification.cancelLocalNotification(1);*/
                             console.log('自動備份成功');
                         }
                     }

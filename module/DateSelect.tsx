@@ -1,6 +1,6 @@
 /* 直接選擇月份 */
 import React, {useCallback, useEffect, useState} from "react";
-import {IconButton, Text, useTheme} from "react-native-paper";
+import {IconButton, MD2Theme, Text, useTheme} from 'react-native-paper';
 import moment from "moment/moment";
 import ReAnimated, {FadeInUp, FadeOutUp} from "react-native-reanimated";
 import {StyleSheet, TouchableWithoutFeedback, View} from "react-native";
@@ -18,7 +18,7 @@ const DateSelect: React.FC<{
           onDismiss = () => null
       }) => {
     const [date, setDate] = useState(value);
-    const {colors} = useTheme();
+    const {colors} = useTheme<MD2Theme>();
     const correctMonth = date.getMonth();
 
     /* 修改預設月份 */

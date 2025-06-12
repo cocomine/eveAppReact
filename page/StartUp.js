@@ -4,7 +4,6 @@ import {Headline, useTheme} from 'react-native-paper';
 import {openDB} from '../module/SQLite';
 import Lottie from 'lottie-react-native';
 import {autoBackup} from './Backup';
-import PushNotification, {Importance} from 'react-native-push-notification';
 import SpInAppUpdates, {IAUUpdateKind} from 'sp-react-native-in-app-updates';
 
 const inAppUpdates = new SpInAppUpdates(false);
@@ -28,7 +27,7 @@ const StartUp = ({navigation}) => {
 
     /* 創建通知頻道 */
     const createChannel = () => {
-        PushNotification.createChannel(
+        /*PushNotification.createChannel(
             {
                 channelId: 'backingup', // (required)
                 channelName: 'BackingUp Status', // (required)
@@ -38,7 +37,7 @@ const StartUp = ({navigation}) => {
                 vibrate: false,
             },
             created => console.log(`'BackingUp Status' Notification Channel is '${created}'`),
-        );
+        );*/
     };
 
     /* Google play 程式更新 */
