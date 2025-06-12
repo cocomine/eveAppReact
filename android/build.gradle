@@ -7,11 +7,7 @@ buildscript {
         compileSdkVersion = 35
         targetSdkVersion = 34
 
-        /* @react-native-google-signin/google-signin start */
-        googlePlayServicesAuthVersion = "19.2.0"
-        googlePlayServicesVersion = "+"
-        firebaseMessagingVersion = "21.1.0"
-        /* @react-native-google-signin/google-signin end */
+        googlePlayServicesAuthVersion = "20.7.0" //@react-native-google-signin/google-signin
 
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
@@ -24,7 +20,7 @@ buildscript {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
-        classpath 'com.google.gms:google-services:4.3.15' // <--- @react-native-google-signin/google-signin
+        classpath 'com.google.gms:google-services:4.4.0' //@react-native-google-signin/google-signin
     }
 }
 

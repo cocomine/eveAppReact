@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: 'com.google.gms.google-services'
 
 // react-native-vector-icons plugin is used to load and configure the fonts
 project.ext.vectoricons = [
@@ -95,8 +96,8 @@ android {
         applicationId "com.cocomine.eveapp2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 222
-        versionName "2.2.5"
+        versionCode 223
+        versionName "2.3.0"
         resConfigs "zh"
     }
     signingConfigs {
@@ -141,7 +142,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0' // @react-native-google-signin/google-signin
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -149,5 +149,3 @@ dependencies {
         implementation jscFlavor
     }
 }
-
-apply plugin: 'com.google.gms.google-services' // @react-native-google-signin/google-signin

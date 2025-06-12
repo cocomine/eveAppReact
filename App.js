@@ -133,14 +133,16 @@ const MainScreen = ({navigation}) => {
     const [routes] = useState([
         {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
         {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
-        {key: 'Statistics', title: '統計', focusedIcon: 'chart-bar', color: Color.success},
+        //{key: 'Statistics', title: '統計', focusedIcon: 'chart-bar', color: Color.success},
+        {key: 'Search', title: '搜尋', focusedIcon: 'magnify', color: 'darkslateblue'},
         {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo},
     ]);
 
     const renderScene = BottomNavigation.SceneMap({
         Home: Home,
         Export: Export,
-        Statistics: Statistics,
+        //Statistics: Statistics,
+        Search: Search,
         Setting: Setting,
     });
 

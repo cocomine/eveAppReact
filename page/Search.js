@@ -120,119 +120,155 @@ const Search = ({ navigation }) => {
 
     return (
         /* 頂部toolbar */
-        <SafeAreaView style={{ flex: 1, position: "relative" }}>
-            <StatusBar backgroundColor={"darkslateblue"} barStyle={"light-content"} animated={true} />
+        <SafeAreaView style={{flex: 1, position: 'relative'}}>
+            <StatusBar backgroundColor={'darkslateblue'} barStyle={'light-content'} animated={true} />
             {/*<React.StrictMode>*/}
-            <View style={{ zIndex: 1, elevation: 1 }}>
-                <Toolbar containerStyle={{ backgroundColor: "darkslateblue" }}>
-                    <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
+            <View style={{zIndex: 1, elevation: 1}}>
+                <Toolbar containerStyle={{backgroundColor: 'darkslateblue'}}>
+                    {/*<Appbar.BackAction onPress={navigation.goBack} color={Color.white} />*/}
 
                     {/* 全部 */}
-                    {showMode === 0 ?
-                        <ToolBarView><Text style={{ color: Color.white }}>全部</Text></ToolBarView> : null}
+                    {showMode === 0 ? (
+                        <ToolBarView>
+                            <Text style={{color: Color.white}}>全部</Text>
+                        </ToolBarView>
+                    ) : null}
 
                     {/* 週 */}
-                    {showMode === 1 ? <ToolBarView>
-                        <IconButton icon={"chevron-left"} iconColor={Color.white} onPress={LastWeek} />
-                        <Text style={{ color: Color.white }}>
-                            {moment(ShowDay).startOf("week").format("D.M.YYYY") + " ~ " + moment(ShowDay).endOf("week").format("D.M")}</Text>
-                        <IconButton icon={"chevron-right"} iconColor={Color.white} onPress={NextWeek} />
-                    </ToolBarView> : null}
+                    {showMode === 1 ? (
+                        <ToolBarView>
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastWeek} />
+                            <Text style={{color: Color.white}}>
+                                {moment(ShowDay).startOf('week').format('D.M.YYYY') +
+                                    ' ~ ' +
+                                    moment(ShowDay).endOf('week').format('D.M')}
+                            </Text>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextWeek} />
+                        </ToolBarView>
+                    ) : null}
 
                     {/* 月份 */}
-                    {showMode === 2 ? <ToolBarView>
-                        <IconButton icon={"chevron-left"} iconColor={Color.white} onPress={LastMonth} />
-                        <Text style={{ color: Color.white }}>{moment(ShowDay).format("M月 yyyy")}</Text>
-                        <IconButton icon={"chevron-right"} iconColor={Color.white} onPress={NextMonth} />
-                    </ToolBarView> : null}
+                    {showMode === 2 ? (
+                        <ToolBarView>
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
+                            <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
+                        </ToolBarView>
+                    ) : null}
 
                     {/* 年 */}
-                    {showMode === 3 ? <ToolBarView>
-                        <IconButton icon={"chevron-left"} iconColor={Color.white} onPress={LastYear} />
-                        <Text style={{ color: Color.white }}>{ShowDay.format("YYYY")}</Text>
-                        <IconButton icon={"chevron-right"} iconColor={Color.white} onPress={NextYear} />
-                    </ToolBarView> : null}
+                    {showMode === 3 ? (
+                        <ToolBarView>
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastYear} />
+                            <Text style={{color: Color.white}}>{ShowDay.format('YYYY')}</Text>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextYear} />
+                        </ToolBarView>
+                    ) : null}
 
                     {/* 自訂 */}
-                    {showMode === 4 ? <ToolBarView>
-                        <TouchableWithoutFeedback onPress={() => {
-                            DateTimePickerAndroid.open({
-                                value: ShowDay.toDate(), onChange: (event, newDate) => {
-                                    setShowDay(moment(newDate));
-                                },
-                            });
-                        }}>
-                            <View style={style.row}>
-                                <Text style={{ color: Color.white }}>{ShowDay.format("YYYY-MM-DD")}</Text>
-                                <MaterialCommunityIcons name={"calendar-month-outline"} size={20} />
-                            </View>
-                        </TouchableWithoutFeedback>
-                        <Text style={{ color: Color.white, paddingHorizontal: 10 }}>~</Text>
-                        <TouchableWithoutFeedback onPress={() => {
-                            DateTimePickerAndroid.open({
-                                value: ShowDayEnd.toDate(), onChange: (event, newDate) => {
-                                    setShowDayEnd(moment(newDate));
-                                },
-                                minimumDate: ShowDay.toDate(),
-                            });
-                        }}>
-                            <View style={style.row}>
-                                <Text style={{ color: Color.white }}>{ShowDayEnd.format("YYYY-MM-DD")}</Text>
-                                <MaterialCommunityIcons name={"calendar-month-outline"} size={20} />
-                            </View>
-                        </TouchableWithoutFeedback>
-                    </ToolBarView> : null}
+                    {showMode === 4 ? (
+                        <ToolBarView>
+                            <TouchableWithoutFeedback
+                                onPress={() => {
+                                    DateTimePickerAndroid.open({
+                                        value: ShowDay.toDate(),
+                                        onChange: (event, newDate) => {
+                                            setShowDay(moment(newDate));
+                                        },
+                                    });
+                                }}>
+                                <View style={style.row}>
+                                    <Text style={{color: Color.white}}>{ShowDay.format('YYYY-MM-DD')}</Text>
+                                    <MaterialCommunityIcons name={'calendar-month-outline'} size={20} />
+                                </View>
+                            </TouchableWithoutFeedback>
+                            <Text style={{color: Color.white, paddingHorizontal: 10}}>~</Text>
+                            <TouchableWithoutFeedback
+                                onPress={() => {
+                                    DateTimePickerAndroid.open({
+                                        value: ShowDayEnd.toDate(),
+                                        onChange: (event, newDate) => {
+                                            setShowDayEnd(moment(newDate));
+                                        },
+                                        minimumDate: ShowDay.toDate(),
+                                    });
+                                }}>
+                                <View style={style.row}>
+                                    <Text style={{color: Color.white}}>{ShowDayEnd.format('YYYY-MM-DD')}</Text>
+                                    <MaterialCommunityIcons name={'calendar-month-outline'} size={20} />
+                                </View>
+                            </TouchableWithoutFeedback>
+                        </ToolBarView>
+                    ) : null}
 
-                    <ToolBarView style={{ position: "relative" }}>
+                    <ToolBarView style={{position: 'relative'}}>
                         <Menu
                             visible={showModeDropdown}
                             onDismiss={() => setShowModeDropdown(false)}
                             anchor={
                                 <Text onPress={() => setShowModeDropdown(true)} style={style.dropdown}>
-                                    {showModeList.find((item => item.value === showMode)).label}
-                                    <MaterialCommunityIcons name={"chevron-down"} size={10} />
-                                </Text>}>
-                            {showModeList.map((item, index) =>
-                                <Menu.Item onPress={() => setShowMode(item.value)} title={item.label} />,
-                            )}
+                                    {showModeList.find(item => item.value === showMode).label}
+                                    <MaterialCommunityIcons name={'chevron-down'} size={10} />
+                                </Text>
+                            }>
+                            {showModeList.map((item, index) => (
+                                <Menu.Item onPress={() => setShowMode(item.value)} title={item.label} />
+                            ))}
                         </Menu>
                     </ToolBarView>
                 </Toolbar>
-                <Toolbar containerStyle={{ backgroundColor: "darkslateblue" }}>
-                    <View style={{ flex: 1 }}>
-                        <TextInput value={keyword} onChangeText={setKeyword} left={
-                            <TextInput.Icon name="magnify" />} dense={true} style={{ borderRadius: 4 }}
-                                   underlineColor={Color.transparent} />
+                <Toolbar containerStyle={{backgroundColor: 'darkslateblue'}}>
+                    <View style={{flex: 1}}>
+                        <TextInput
+                            value={keyword}
+                            onChangeText={setKeyword}
+                            left={<TextInput.Icon name="magnify" />}
+                            dense={true}
+                            style={{borderRadius: 4}}
+                            underlineColor={Color.transparent}
+                        />
                     </View>
                 </Toolbar>
-                <Toolbar containerStyle={{ backgroundColor: "darkslateblue" }}>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: "center",
-                        }}>{"人民幣\n¥ " + formatPrice(Total.RMB.toFixed(2))}</Text>
+                <Toolbar containerStyle={{backgroundColor: 'darkslateblue'}}>
+                    <View style={{flex: 1}}>
+                        <Text
+                            style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center',
+                            }}>
+                            {'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}
+                        </Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: "center",
-                        }}>{"港幣\n$ " + formatPrice(Total.HKD.toFixed(2))}</Text>
+                    <View style={{flex: 1}}>
+                        <Text
+                            style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center',
+                            }}>
+                            {'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}
+                        </Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: "center",
-                        }}>{"加收\n¥ " + formatPrice(Total.Add.toFixed(2))}</Text>
+                    <View style={{flex: 1}}>
+                        <Text
+                            style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center',
+                            }}>
+                            {'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}
+                        </Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{
-                            color: Color.white,
-                            fontSize: 12,
-                            textAlign: "center",
-                        }}>{"運費\n¥ " + formatPrice(Total.Shipping.toFixed(2))}</Text>
+                    <View style={{flex: 1}}>
+                        <Text
+                            style={{
+                                color: Color.white,
+                                fontSize: 12,
+                                textAlign: 'center',
+                            }}>
+                            {'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}
+                        </Text>
                     </View>
                 </Toolbar>
             </View>
@@ -240,14 +276,15 @@ const Search = ({ navigation }) => {
             {/* 內容 */}
             <FlatList
                 data={Data}
-                renderItem={({ item }) => <DataPart data={item} rate={setting["Rate"]} />}
+                renderItem={({item}) => <DataPart data={item} rate={setting['Rate']} />}
                 ListFooterComponent={
-                    <View style={{ height: 120, justifyContent: "center", alignItems: "center" }}>
+                    <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
                         <SVGCargo height="60" width="180" />
                         <Text>已經到底喇~~ （￣︶￣）↗ </Text>
-                    </View>}
+                    </View>
+                }
                 ListEmptyComponent={
-                    <View style={{ justifyContent: "center", alignItems: "center", height: "100%" }}>
+                    <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
                         <SVGLostCargo height="100" width="300" />
                         <Text>沒有資料... Σ(っ °Д °;)っ</Text>
                     </View>

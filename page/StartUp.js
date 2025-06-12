@@ -1,10 +1,11 @@
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {Alert, SafeAreaView, StatusBar, useColorScheme, View} from 'react-native';
 import {Headline, useTheme} from 'react-native-paper';
 import {openDB} from '../module/SQLite';
 import Lottie from 'lottie-react-native';
 import {autoBackup} from './Backup';
 import SpInAppUpdates, {IAUUpdateKind} from 'sp-react-native-in-app-updates';
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 const inAppUpdates = new SpInAppUpdates(false);
 
@@ -13,7 +14,7 @@ const StartUp = ({navigation}) => {
     const isDarkMode = useColorScheme() === 'dark';
 
     useEffect(() => {
-        createChannel();
+        createChannel().then();
         inAppUpdate().then();
 
         openDB().then(() => {
@@ -23,22 +24,26 @@ const StartUp = ({navigation}) => {
                 navigation.reset({index: 0, routes: [{name: 'Main'}]});
             }, 2500);
         });
-    }, []);
+    }, [createChannel, navigation]);
 
     /* 創建通知頻道 */
-    const createChannel = () => {
-        /*PushNotification.createChannel(
-            {
-                channelId: 'backingup', // (required)
-                channelName: 'BackingUp Status', // (required)
-                channelDescription: '顯示backup資訊',
-                importance: Importance.MIN,
-                playSound: false,
-                vibrate: false,
-            },
-            created => console.log(`'BackingUp Status' Notification Channel is '${created}'`),
-        );*/
-    };
+    const createChannel = useCallback(async () => {
+        // Request permissions (required for iOS)
+        await notifee.requestPermission();
+
+        // Create a channel (required for Android)
+        const channelId = await notifee.createChannel({
+            id: 'backingup',
+            name: 'BackingUp Status',
+            description: '顯示backup資訊',
+            importance: AndroidImportance.MIN,
+            badge: false,
+            lights: false,
+            vibration: false,
+        });
+
+        console.log("'BackingUp Status' Notification Channel is created");
+    }, []);
 
     /* Google play 程式更新 */
     const inAppUpdate = async () => {
@@ -50,7 +55,8 @@ const StartUp = ({navigation}) => {
                 [
                     {
                         text: '立即更新',
-                        onPress: () => inAppUpdates.startUpdate({updateType: IAUUpdateKind.IMMEDIATE}),
+                        onPress: () =>
+                            inAppUpdates.startUpdate({updateType: IAUUpdateKind.IMMEDIATE}),
                     },
                     {
                         text: '稍後更新',

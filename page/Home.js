@@ -261,11 +261,11 @@ const Home = () => {
                             <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
                         </ToolBarView>
                         <ToolBarView>
-                            <IconButton
+                            {/*<IconButton
                                 icon={'magnify'}
                                 iconColor={Color.white}
                                 onPress={() => navigation.navigate('Search')}
-                            />
+                            />*/}
                             <SmailText color={Color.white}>本月總計</SmailText>
                             <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
                         </ToolBarView>

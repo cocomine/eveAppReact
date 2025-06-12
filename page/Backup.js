@@ -14,7 +14,7 @@ import {Color} from '../module/Color';
 import {Appbar, Button, Dialog, Headline, Portal, Subheading, Switch, Text, Title, useTheme} from 'react-native-paper';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import Lottie from 'lottie-react-native';
-import {GoogleSignin, statusCodes} from '@react-native-google-signin/google-signin';
+import {GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes} from '@react-native-google-signin/google-signin';
 import {GDrive, ListQueryBuilder, MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
 import RNFS, {CachesDirectoryPath} from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,11 +26,18 @@ import {Ripple} from '../module/Ripple';
 import SVGLostCargo from '../module/SVGLostCargo';
 import {base64ToBytes, bytesToBase64} from 'byte-base64';
 import RNRestart from 'react-native-restart';
+import notifee from '@notifee/react-native';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
 GoogleSignin.signInSilently()
-    .then(e => console.log('Google API Login: ' + e.user.email))
+    .then(response => {
+        if (isSuccessResponse(response)) {
+            console.log('Google API SignIn Silently Success', response.data.user.email);
+        } else {
+            console.log('Google API SignIn Silently Failed');
+        }
+    })
     .catch(e => console.log('Google API Error: ' + e.message));
 const gdrive = new GDrive();
 
@@ -52,11 +59,11 @@ const Backup = ({navigation}) => {
     /* 初始化 */
     useEffect(() => {
         const startup = async () => {
-            const isLogin = await GoogleSignin.isSignedIn();
-            if (isLogin) {
-                const userinfo = await GoogleSignin.getCurrentUser();
+            if (GoogleSignin.hasPreviousSignIn()) {
+                const userinfo = GoogleSignin.getCurrentUser();
                 setUserInfo({...userinfo});
-                setIsLogin(isLogin);
+                setIsLogin(true);
+                gdrive.accessToken = (await GoogleSignin.getTokens()).accessToken;
 
                 const [folder, BackupDate] = await listAllBackup();
                 folderID.current = folder;
@@ -102,27 +109,37 @@ const Backup = ({navigation}) => {
         await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
 
         try {
-            const userinfo = await GoogleSignin.signIn();
-            setUserInfo({...userinfo});
-            setIsLogin(true);
+            const response = await GoogleSignin.signIn();
+            if (isSuccessResponse(response)) {
+                //login成功
+                setUserInfo({...response.data});
+                setIsLogin(true);
+                gdrive.accessToken = (await GoogleSignin.getTokens()).accessToken;
 
-            const [folder, BackupDate] = await listAllBackup();
-            folderID.current = folder;
-            setNewBackupDate(BackupDate);
-        } catch (error) {
-            console.log(error);
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                ToastAndroid.show('已取消連結', ToastAndroid.SHORT);
-            } else if (error.code === statusCodes.IN_PROGRESS) {
-                ToastAndroid.show('連結仍在進行中', ToastAndroid.SHORT);
-            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                ToastAndroid.show('Google Play service不可用', ToastAndroid.SHORT);
+                const [folder, BackupDate] = await listAllBackup();
+                folderID.current = folder;
+                setNewBackupDate(BackupDate);
             } else {
-                ToastAndroid.show('未知其他錯誤: ' + error.code, ToastAndroid.SHORT);
+                //cancel login
+                ToastAndroid.show('已取消連結', ToastAndroid.SHORT);
+            }
+        } catch (error) {
+            console.error(error);
+            if (isErrorWithCode(error)) {
+                switch (error.code) {
+                    case statusCodes.IN_PROGRESS:
+                        ToastAndroid.show('連結仍在進行中', ToastAndroid.SHORT);
+                        break;
+                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                        ToastAndroid.show('Google Play service不可用', ToastAndroid.SHORT);
+                        break;
+                    default:
+                        ToastAndroid.show('未知其他錯誤: ' + error.code, ToastAndroid.SHORT);
+                }
             }
             await unlink();
         }
-    }, []);
+    }, [unlink]);
 
     /* 備份 */
     const backup = useCallback(() => {
@@ -424,21 +441,15 @@ const RestoreList = ({data, onPress}) => {
 /* 備份檔案列表 */
 const backupList = async folderID => {
     return await gdrive.files.list({
-        q: new ListQueryBuilder().e('parents', folderID).and().e('trashed', false),
+        q: `(parents = "${folderID}") and (trashed = false)`,
         orderBy: 'createdTime desc',
     });
 };
 
 /* 列出所有備份 */
 const listAllBackup = async () => {
-    gdrive.accessToken = (await GoogleSignin.getTokens()).accessToken;
     const list = await gdrive.files.list({
-        q: new ListQueryBuilder()
-            .e('name', 'eveApp')
-            .and()
-            .e('mimeType', 'application/vnd.google-apps.folder')
-            .and()
-            .e('trashed', false),
+        q: '(name = "eveApp") and (mimeType = "application/vnd.google-apps.folder") and (trashed = false)',
     });
 
     let folderID = list.files[0] ? list.files[0].id : null;
@@ -490,20 +501,21 @@ const doBackup = async folderID => {
     //上載檔案
     const fileName = custom_name + moment(new Date()).format('_D/M/YYYY-H:mm:ss.SSS') + '.db';
     const uploader = gdrive.files.newResumableUploader();
-    await uploader
-        .setDataType('application/x-sqlite3')
+    const uploader_req = await uploader
+        .setDataMimeType('application/x-sqlite3')
         .setRequestBody({
             name: fileName,
             description: 'eveApp Database. Backup on ' + moment(new Date()).format('DD/M/YYY HH:mm:ss'),
             parents: [folderID],
         })
+        .setContentLength(U8byteArray.length)
         .execute();
 
     // 可恢復上載
     let tryTime = 0;
     while (tryTime < 10) {
         try {
-            await uploader.uploadChunk(U8byteArray);
+            await uploader_req.uploadChunk(U8byteArray);
             console.log('完成上載 (' + fileName + ')');
             break;
         } catch (e) {
@@ -514,7 +526,7 @@ const doBackup = async folderID => {
             throw new Error('Upload Fall.');
         }
     }
-    const status = await uploader.requestUploadStatus();
+    const status = await uploader_req.requestUploadStatus();
 
     if (!status.isComplete) {
         throw new Error('Upload is not complete.');
@@ -548,6 +560,23 @@ const doRestore = async fileID => {
     await RNFS.writeFile(CachesDirectoryPath + '/../databases/' + dbname[0] + '.db', file, 'base64');
 };
 
+/* 註冊自動備份前台服務 */
+notifee.registerForegroundService(notification => {
+    return new Promise(async () => {
+        console.log('正在進行自動備份');
+        try {
+            gdrive.accessToken = (await GoogleSignin.getTokens()).accessToken;
+            const [folderID] = await listAllBackup();
+            await doBackup(folderID);
+            console.log('自動備份成功');
+        } catch (e) {
+            console.error('自動備份失敗: ', e.message);
+        } finally {
+            await notifee.stopForegroundService();
+        }
+    });
+});
+
 /* 自動備份 */
 const autoBackup = async () => {
     DB.transaction(
@@ -556,10 +585,33 @@ const autoBackup = async () => {
                 "SELECT value FROM Setting WHERE Target IN('AutoBackup', 'AutoBackup_cycle')",
                 [],
                 async (tr, rs) => {
-                    const setting = {enable: rs.rows.item(0).value === 'On', cycle: rs.rows.item(1).value};
+                    const setting = {
+                        enable: rs.rows.item(0).value === 'On',
+                        cycle: rs.rows.item(1).value,
+                    };
 
                     let Last_Backup = await AsyncStorage.getItem('Last_Backup');
-                    if (Last_Backup && setting.enable) {
+                    if (setting.enable) {
+                        //如果自動備份開啟
+
+                        if (Last_Backup == null) {
+                            //如果沒有備份過
+                            await notifee.displayNotification({
+                                title: '備份進行中...',
+                                body: '正在進行自動備份',
+                                android: {
+                                    smallIcon: 'ic_notification',
+                                    channelId: 'backingup',
+                                    largeIcon: 'ic_launcher',
+                                    asForegroundService: true,
+                                    color: Color.primaryColor,
+                                    colorized: true,
+                                    localOnly: true,
+                                },
+                            }); //顯示通知, start foreground service
+                            return;
+                        }
+
                         const now = new Date();
                         const Last_Backup_Date = new Date(Last_Backup);
                         let diff = now.getTime() - Last_Backup_Date.getTime();
@@ -569,25 +621,19 @@ const autoBackup = async () => {
                             (setting.cycle === 'Week' && diff >= 1000 * 60 * 60 * 24 * 7) ||
                             (setting.cycle === 'Month' && diff >= 1000 * 60 * 60 * 24 * 30)
                         ) {
-                            //推出通知
-                            /*PushNotification.localNotification({
-                                channelId: 'backingup',
-                                id: 1,
-                                title: '備份進行中', // (optional)
-                                message: '正在進行自動備份', // (required)
-                                largeIcon: 'ic_launcher',
-                                smallIcon: 'ic_notification',
-                                ongoing: true,
-                            });*/
-                            console.log('正在進行自動備份');
-
-                            //進行備份
-                            const [folderID] = await listAllBackup();
-                            await doBackup(folderID);
-
-                            //取消通知
-                            /*PushNotification.cancelLocalNotification(1);*/
-                            console.log('自動備份成功');
+                            await notifee.displayNotification({
+                                title: '備份進行中...',
+                                body: '正在進行自動備份',
+                                android: {
+                                    smallIcon: 'ic_notification',
+                                    channelId: 'backingup',
+                                    largeIcon: 'ic_launcher',
+                                    asForegroundService: true,
+                                    color: Color.primaryColor,
+                                    colorized: true,
+                                    localOnly: true,
+                                },
+                            }); //顯示通知, start foreground service
                         }
                     }
                 },
