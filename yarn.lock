@@ -1950,6 +1950,11 @@
   dependencies:
     nanoid "^3.1.23"
 
+"@rnx-kit/align-deps@^3.0.6":
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/@rnx-kit/align-deps/-/align-deps-3.0.6.tgz#7932aacefe7a260ae4a844c5ca07eba2e073385a"
+  integrity sha512-hRqnaMzHxua8iEV2Bc4hYHC78sqvriSqGxIWR6/q+ZImTvrpBGvomSCer6wKquRjziAEwPCDW5NJxjaHfSJ1FA==
+
 "@robinbobin/react-native-google-drive-api-wrapper@^1.2.3":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@robinbobin/react-native-google-drive-api-wrapper/-/react-native-google-drive-api-wrapper-1.2.4.tgz#b5c0c30c3754b9abba9034897b66a4afd7f1755c"
