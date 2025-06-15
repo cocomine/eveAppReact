@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
     Animated,
     FlatList,
@@ -10,28 +10,28 @@ import {
     TouchableWithoutFeedback,
     useColorScheme,
     View,
-} from "react-native";
-import { Color } from "../module/Color";
-import { Toolbar, ToolBarView } from "../module/Toolbar";
-import ADIcon from "react-native-vector-icons/AntDesign";
-import FW5Icon from "react-native-vector-icons/FontAwesome5";
-import { SmailText } from "../module/SmailText";
-import moment from "moment";
-import "moment/min/locales";
-import { Swipeable } from "react-native-gesture-handler";
-import ReactNativeHapticFeedback from "react-native-haptic-feedback";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text } from "react-native-paper";
-import { DB, useSetting } from "../module/SQLite";
-import formatPrice from "../module/formatPrice";
-import SVGLostCargo from "../module/SVGLostCargo";
-import SVGCargo from "../module/SVGCargo";
-import { Ripple } from "../module/Ripple";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DateSelect } from "../module/DateSelect";
-import { convertColor } from "./Note";
-import ImageViewer from "react-native-image-zoom-viewer";
+} from 'react-native';
+import {Color} from '../module/Color';
+import {Toolbar, ToolBarView} from '../module/Toolbar';
+import ADIcon from 'react-native-vector-icons/AntDesign';
+import FW5Icon from 'react-native-vector-icons/FontAwesome5';
+import {SmailText} from '../module/SmailText';
+import moment from 'moment';
+import 'moment/min/locales';
+import {Swipeable} from 'react-native-gesture-handler';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text} from 'react-native-paper';
+import {DB, useSetting} from '../module/SQLite';
+import formatPrice from '../module/formatPrice';
+import SVGLostCargo from '../module/SVGLostCargo';
+import SVGCargo from '../module/SVGCargo';
+import {Ripple} from '../module/Ripple';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {DateSelect} from '../module/DateSelect';
+import {convertColor} from './Note';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate) {
@@ -51,12 +51,12 @@ function group_data(ResultSet, Rate) {
         total.Total += row.RMB / Rate + row.HKD + row.Add + row.Shipping;
 
         //圖片
-        let images = []
+        let images = [];
         // catch error if not a valid JSON
-        try{
+        try {
             images = JSON.parse(row.Images);
-        }catch (e) {
-            console.error(e)
+        } catch (e) {
+            console.error(e);
         }
 
         //資料
@@ -74,7 +74,7 @@ function group_data(ResultSet, Rate) {
                 HKD: row.HKD,
                 Add: row.Add,
                 Shipping: row.Shipping,
-                haveImage: images.length > 0 ,
+                haveImage: images.length > 0,
                 Images: images,
             });
         } else {
@@ -95,7 +95,7 @@ function group_data(ResultSet, Rate) {
                         HKD: row.HKD,
                         Add: row.Add,
                         Shipping: row.Shipping,
-                        haveImage: images.length > 0 ,
+                        haveImage: images.length > 0,
                         Images: images,
                     },
                 ],
@@ -213,7 +213,7 @@ const Home = () => {
                 console.log('傳輸錯誤: ' + error.message);
             },
         );
-    },[ShowDay, setting, DB]);
+    }, [ShowDay, setting]);
 
     /* 直接選擇月份 */
     const setMonth = useCallback(date => {
@@ -226,7 +226,7 @@ const Home = () => {
 
     /* 自動跳轉顯示月份 */
     useEffect(() => {
-        if (RNroute.params) {
+        if (RNroute.params && RNroute.params.ShowDay) {
             setShowDay(new Date(RNroute.params.ShowDay));
         }
     }, [RNroute]);
@@ -244,7 +244,7 @@ const Home = () => {
                 listRef.current.scrollToIndex({index: index});
             }
         }
-    }, [Data]);
+    }, [Data, ShowDay]);
 
     return (
         <SafeAreaView style={{flex: 1}}>
@@ -539,6 +539,8 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
             }).start();
             isRMBShow.current = true;
         }
+
+        //eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     /* 移除動畫 */
@@ -562,7 +564,9 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
 
     /* 初始化 */
     const onLayout = useCallback(({nativeEvent}) => {
-        if (height.current === null) height.current = new Animated.Value(nativeEvent.layout.height);
+        if (height.current === null) {
+            height.current = new Animated.Value(nativeEvent.layout.height);
+        }
     }, []);
 
     /* 確認動作 */
@@ -589,7 +593,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 );
             }
         },
-        [id],
+        [hide, id, navigation],
     );
 
     /* 顯示圖片 */
@@ -625,7 +629,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                     item.Add,
                     item.Shipping,
                     item.Remark,
-                    item.Images
+                    item.Images,
                 ]);
             },
             function (error) {
@@ -636,7 +640,21 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 setConfirmMSG(false);
             },
         );
-    }, [dateTime]);
+    }, [
+        dateTime,
+        id,
+        item.Add,
+        item.CargoNum,
+        item.HKD,
+        item.Images,
+        item.Local,
+        item.OrderNum,
+        item.RMB,
+        item.Remark,
+        item.Shipping,
+        item.Type,
+        show,
+    ]);
 
     return (
         <Animated.View style={{height: height.current}} onLayout={onLayout}>
@@ -672,16 +690,16 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                                     <View style={{width: 5}}></View>
                                     {item.haveImage ? (
                                         <Text>
-                                            <FW5Icon name={'image'} size={13} color={Color.textGary}/>
+                                            <FW5Icon name={'image'} size={13} color={Color.textGary} />
                                         </Text>
-                                    ) : ''}
+                                    ) : (
+                                        ''
+                                    )}
                                 </Text>
                             </View>
                         </View>
                         <View>
-                            <Text style={style.dataPartRemark}>
-                                {item.Remark === null ? '' : item.Remark}
-                            </Text>
+                            <Text style={style.dataPartRemark}>{item.Remark === null ? '' : item.Remark}</Text>
                         </View>
                         <View style={[style.row, {justifyContent: 'flex-start'}]}>
                             <View style={{marginRight: 10}}>
@@ -803,11 +821,11 @@ const NewFunctionBanner = () => {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        AsyncStorage.getItem('newFunction').then((value) => {
+        AsyncStorage.getItem('newFunction').then(value => {
             if (value !== '213') {
                 setVisible(true);
             }
-        })
+        });
     }, []);
 
     return (
