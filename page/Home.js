@@ -509,24 +509,22 @@ const SwipeLeft = (progress, translation) => {
 const SwipeRight = (progress, translation) => {
     //背景動畫
     const styleAnimation = useAnimatedStyle(() => {
-        console.log('appliedTranslation:', translation.value);
-
         const translateX = interpolate(translation.value, [-120, 0], [-20, 20], 'clamp');
         const rotate = interpolate(translation.value, [-120, 0], [0, 70], 'clamp');
 
         return {
-            marginRight: 'auto',
+            marginLeft: 'auto',
             transform: [{translateX: translateX}, {rotate: rotate.toString() + 'deg'}],
         };
     });
 
     //背景圖片
     return (
-        <REAnimated.View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
+        <View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
             <REAnimated.View style={styleAnimation}>
-                <FW5Icon name={'trash'} size={40} color={Color.white} />
+                <FW5Icon name={'trash-alt'} size={40} color={Color.white} />
             </REAnimated.View>
-        </REAnimated.View>
+        </View>
     );
 };
 
