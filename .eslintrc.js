@@ -18,5 +18,6 @@ module.exports = {
         'react-native/no-color-literals': 'off',
         'react-native/no-raw-text': 'off',
         'react-native/no-unused-styles': 'warn',
+        curly: 'off',
     },
 };

@@ -50,15 +50,6 @@ function App() {
         },
     };
 
-    function CustomNavigationBar({navigation, back, options}) {
-        return (
-            <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
-                {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack} />}
-                <Appbar.Content title={options.title} />
-            </Appbar.Header>
-        );
-    }
-
     return (
         <GestureHandlerRootView style={{flex: 1}}>
             <PaperProvider theme={theme}>
@@ -124,6 +115,15 @@ function App() {
                 </NavigationContainer>
             </PaperProvider>
         </GestureHandlerRootView>
+    );
+}
+
+function CustomNavigationBar({navigation, back, options}) {
+    return (
+        <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
+            {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack} />}
+            <Appbar.Content title={options.title} />
+        </Appbar.Header>
     );
 }
 

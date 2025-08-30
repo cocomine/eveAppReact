@@ -4,7 +4,7 @@ import {Caption, Divider, List, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import {Swipeable} from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import FW5Icon from 'react-native-vector-icons/FontAwesome5';
+import FW5Icon from '@react-native-vector-icons/fontawesome5';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNRestart from 'react-native-restart';
 import RNFS, {CachesDirectoryPath} from 'react-native-fs';

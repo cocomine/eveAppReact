@@ -1,67 +1,77 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { DB, useSetting } from "../module/SQLite";
-import moment from "moment/moment";
-import { FlatList, SafeAreaView, StatusBar, StyleSheet, TouchableWithoutFeedback, View } from "react-native";
-import { Appbar, IconButton, Menu, Text, TextInput } from "react-native-paper";
-import { Toolbar, ToolBarView } from "../module/Toolbar";
-import { Color } from "../module/Color";
-import formatPrice from "../module/formatPrice";
-import SVGCargo from "../module/SVGCargo";
-import SVGLostCargo from "../module/SVGLostCargo";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { DataPart, group_data } from "./Home";
+import React, {useCallback, useEffect, useState} from 'react';
+import {DB, useSetting} from '../module/SQLite';
+import moment from 'moment/moment';
+import {
+    FlatList,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    ToastAndroid,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
+import {Appbar, IconButton, Menu, Text, TextInput} from 'react-native-paper';
+import {Toolbar, ToolBarView} from '../module/Toolbar';
+import {Color} from '../module/Color';
+import formatPrice from '../module/formatPrice';
+import SVGCargo from '../module/SVGCargo';
+import SVGLostCargo from '../module/SVGLostCargo';
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
+import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
+import {DataPart, group_data} from './Home';
 
 /* 顯示模式List */
 const showModeList = [
-    { label: "全部", value: 0 },
-    { label: "週", value: 1 },
-    { label: "月", value: 2 },
-    { label: "年", value: 3 },
-    { label: "自訂", value: 4 },
+    {label: '全部', value: 0},
+    {label: '週', value: 1},
+    {label: '月', value: 2},
+    {label: '年', value: 3},
+    {label: '自訂', value: 4},
 ];
 
-const Search = ({ navigation }) => {
-    const [Total, setTotal] = useState({ Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0 }); //總數
+const Search = ({navigation}) => {
+    const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(moment()); //顯示日期
     const [ShowDayEnd, setShowDayEnd] = useState(moment()); //顯示日期
-    const [keyword, setKeyword] = useState(""); //搜尋keyword
+    const [keyword, setKeyword] = useState(''); //搜尋keyword
     const [showMode, setShowMode] = useState(2); //顯示模式, 0 全部, 1 週, 2 月, 3 年, 4 自訂
     const [showModeDropdown, setShowModeDropdown] = useState(false); //顯示模式, 下拉式選單是否開啟
     const [setting] = useSetting(); //設定
 
     /* 更新資料 */
     useEffect(() => {
-        let sqlQuery = "";
+        let sqlQuery = '';
         let sqlValue = [];
-        let package_list;
 
         /* 根據模式安排sql query */
         switch (showMode) {
             case 1:
                 sqlQuery = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
-                sqlValue = [moment(ShowDay).startOf("week").format("YYYY-MM-DD"), moment(ShowDay).endOf("week").format("YYYY-MM-DD")];
+                sqlValue = [
+                    moment(ShowDay).startOf('week').format('YYYY-MM-DD'),
+                    moment(ShowDay).endOf('week').format('YYYY-MM-DD'),
+                ];
                 break;
             case 2:
                 sqlQuery = "WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ?";
-                sqlValue = [ShowDay.format("MM"), ShowDay.format("YYYY")];
+                sqlValue = [ShowDay.format('MM'), ShowDay.format('YYYY')];
                 break;
             case 3:
                 sqlQuery = "WHERE STRFTIME('%Y', DateTime) = ?";
-                sqlValue = [ShowDay.format("YYYY")];
+                sqlValue = [ShowDay.format('YYYY')];
                 break;
             case 4:
                 sqlQuery = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
-                sqlValue = [moment(ShowDay).format("YYYY-MM-DD"), moment(ShowDayEnd).format("YYYY-MM-DD")];
+                sqlValue = [moment(ShowDay).format('YYYY-MM-DD'), moment(ShowDayEnd).format('YYYY-MM-DD')];
                 break;
             default:
-                sqlQuery = "WHERE true";
+                sqlQuery = 'WHERE true';
                 break;
         }
-        if (keyword !== "") {
-            sqlQuery += " AND (OrderNum LIKE ? OR Type LIKE ? OR CargoNum LIKE ? OR Local LIKE ?)";
-            const tmp = "%" + keyword + "%";
+        if (keyword !== '') {
+            sqlQuery += ' AND (OrderNum LIKE ? OR Type LIKE ? OR CargoNum LIKE ? OR Local LIKE ?)';
+            const tmp = '%' + keyword + '%';
             sqlValue.push(tmp, tmp, tmp, tmp);
         }
 
@@ -71,50 +81,58 @@ const Search = ({ navigation }) => {
         // console.log(sqlValue);
 
         /* 讀取紀錄 */
-        DB.transaction(function(tr) {
-            console.log("顯示: ", moment(ShowDay).format("DD/MM/YYYY"));
-            tr.executeSql(`SELECT *
-                           FROM Record ${sqlQuery}
-                           ORDER BY DateTime ASC`, sqlValue, function(tx, rs) {
-                    const [package_list,total ] = group_data(rs, setting["Rate"]);
+        const extracted = async () => {
+            try {
+                await DB.transaction(async tr => {
+                    console.log('顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
+                    const [, rs] = await tr.executeSql(
+                        `SELECT * FROM Record ${sqlQuery} ORDER BY DateTime ASC`,
+                        sqlValue,
+                    );
+
+                    const [package_list, total] = group_data(rs, setting.Rate);
                     setTotal(total);
                     setData(package_list);
-                },
-            );
-        }, function(error) {
-            console.log("傳輸錯誤: " + error.message);
-        }, function() {
-            console.log("已取得資料");
-        });
+                });
+            } catch (e) {
+                console.error('傳輸錯誤: ' + e.message);
+                ToastAndroid.show('傳輸錯誤', ToastAndroid.LONG);
+                return;
+            }
+
+            console.log('已取得資料');
+        };
+
+        extracted().then();
     }, [ShowDay, setting, keyword, showMode, ShowDayEnd]);
 
     /* 選擇顯示月份 */
     const NextMonth = useCallback(() => {
-        ShowDay.add(1, "M").endOf("month");
+        ShowDay.add(1, 'M').endOf('month');
         setShowDay(moment(ShowDay));
     }, [ShowDay]);
     const LastMonth = useCallback(() => {
-        ShowDay.subtract(1, "M").endOf("month");
+        ShowDay.subtract(1, 'M').endOf('month');
         setShowDay(moment(ShowDay));
     }, [ShowDay]);
 
     /* 選擇顯示週 */
     const NextWeek = useCallback(() => {
-        ShowDay.add(1, "w");
+        ShowDay.add(1, 'w');
         setShowDay(moment(ShowDay));
     }, [ShowDay]);
     const LastWeek = useCallback(() => {
-        ShowDay.subtract(1, "w");
+        ShowDay.subtract(1, 'w');
         setShowDay(moment(ShowDay));
     }, [ShowDay]);
 
     /* 選擇顯示年 */
     const NextYear = useCallback(() => {
-        ShowDay.add(1, "y");
+        ShowDay.add(1, 'y');
         setShowDay(moment(ShowDay));
     }, [ShowDay]);
     const LastYear = useCallback(() => {
-        ShowDay.subtract(1, "y");
+        ShowDay.subtract(1, 'y');
         setShowDay(moment(ShowDay));
     }, [ShowDay]);
 
@@ -298,16 +316,16 @@ const Search = ({ navigation }) => {
 const style = StyleSheet.create({
     dropdown: {
         color: Color.white,
-        borderWidth: .7,
+        borderWidth: 0.7,
         borderColor: Color.white,
         borderRadius: 10,
         padding: 10,
         paddingVertical: 5,
     },
     row: {
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexDirection: "row",
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexDirection: 'row',
     },
 });
-export { Search };
+export {Search};
