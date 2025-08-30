@@ -6,6 +6,7 @@ import {
     PixelRatio,
     SafeAreaView,
     StyleSheet,
+    ToastAndroid,
     TouchableOpacity,
     TouchableWithoutFeedback,
     useColorScheme,
@@ -13,14 +14,13 @@ import {
 } from 'react-native';
 import {Color} from '../module/Color';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
-import ADIcon from 'react-native-vector-icons/AntDesign';
-import FW5Icon from 'react-native-vector-icons/FontAwesome5';
+import ADIcon from '@react-native-vector-icons/ant-design';
+import FW5Icon from '@react-native-vector-icons/fontawesome5';
 import {SmailText} from '../module/SmailText';
 import moment from 'moment';
 import 'moment/min/locales';
-import {Swipeable} from 'react-native-gesture-handler';
-import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text} from 'react-native-paper';
 import {DB, useSetting} from '../module/SQLite';
@@ -32,6 +32,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DateSelect} from '../module/DateSelect';
 import {convertColor} from './Note';
 import ImageViewer from 'react-native-image-zoom-viewer';
+import REAnimated, {
+    interpolate,
+    runOnJS,
+    SharedValue,
+    useAnimatedReaction,
+    useAnimatedStyle,
+} from 'react-native-reanimated';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate) {
@@ -56,7 +64,7 @@ function group_data(ResultSet, Rate) {
         try {
             images = JSON.parse(row.Images);
         } catch (e) {
-            console.error(e);
+            console.log(e.message);
         }
 
         //資料
@@ -173,46 +181,54 @@ const Home = () => {
         setIsRefresh(true);
 
         /* 讀取紀錄 */
-        DB.transaction(
-            function (tr) {
-                console.log('顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
-                tr.executeSql(
-                    "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
-                    [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')],
-                    function (tx, rs) {
-                        console.log('已取得資料', rs.rows.length);
-                        const [data, total] = group_data(rs, setting['Rate']);
-                        setTotal(total);
-                        setData(data);
+        function queryRecords(ShowDay1) {
+            return new Promise(async resolve => {
+                await DB.readTransaction(async tr => {
+                    const [, rs] = await tr.executeSql(
+                        "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
+                        [moment(ShowDay1).format('MM'), moment(ShowDay1).format('YYYY')],
+                    );
+                    resolve(rs);
+                });
+            });
+        }
 
-                        /* 讀取備忘錄 */
-                        DB.transaction(
-                            function (tr) {
-                                console.log('備忘錄顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
-                                tr.executeSql(
-                                    "SELECT * FROM Note WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
-                                    [moment(ShowDay).format('MM'), moment(ShowDay).format('YYYY')],
-                                    function (tx, rs) {
-                                        console.log('已取得資料', rs.rows.length);
-                                        const data_have_note = rs.rows.length > 0 ? grouping_note(data, rs) : data;
-                                        setData(data_have_note);
-                                    },
-                                );
-                            },
-                            function (error) {
-                                console.log('傳輸錯誤: ' + error.message);
-                            },
-                            function () {
-                                setIsRefresh(false);
-                            },
-                        );
-                    },
-                );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message);
-            },
-        );
+        // 讀取備忘錄
+        function queryNotes(ShowDay2) {
+            return new Promise(async resolve => {
+                await DB.readTransaction(async tr => {
+                    const [, rs] = await tr.executeSql(
+                        "SELECT * FROM Note WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
+                        [moment(ShowDay2).format('MM'), moment(ShowDay2).format('YYYY')],
+                    );
+                    resolve(rs);
+                });
+            });
+        }
+
+        async function extracted() {
+            try {
+                console.log('顯示:', moment(ShowDay).format('DD/MM/YYYY'));
+                const rs = await queryRecords(ShowDay);
+                console.log('已取得資料', rs.rows.length);
+                const [data, total] = group_data(rs, setting.Rate);
+                setTotal(total);
+                setData(data);
+
+                console.log('備忘錄顯示:', moment(ShowDay).format('DD/MM/YYYY'));
+                const rs1 = await queryNotes(ShowDay);
+                console.log('已取得資料', rs1.rows.length);
+                const data_have_note = rs1.rows.length > 0 ? grouping_note(data, rs1) : data;
+                setData(data_have_note);
+            } catch (e) {
+                console.log('傳輸錯誤: ' + e.message);
+                ToastAndroid.show('傳輸錯誤', ToastAndroid.SHORT);
+            } finally {
+                setIsRefresh(false);
+            }
+        }
+
+        extracted().then();
     }, [ShowDay, setting]);
 
     /* 直接選擇月份 */
@@ -345,7 +361,7 @@ const Home = () => {
                         ref={listRef}
                         onRefresh={updateData}
                         refreshing={isRefresh}
-                        renderItem={({item}) => <DataPart data={item} rate={setting['Rate']} />}
+                        renderItem={({item}) => <DataPart data={item} rate={setting.Rate} />}
                         onScrollToIndexFailed={info => {
                             setTimeout(() => {
                                 listRef.current.scrollToIndex({index: info.index});
@@ -437,87 +453,91 @@ const DataPart = ({data, rate}) => {
     );
 };
 
+/**
+ * 滑動左側顯示編輯
+ * @param {SharedValue<number>} progress 進度
+ * @param {SharedValue<number>} translation 位移
+ * @type {Function}
+ */
+const SwipeLeft = (progress, translation) => {
+    const canHaptic = useRef(true); //可否震動
+
+    //背景動畫
+    const styleAnimation = useAnimatedStyle(() => {
+        const translateX = interpolate(translation.value, [0, 120], [-20, 20], 'clamp');
+        const rotate = interpolate(translation.value, [0, 120], [-70, 0], 'clamp');
+
+        return {
+            marginRight: 'auto',
+            transform: [{translateX: translateX}, {rotate: rotate + 'deg'}],
+        };
+    });
+
+    //體感觸摸
+    useAnimatedReaction(
+        () => translation.value,
+        current => {
+            if (current > 150 && canHaptic.current === true) {
+                runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
+                canHaptic.current = false;
+            } else if (current < -150 && canHaptic.current === true) {
+                runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
+                canHaptic.current = false;
+            } else if (current <= 150 && current >= -150) {
+                canHaptic.current = true;
+            }
+        },
+        [canHaptic],
+    );
+
+    //背景圖片
+    return (
+        <REAnimated.View style={{backgroundColor: 'cornflowerblue', width: '100%', justifyContent: 'center'}}>
+            <REAnimated.View style={styleAnimation}>
+                <FW5Icon name={'edit'} size={40} color={Color.white} />
+            </REAnimated.View>
+        </REAnimated.View>
+    );
+};
+
+/**
+ * 滑動右側顯示刪除
+ * @param {SharedValue<number>} progress 進度
+ * @param {SharedValue<number>} translation 位移
+ * @type {Function}
+ */
+const SwipeRight = (progress, translation) => {
+    //背景動畫
+    const styleAnimation = useAnimatedStyle(() => {
+        console.log('appliedTranslation:', translation.value);
+
+        const translateX = interpolate(translation.value, [-120, 0], [-20, 20], 'clamp');
+        const rotate = interpolate(translation.value, [-120, 0], [0, 70], 'clamp');
+
+        return {
+            marginRight: 'auto',
+            transform: [{translateX: translateX}, {rotate: rotate.toString() + 'deg'}],
+        };
+    });
+
+    //背景圖片
+    return (
+        <REAnimated.View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
+            <REAnimated.View style={styleAnimation}>
+                <FW5Icon name={'trash'} size={40} color={Color.white} />
+            </REAnimated.View>
+        </REAnimated.View>
+    );
+};
+
 /* 數據內容 */
 const DataPartBody = ({item, rate, id, dateTime}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const navigation = useNavigation(); //導航
     const isRMBShow = useRef(false); //人民幣顯示
-    const canHaptic = useRef(true); //可否震動
     const [confirmMSG, setConfirmMSG] = useState(false); //確認刪除訊息
     const [showBigImage, setShowBigImage] = useState(false); //大圖
     const ref = useRef(null);
-
-    /* 向左滑動 */
-    const swipeRight = useCallback((progress, dragX) => {
-        //背景動畫
-        const translateX = dragX.interpolate({
-            inputRange: [-120, 0],
-            outputRange: [-20, 20],
-            extrapolate: 'clamp',
-        });
-        const rotate = dragX.interpolate({
-            inputRange: [-120, 0],
-            outputRange: ['0deg', '70deg'],
-            extrapolate: 'clamp',
-        });
-        //背景圖片
-        return (
-            <Animated.View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
-                <Animated.View
-                    style={{
-                        marginLeft: 'auto',
-                        transform: [{translateX}, {rotate}],
-                    }}>
-                    <FW5Icon name={'trash-alt'} size={40} color={Color.white} />
-                </Animated.View>
-            </Animated.View>
-        );
-    }, []);
-
-    /* 向右滑動 */
-    const swipeLeft = useCallback((progress, dragX) => {
-        //背景動畫
-        const translateX = dragX.interpolate({
-            inputRange: [0, 120],
-            outputRange: [-20, 20],
-            extrapolate: 'clamp',
-        });
-        const rotate = dragX.interpolate({
-            inputRange: [0, 120],
-            outputRange: ['-70deg', '0deg'],
-            extrapolate: 'clamp',
-        });
-
-        //體感觸摸
-        dragX.addListener(({value}) => {
-            if (value > 120) {
-                if (canHaptic.current === true) {
-                    ReactNativeHapticFeedback.trigger('effectTick');
-                    canHaptic.current = false;
-                }
-            } else if (value < 120 * -1) {
-                if (canHaptic.current === true) {
-                    ReactNativeHapticFeedback.trigger('effectTick');
-                    canHaptic.current = false;
-                }
-            } else {
-                canHaptic.current = true;
-            }
-        });
-
-        //背景圖片
-        return (
-            <Animated.View style={{backgroundColor: 'cornflowerblue', width: '100%', justifyContent: 'center'}}>
-                <Animated.View
-                    style={{
-                        marginRight: 'auto',
-                        transform: [{translateX}, {rotate}],
-                    }}>
-                    <FW5Icon name={'edit'} size={40} color={Color.white} />
-                </Animated.View>
-            </Animated.View>
-        );
-    }, []);
 
     /* 切換人民幣顯示 */
     const translateY = useRef(new Animated.Value(0)).current;
@@ -573,24 +593,29 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
     const swipeOpen = useCallback(
         direction => {
             //編輯
-            if (direction === 'left') {
+            if (direction === 'right') {
                 navigation.navigate('EditRecord', {recordID: id});
                 ref.current.close();
             }
             //移除
-            if (direction === 'right') {
-                DB.transaction(
-                    function (tr) {
-                        tr.executeSql('DELETE FROM Record WHERE RecordID = ?', [id]);
-                    },
-                    function (error) {
-                        console.log('傳輸錯誤: ' + error.message); //debug
-                    },
-                    () => {
-                        hide();
-                        setConfirmMSG(true);
-                    },
-                );
+            if (direction === 'left') {
+                //刪除 async function
+                const extracted = async () => {
+                    try {
+                        await DB.transaction(async tr => {
+                            await tr.executeSql('DELETE FROM Record WHERE RecordID = ?', [id]);
+                        });
+                    } catch (e) {
+                        console.log('傳輸錯誤: ' + e.message); //debug
+                        ToastAndroid.show('傳輸錯誤', ToastAndroid.SHORT);
+                        return;
+                    }
+
+                    hide();
+                    setConfirmMSG(true);
+                };
+
+                extracted().then();
             }
         },
         [hide, id, navigation],
@@ -615,31 +640,39 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
 
     /* 取消刪除 */
     const undo = useCallback(() => {
-        DB.transaction(
-            function (tr) {
-                tr.executeSql('INSERT INTO Record VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                    id,
-                    moment(dateTime).format('yyyy-MM-DD'),
-                    item.OrderNum,
-                    item.Type,
-                    item.CargoNum,
-                    item.Local,
-                    item.RMB,
-                    item.HKD,
-                    item.Add,
-                    item.Shipping,
-                    item.Remark,
-                    item.Images,
-                ]);
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message); //debug
-            },
-            function () {
-                show();
-                setConfirmMSG(false);
-            },
-        );
+        const extracted = async () => {
+            try {
+                await DB.transaction(async tr => {
+                    await tr.executeSql(
+                        'INSERT INTO Record (RecordID, DateTime, OrderNum, Type, CargoNum, Local, RMB, HKD, "Add", Shipping, Remark, Images, Rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        [
+                            id,
+                            moment(dateTime).format('yyyy-MM-DD'),
+                            item.OrderNum,
+                            item.Type,
+                            item.CargoNum,
+                            item.Local,
+                            item.RMB,
+                            item.HKD,
+                            item.Add,
+                            item.Shipping,
+                            item.Remark,
+                            item.Images,
+                            item.Rate,
+                        ],
+                    );
+                });
+            } catch (e) {
+                console.error('傳輸錯誤: ' + e.message);
+                ToastAndroid.show('傳輸錯誤', ToastAndroid.SHORT);
+                return;
+            }
+
+            show();
+            setConfirmMSG(false);
+        };
+
+        extracted().then();
     }, [
         dateTime,
         id,
@@ -650,6 +683,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
         item.Local,
         item.OrderNum,
         item.RMB,
+        item.Rate,
         item.Remark,
         item.Shipping,
         item.Type,
@@ -660,11 +694,11 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
         <Animated.View style={{height: height.current}} onLayout={onLayout}>
             <Swipeable
                 ref={ref}
-                renderRightActions={swipeRight}
+                renderRightActions={SwipeRight}
                 onSwipeableOpen={swipeOpen}
-                leftThreshold={120}
-                rightThreshold={120}
-                renderLeftActions={swipeLeft}
+                leftThreshold={150}
+                rightThreshold={150}
+                renderLeftActions={SwipeLeft}
                 overshootFriction={20}>
                 <Ripple.Default onPress={switchRMBShow} onLongPress={showImages}>
                     <Animated.View

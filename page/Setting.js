@@ -10,7 +10,7 @@ import {
     useColorScheme,
     View,
 } from 'react-native';
-import {DB, updateSetting} from '../module/SQLite';
+import {DB, updateSetting, useSetting} from '../module/SQLite';
 import {useNavigation} from '@react-navigation/native';
 import prompt from 'react-native-prompt-android';
 
@@ -76,30 +76,28 @@ const Setting = ({route}) => {
 
     const [state, dispatch] = useReducer(reducer, initialState); //setting value
     const [onlineRate_load, set_onlineRate_load] = useState(false);
+    const [, forceRefresh] = useSetting();
 
     /* get setting value */
     useEffect(() => {
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
-                    'SELECT * FROM Setting',
-                    [],
-                    function (tx, rs) {
-                        let Setting = [];
-                        for (let i = 0; i < rs.rows.length; i++) {
-                            Setting[rs.rows.item(i).Target] = rs.rows.item(i).value;
-                        }
-                        dispatch({payload: Setting});
-                    },
-                    function (error) {
-                        console.log('獲取失敗: ' + error.message); //debug
-                    },
-                );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message); //debug
-            },
-        );
+        const extracted = async () => {
+            try {
+                await DB.readTransaction(async tr => {
+                    const [, rs] = await tr.executeSql('SELECT * FROM Setting', []);
+
+                    let setting_tmp = {};
+                    for (let i = 0; i < rs.rows.length; i++) {
+                        setting_tmp[rs.rows.item(i).Target] = rs.rows.item(i).value;
+                    }
+                    dispatch({payload: setting_tmp});
+                });
+            } catch (e) {
+                console.error('獲取失敗: ' + e.message); //debug
+                ToastAndroid.show('獲取失敗', ToastAndroid.SHORT);
+            }
+        };
+
+        extracted().then();
     }, []);
 
     /* 彈出窗口 */
@@ -110,7 +108,7 @@ const Setting = ({route}) => {
                 //輸入檢查
                 switch (type) {
                     case UPDATE_RATE:
-                        if (!/^[0-9]+(\.[0-9]{0,2})?$/g.test(value)) {
+                        if (!/^[0-9]+(\.[0-9]+)?$/g.test(value)) {
                             ToastAndroid.show('輸入格式不正確 必須是數字', ToastAndroid.SHORT);
                             return;
                         } else {
@@ -119,27 +117,35 @@ const Setting = ({route}) => {
                         }
                         break;
                     case UPDATE_NAME_ZH:
-                        if (!/^.+[\u4e00-\u9fa5]$/g.test(value)) {
+                        if (!/^[\u4e00-\u9fa5\s]+$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入中文', ToastAndroid.SHORT);
                             return;
+                        } else {
+                            value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
                         break;
                     case UPDATE_NAME_EN:
-                        if (!/^.+[a-zA-Z]$/g.test(value)) {
+                        if (!/^[a-zA-Z\s]+$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入英文', ToastAndroid.SHORT);
                             return;
+                        } else {
+                            value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
                         break;
                     case UPDATE_DRIVER:
-                        if (!/^.+[a-zA-Z\u4e00-\u9fa5]$/g.test(value)) {
-                            ToastAndroid.show('只能夠輸入英文或中文', ToastAndroid.SHORT);
+                        if (!/^.+$/g.test(value)) {
+                            ToastAndroid.show('司機名稱不能為空', ToastAndroid.SHORT);
                             return;
+                        } else {
+                            value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
                         break;
                     case UPDATE_LICENSE:
-                        if (!/^.+[A-Z0-9]$/g.test(value)) {
+                        if (!/^[A-Z0-9\s]+$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入大楷英文和數字', ToastAndroid.SHORT);
                             return;
+                        } else {
+                            value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
                         break;
                     case UPDATE_EMAIL:
@@ -221,18 +227,30 @@ const Setting = ({route}) => {
 
     /* update database */
     useEffect(() => {
-        DB.transaction(
-            function (tr) {
-                for (let obj in state) {
-                    tr.executeSql('UPDATE Setting SET value = ? WHERE Target = ?', [state[obj], obj]); //放入sql
-                }
-                updateSetting();
-            },
-            function (error) {
-                ToastAndroid('更新失敗 ' + error.message, ToastAndroid.SHORT);
-            },
-        );
-    }, [state]);
+        const extracted = async () => {
+            try {
+                await DB.transaction(async tr => {
+                    const sql_promise = [];
+                    for (const obj in state) {
+                        sql_promise.push(
+                            tr.executeSql('UPDATE Setting SET value = ? WHERE Target = ?', [state[obj], obj]),
+                        );
+                    }
+
+                    await Promise.all(sql_promise);
+                });
+            } catch (e) {
+                console.error('更新失敗', e.message);
+                ToastAndroid('更新失敗', ToastAndroid.SHORT);
+                return;
+            }
+
+            console.log('更新成功');
+            forceRefresh();
+        };
+
+        extracted().then();
+    }, [forceRefresh, state]);
 
     //debug
     // useEffect(() => {
@@ -338,9 +356,6 @@ const Setting = ({route}) => {
 };
 
 const style = StyleSheet.create({
-    padding: {
-        paddingHorizontal: 10,
-    },
     Section: {
         borderTopWidth: 0.5,
         borderBottomWidth: 0.5,

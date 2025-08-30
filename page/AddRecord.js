@@ -27,7 +27,7 @@ import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import REAnimated, {Layout, StretchInX} from 'react-native-reanimated';
+import REAnimated, {LinearTransition, StretchInX} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
 
 const IconButton = REAnimated.createAnimatedComponent(PaperIconButton);
@@ -196,33 +196,38 @@ const AddRecord = ({navigation, route}) => {
     }, []);
 
     /* 虛擬鍵盤點擊 */
-    const onKeyPress = useCallback(value => {
-        if (focusingDecInput.current) {
-            if (value === 'back')
-                inputs.current[focusingDecInput.current].setText(
-                    inputs.current[focusingDecInput.current].getText().slice(0, -1),
-                );
-            //刪除最後一個文字
-            else if (value === 'done')
-                focusNextField(
-                    Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1],
-                );
-            //完成輸入
-            else if (value === 'calculator')
-                navigation.navigate('calculator', {
-                    inputID: focusingDecInput.current,
-                    pageID: route.name,
-                });
-            //跳轉到計算機
-            else
-                inputs.current[focusingDecInput.current].setText(
-                    inputs.current[focusingDecInput.current].getText() + value,
-                ); //輸入文字
-        }
-    }, []);
+    const onKeyPress = useCallback(
+        value => {
+            if (focusingDecInput.current) {
+                if (value === 'back') {
+                    //刪除最後一個文字
+                    inputs.current[focusingDecInput.current].setText(
+                        inputs.current[focusingDecInput.current].getText().slice(0, -1),
+                    );
+                } else if (value === 'done') {
+                    //完成輸入
+                    focusNextField(
+                        Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1],
+                    );
+                } else if (value === 'calculator') {
+                    //跳轉到計算機
+                    navigation.navigate('calculator', {
+                        inputID: focusingDecInput.current,
+                        pageID: route.name,
+                    });
+                } else {
+                    //輸入文字
+                    inputs.current[focusingDecInput.current].setText(
+                        inputs.current[focusingDecInput.current].getText() + value,
+                    );
+                }
+            }
+        },
+        [focusNextField, navigation, route.name],
+    );
 
     /* 遞交 */
-    const submit = useCallback(() => {
+    const submit = useCallback(async () => {
         let error = {
             cargo: null,
             location: null,
@@ -248,11 +253,11 @@ const AddRecord = ({navigation, route}) => {
         if (Object.values(error).findIndex(value => value !== null) >= 0) return; //是否全部已通過
 
         //通過放入資料庫
-        const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
-                    'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark, Images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum; //組合櫃號
+        try {
+            await DB.transaction(async function (tr) {
+                await tr.executeSql(
+                    'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark, Images, Rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         moment(state.date).format('yyyy-MM-DD'),
                         state.orderID,
@@ -265,22 +270,37 @@ const AddRecord = ({navigation, route}) => {
                         state.shipping,
                         state.remark,
                         JSON.stringify(state.image),
+                        setting.Rate,
                     ],
                 );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message); //debug
-            },
-            function () {
-                needSaveDraft.current = false;
-                AsyncStorage.removeItem('Draft').then();
-                navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
-            },
-        );
-    }, [state]);
+            });
+        } catch (e) {
+            console.log('傳輸錯誤: ' + e.message); //debug
+            ToastAndroid.show('新增失敗', ToastAndroid.SHORT);
+            return;
+        }
 
-    /* 打開相機 */
-    const openCamera = useCallback(() => {}, [route]);
+        //成功
+        needSaveDraft.current = false;
+        AsyncStorage.removeItem('Draft').then();
+        navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
+    }, [
+        navigation,
+        setting.Rate,
+        state.ADD,
+        state.HKD,
+        state.RMB,
+        state.cargoCheckNum,
+        state.cargoLetter,
+        state.cargoNum,
+        state.date,
+        state.image,
+        state.location,
+        state.orderID,
+        state.remark,
+        state.shipping,
+        state.type,
+    ]);
 
     /* 計算機返回輸入欄位id */
     useEffect(() => {
@@ -686,34 +706,6 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
         isFocus.current = true;
     };
 
-    /* 向數據庫取數據 */
-    useEffect(() => {
-        if (!isFocus.current) return; //非聚焦狀態不處理
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
-                    'SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10',
-                    ['%' + inputText + '%'],
-                    function (tx, rs) {
-                        if (rs.rows.length <= 0 || inputText.length <= 0) {
-                            switchShowList(false);
-                        } else {
-                            switchShowList(true);
-                            let val = [];
-                            for (let i = 0; i < rs.rows.length; i++) {
-                                val.push(rs.rows.item(i).Local);
-                            }
-                            setAutoComplete(val);
-                        }
-                    },
-                );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message); //debug
-            },
-        );
-    }, [inputText]);
-
     /* 預設文字 */
     useEffect(() => {
         setInputText(value);
@@ -748,38 +740,41 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
     const scale = useRef(new Animated.Value(0.8)).current;
 
     /* 切換開啟關閉狀態 */
-    function switchShowList(setShow, callback = () => null) {
-        if (setShow) {
-            //開啟
-            setShowList(true);
-            Animated.timing(fade, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-            Animated.timing(scale, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        } else {
-            //關閉
-            Animated.timing(fade, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-            Animated.timing(scale, {
-                toValue: 0.8,
-                duration: 200,
-                useNativeDriver: true,
-            }).start(() => {
-                setShowList(false);
-                callback();
-                setUpDown('down');
-            });
-        }
-    }
+    const switchShowList = useCallback(
+        (setShow, callback = () => null) => {
+            if (setShow) {
+                //開啟
+                setShowList(true);
+                Animated.timing(fade, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+                Animated.timing(scale, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+            } else {
+                //關閉
+                Animated.timing(fade, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+                Animated.timing(scale, {
+                    toValue: 0.8,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start(() => {
+                    setShowList(false);
+                    callback();
+                    setUpDown('down');
+                });
+            }
+        },
+        [fade, scale],
+    );
 
     /* 判斷空間是否充足 */
     useEffect(() => {
@@ -800,7 +795,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
         }, 5);
 
         return () => clearTimeout(x);
-    }, [showList, inputText, scrollOffset]);
+    }, [showList, inputText, scrollOffset, deviceHeight, keybordHeight, upDown]);
 
     /* 取得鍵盤高度 */
     useEffect(() => {
@@ -813,6 +808,39 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
             hideEvent.remove();
         };
     }, []);
+
+    /* 向數據庫取數據(autocomplete) */
+    useEffect(() => {
+        if (!isFocus.current) return; //非聚焦狀態不處理
+
+        //提取數據
+        const extracted = async () => {
+            try {
+                await DB.readTransaction(async function (tr) {
+                    const [, rs] = await tr.executeSql(
+                        'SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10',
+                        ['%' + inputText + '%'],
+                    );
+
+                    if (rs.rows.length <= 0 || inputText.length <= 0) {
+                        switchShowList(false); //關閉列表 沒有數據
+                    } else {
+                        switchShowList(true);
+                        let val = [];
+                        for (let i = 0; i < rs.rows.length; i++) {
+                            val.push(rs.rows.item(i).Local);
+                        }
+                        setAutoComplete(val);
+                    }
+                });
+            } catch (e) {
+                console.error('傳輸錯誤: ' + e.message);
+                ToastAndroid.show('讀取失敗', ToastAndroid.SHORT);
+            }
+        };
+
+        extracted().then();
+    }, [inputText, switchShowList]);
 
     return (
         <View style={{position: 'relative', flex: 1}}>
@@ -873,8 +901,8 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
     const [bigImage, setBigImage] = useState(null); //大圖
 
     /* 處理結果 */
-    function fetchResult() {
-        return result => {
+    const fetchResult = useCallback(
+        result => {
             if (result.didCancel) return;
             if (result.errorMessage) return;
             if (result.errorCode === 'camera_unavailable') {
@@ -893,8 +921,9 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
 
             setImages(imgBase64);
             onSelectedImage(imgBase64);
-        };
-    }
+        },
+        [images, onSelectedImage],
+    );
 
     /* 打開選擇器 */
     const openPicker = useCallback(
@@ -902,21 +931,21 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
             setShowModeDropdown(false);
             if (type === 0) {
                 //相機
-                launchCamera(imagePickerOptions).then(fetchResult());
+                launchCamera(imagePickerOptions).then(fetchResult);
             } else if (type === 1) {
                 //相簿
-                launchImageLibrary(imagePickerOptions).then(fetchResult());
+                launchImageLibrary(imagePickerOptions).then(fetchResult);
             }
         },
-        [images],
+        [fetchResult],
     );
 
     /* 圖片檢視器列表 */
     const imagesViewerList = useMemo(() => {
-        return images.map((assets, index) => ({
-            url: 'data:image/jpeg;base64,' + assets.base64,
-            width: assets.width,
-            height: assets.height,
+        return images.map((assets1, index) => ({
+            url: 'data:image/jpeg;base64,' + assets1.base64,
+            width: assets1.width,
+            height: assets1.height,
             props: {
                 key: index,
             },
@@ -938,21 +967,21 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                         選擇圖片
                     </Button>
                 }>
-                <Menu.Item onPress={() => openPicker(0)} title={'相機'} leadingIcon={'camera'} key={1}/>
-                <Menu.Item onPress={() => openPicker(1)} title={'相簿'} leadingIcon={'image-album'} key={2}/>
+                <Menu.Item onPress={() => openPicker(0)} title={'相機'} leadingIcon={'camera'} key={1} />
+                <Menu.Item onPress={() => openPicker(1)} title={'相簿'} leadingIcon={'image-album'} key={2} />
             </Menu>
             <View style={[style.formGroup]}>
-                {images.map((assets, index) => (
+                {images.map((assets2, index) => (
                     <REAnimated.View
                         style={[style.img, {marginLeft: index !== 0 && 5}]}
                         entering={StretchInX}
-                        layout={Layout.duration(300).delay(300)}
-                        key={assets.base64}>
+                        layout={LinearTransition.duration(300).delay(300)}
+                        key={index}>
                         <TouchableWithoutFeedback onPress={() => setBigImage(index)}>
                             <REAnimated.Image
-                                source={{uri: 'data:image/jpeg;base64,' + assets.base64}}
+                                source={{uri: 'data:image/jpeg;base64,' + assets2.base64}}
                                 style={{flex: 1}}
-                                layout={Layout.duration(300).delay(300)}
+                                layout={LinearTransition.duration(300).delay(300)}
                             />
                         </TouchableWithoutFeedback>
                         <IconButton
@@ -965,7 +994,7 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                                 setImages(images.filter((_, i) => i !== index));
                                 onSelectedImage(images.filter((_, i) => i !== index));
                             }}
-                            layout={Layout.duration(300).delay(300)}
+                            layout={LinearTransition.duration(300).delay(300)}
                         />
                     </REAnimated.View>
                 ))}

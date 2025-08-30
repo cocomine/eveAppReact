@@ -55,8 +55,7 @@ const StartUp = ({navigation}) => {
                 [
                     {
                         text: '立即更新',
-                        onPress: () =>
-                            inAppUpdates.startUpdate({updateType: IAUUpdateKind.IMMEDIATE}),
+                        onPress: () => inAppUpdates.startUpdate({updateType: IAUUpdateKind.IMMEDIATE}),
                     },
                     {
                         text: '稍後更新',
