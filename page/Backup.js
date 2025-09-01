@@ -3,7 +3,6 @@ import {
     FlatList,
     Image,
     Linking,
-    SafeAreaView,
     StatusBar,
     StyleSheet,
     ToastAndroid,
@@ -27,6 +26,7 @@ import SVGLostCargo from '../module/SVGLostCargo';
 import {base64ToBytes, bytesToBase64} from 'byte-base64';
 import RNRestart from 'react-native-restart';
 import notifee from '@notifee/react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
@@ -55,6 +55,7 @@ const Backup = ({navigation}) => {
     const [autoBackupEnable, setAutoBackupEnable] = useState(false); //自動備份狀態
     const [autoBackupCycle, setAutoBackupCycle] = useState('Week'); //自動備份狀態
     const folderID = useRef(null); //資料夾id
+    const themes = useTheme();
 
     /* 初始化 */
     useEffect(() => {
@@ -238,7 +239,7 @@ const Backup = ({navigation}) => {
     }, []);
 
     return (
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{flex: 1}} edges={['bottom']}>
             {/*<React.StrictMode>*/}
             <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true} />
             <Appbar.Header style={{backgroundColor: Color.primaryColor}}>

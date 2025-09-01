@@ -1,35 +1,35 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { AddRecord } from "./page/AddRecord";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StatusBar, useColorScheme } from "react-native";
+import React, {useCallback, useEffect, useState} from 'react';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {AddRecord} from './page/AddRecord';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {StatusBar, useColorScheme} from 'react-native';
 import {
     DarkTheme as NavigationDarkTheme,
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
     useFocusEffect,
-} from "@react-navigation/native";
+} from '@react-navigation/native';
 import {
     Appbar,
     BottomNavigation,
     MD2DarkTheme as PaperDarkTheme,
     MD2LightTheme as PaperDefaultTheme,
     Provider as PaperProvider,
-} from "react-native-paper";
-import merge from "deepmerge";
-import { Home } from "./page/Home";
-import { Color } from "./module/Color";
-import Calculator from "./module/Calculator";
-import { EditRecord } from "./page/EditRecord";
-import { Export } from "./page/Export";
-import { Setting } from "./page/Setting";
-import { StartUp } from "./page/StartUp";
-import { ChangeSave } from "./page/ChangeSave";
-import { Statistics } from "./page/Statistics";
-import { Backup } from "./page/Backup";
-import { Search } from "./page/Search";
-import { Note } from "./page/Note";
-import { AddNote } from "./page/AddNote";
+} from 'react-native-paper';
+import merge from 'deepmerge';
+import {Home} from './page/Home';
+import {Color} from './module/Color';
+import Calculator from './module/Calculator';
+import {EditRecord} from './page/EditRecord';
+import {Export} from './page/Export';
+import {Setting} from './page/Setting';
+import {StartUp} from './page/StartUp';
+import {ChangeSave} from './page/ChangeSave';
+import {Backup} from './page/Backup';
+import {Search} from './page/Search';
+import {Note} from './page/Note';
+import {AddNote} from './page/AddNote';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
 
@@ -51,70 +51,72 @@ function App() {
     };
 
     return (
-        <GestureHandlerRootView style={{flex: 1}}>
-            <PaperProvider theme={theme}>
-                <NavigationContainer theme={theme}>
-                    <Stack.Navigator
-                        initialRouteName={'StartUp'}
-                        screenOptions={{header: props => <CustomNavigationBar {...props} />}}>
-                        <Stack.Group>
-                            <Stack.Screen //主要介面
-                                name="Main"
-                                component={MainScreen}
+        <SafeAreaProvider>
+            <GestureHandlerRootView style={{flex: 1}}>
+                <PaperProvider theme={theme}>
+                    <NavigationContainer theme={theme}>
+                        <Stack.Navigator
+                            initialRouteName={'StartUp'}
+                            screenOptions={{header: props => <CustomNavigationBar {...props} />}}>
+                            <Stack.Group>
+                                <Stack.Screen //主要介面
+                                    name="Main"
+                                    component={MainScreen}
+                                    options={{headerShown: false}}
+                                />
+                                <Stack.Screen //增加紀錄
+                                    name="AddRecord"
+                                    component={AddRecord}
+                                    options={{title: '增加紀錄'}}
+                                />
+                                <Stack.Screen //編輯紀錄
+                                    name="EditRecord"
+                                    component={EditRecord}
+                                    options={{title: '編輯紀錄'}}
+                                />
+                                <Stack.Screen //選擇存檔
+                                    name="ChangeSave"
+                                    component={ChangeSave}
+                                    options={{title: '選擇存檔'}}
+                                />
+                                <Stack.Screen //備份
+                                    name="Backup"
+                                    component={Backup}
+                                    options={{title: '備份', headerShown: false}}
+                                />
+                                <Stack.Screen //搜尋
+                                    name="Search"
+                                    component={Search}
+                                    options={{title: '搜尋', headerShown: false}}
+                                />
+                                <Stack.Screen //備忘錄
+                                    name="Note"
+                                    component={Note}
+                                    options={{title: '備忘錄', headerShown: false}}
+                                />
+                                <Stack.Screen //備忘錄
+                                    name="AddNote"
+                                    component={AddNote}
+                                    options={{title: '備忘錄', headerShown: false}}
+                                />
+                            </Stack.Group>
+                            <Stack.Screen //啟動介面
+                                name="StartUp"
+                                component={StartUp}
                                 options={{headerShown: false}}
                             />
-                            <Stack.Screen //增加紀錄
-                                name="AddRecord"
-                                component={AddRecord}
-                                options={{title: '增加紀錄'}}
-                            />
-                            <Stack.Screen //編輯紀錄
-                                name="EditRecord"
-                                component={EditRecord}
-                                options={{title: '編輯紀錄'}}
-                            />
-                            <Stack.Screen //選擇存檔
-                                name="ChangeSave"
-                                component={ChangeSave}
-                                options={{title: '選擇存檔'}}
-                            />
-                            <Stack.Screen //備份
-                                name="Backup"
-                                component={Backup}
-                                options={{title: '備份', headerShown: false}}
-                            />
-                            <Stack.Screen //搜尋
-                                name="Search"
-                                component={Search}
-                                options={{title: '搜尋', headerShown: false}}
-                            />
-                            <Stack.Screen //備忘錄
-                                name="Note"
-                                component={Note}
-                                options={{title: '備忘錄', headerShown: false}}
-                            />
-                            <Stack.Screen //備忘錄
-                                name="AddNote"
-                                component={AddNote}
-                                options={{title: '備忘錄', headerShown: false}}
-                            />
-                        </Stack.Group>
-                        <Stack.Screen //啟動介面
-                            name="StartUp"
-                            component={StartUp}
-                            options={{headerShown: false}}
-                        />
-                        <Stack.Group screenOptions={{presentation: 'modal'}}>
-                            <Stack.Screen //計算機
-                                name="calculator"
-                                component={Calculator}
-                                options={{headerShown: false}}
-                            />
-                        </Stack.Group>
-                    </Stack.Navigator>
-                </NavigationContainer>
-            </PaperProvider>
-        </GestureHandlerRootView>
+                            <Stack.Group screenOptions={{presentation: 'modal'}}>
+                                <Stack.Screen //計算機
+                                    name="calculator"
+                                    component={Calculator}
+                                    options={{headerShown: false}}
+                                />
+                            </Stack.Group>
+                        </Stack.Navigator>
+                    </NavigationContainer>
+                </PaperProvider>
+            </GestureHandlerRootView>
+        </SafeAreaProvider>
     );
 }
 

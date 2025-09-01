@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
     FlatList,
-    SafeAreaView,
     StyleSheet,
     ToastAndroid,
     TouchableOpacity,
@@ -10,7 +9,7 @@ import {
     View,
 } from 'react-native';
 import SVGCargo from '../module/SVGCargo';
-import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title} from 'react-native-paper';
+import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title, useTheme} from 'react-native-paper';
 import SVGLostCargo from '../module/SVGLostCargo';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
@@ -20,6 +19,7 @@ import Animated, {useAnimatedStyle, useSharedValue, withSequence, withTiming} fr
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {DateSelect} from '../module/DateSelect';
 import {useNavigation, useRoute} from '@react-navigation/native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 /* 備忘錄分組 */
 function group_note(ResultSet) {
@@ -118,6 +118,7 @@ const Note = ({navigation, route}) => {
     const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
     const listRef = useRef(null); //FlatList Ref
     const [isRefresh, setIsRefresh] = useState(false); //是否重新更新
+    const theme = useTheme();
 
     /* 更新資料 */
     useEffect(() => {
@@ -207,80 +208,74 @@ const Note = ({navigation, route}) => {
         }
     }, [Data, ShowDay]);
 
-    //debug
-    // useEffect(() => {
-    //     console.log(Data);
-    // });
-
     return (
-        <SafeAreaView style={{flex: 1}}>
-            {/*<React.StrictMode>*/}
-            <View style={{zIndex: 2, elevation: 2}}>
-                <Toolbar>
-                    <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
-                    <Appbar.Content title={'備忘錄'} />
-                    <ToolBarView>
-                        <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
-                        <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
-                            <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
-                        </TouchableWithoutFeedback>
-                        <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
-                    </ToolBarView>
-                    <DateSelect
-                        visibility={monthSelect}
-                        value={ShowDay}
-                        onSelect={setMonth}
-                        onDismiss={hideMonthSelect}
-                    />
-                </Toolbar>
-            </View>
-            <TouchableWithoutFeedback onPress={hideMonthSelect}>
-                <View style={[style.cover, {display: monthSelect ? undefined : 'none'}]} />
-            </TouchableWithoutFeedback>
-
-            <TouchableOpacity
-                style={style.addRecord}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('AddNote')}>
-                <View>
-                    <MaterialCommunityIcons name={'notebook-plus-outline'} color={Color.white} size={23} />
+        <SafeAreaView style={{flex: 1, backgroundColor: Color.primaryColor}} edges={['top']}>
+            <View style={{backgroundColor: theme.colors.background, flex: 1}}>
+                <View style={{zIndex: 2, elevation: 2}}>
+                    <Toolbar>
+                        <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
+                        <Appbar.Content title={'備忘錄'} />
+                        <ToolBarView>
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
+                            <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
+                                <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                            </TouchableWithoutFeedback>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
+                        </ToolBarView>
+                        <DateSelect
+                            visibility={monthSelect}
+                            value={ShowDay}
+                            onSelect={setMonth}
+                            onDismiss={hideMonthSelect}
+                        />
+                    </Toolbar>
                 </View>
-            </TouchableOpacity>
+                <TouchableWithoutFeedback onPress={hideMonthSelect}>
+                    <View style={[style.cover, {display: monthSelect ? undefined : 'none'}]} />
+                </TouchableWithoutFeedback>
 
-            <View style={{paddingTop: 5, flex: 1}}>
-                <FlatList
-                    data={Data}
-                    ref={listRef}
-                    onRefresh={() => null}
-                    refreshing={isRefresh}
-                    renderItem={({item}) => <NotePart data={item} />}
-                    onScrollToIndexFailed={info => {
-                        setTimeout(() => {
-                            listRef.current.scrollToIndex({index: info.index});
-                        }, 500);
-                    }}
-                    ListFooterComponent={
-                        <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
-                            <SVGCargo height="60" width="180" />
-                            <Text>已經到底喇~~ （￣︶￣）↗ </Text>
-                        </View>
-                    }
-                    ListEmptyComponent={
-                        <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                            <SVGLostCargo height="100" width="300" />
-                            <Text>沒有資料... Σ(っ °Д °;)っ</Text>
-                        </View>
-                    }
-                />
+                <TouchableOpacity
+                    style={style.addRecord}
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('AddNote')}>
+                    <View>
+                        <MaterialCommunityIcons name={'notebook-plus-outline'} color={Color.white} size={23} />
+                    </View>
+                </TouchableOpacity>
+
+                <View style={{paddingTop: 5, flex: 1}}>
+                    <FlatList
+                        data={Data}
+                        ref={listRef}
+                        onRefresh={() => null}
+                        refreshing={isRefresh}
+                        renderItem={({item}) => <NotePart data={item} />}
+                        onScrollToIndexFailed={info => {
+                            setTimeout(() => {
+                                listRef.current.scrollToIndex({index: info.index});
+                            }, 500);
+                        }}
+                        ListFooterComponent={
+                            <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
+                                <SVGCargo height="60" width="180" />
+                                <Text>已經到底喇~~ （￣︶￣）↗ </Text>
+                            </View>
+                        }
+                        ListEmptyComponent={
+                            <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                                <SVGLostCargo height="100" width="300" />
+                                <Text>沒有資料... Σ(っ °Д °;)っ</Text>
+                            </View>
+                        }
+                    />
+                </View>
             </View>
-            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };
 
 /* 備忘錄 */
 const NotePart = ({data}) => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const route = useRoute();
 
     const date = moment(data.dateTime).locale('zh-hk');
@@ -295,7 +290,11 @@ const NotePart = ({data}) => {
     /* 播放動畫 */
     useEffect(() => {
         let id;
-        if (route.params && new Date(route.params.ShowDay).getDate() === date.toDate().getDate()) {
+        if (
+            route.params &&
+            route.params.ShowDay &&
+            new Date(route.params.ShowDay).getDate() === date.toDate().getDate()
+        ) {
             id = setTimeout(() => {
                 bg.value = withSequence(
                     withTiming('rgba(18,125,255,0.6)'),
@@ -307,7 +306,7 @@ const NotePart = ({data}) => {
         }
 
         return () => clearTimeout(id); //清除計時器
-    }, []);
+    }, [bg, date, route.params]);
 
     /* 備忘錄卡片 */
     const NoteBody = ({item}) => {
@@ -326,7 +325,7 @@ const NotePart = ({data}) => {
         /* 播放動畫 */
         useEffect(() => {
             let id;
-            if (route.params && route.params.id === item.id) {
+            if (route.params && route.params.id && route.params.id === item.id) {
                 id = setTimeout(() => {
                     bg.value = withSequence(
                         withTiming('rgba(18,125,255,0.6)'),
@@ -338,7 +337,7 @@ const NotePart = ({data}) => {
             }
 
             return () => clearTimeout(id); //清除計時器
-        }, []);
+        }, [bg, item.id, route.params]);
 
         return (
             <Animated.View style={[style.surfaceOut, animatedStyles]}>

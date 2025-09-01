@@ -4,7 +4,6 @@ import {
     FlatList,
     Modal,
     PixelRatio,
-    SafeAreaView,
     StyleSheet,
     ToastAndroid,
     TouchableOpacity,
@@ -22,7 +21,7 @@ import 'moment/min/locales';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text} from 'react-native-paper';
+import {ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text, useTheme} from 'react-native-paper';
 import {DB, useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
@@ -40,6 +39,7 @@ import REAnimated, {
     useAnimatedStyle,
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate) {
@@ -159,6 +159,7 @@ const Home = () => {
     const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
     const [setting] = useSetting(); //設定
     const listRef = useRef(null); //FlatList Ref
+    const theme = useTheme();
 
     /* 選擇顯示月份 */
     const NextMonth = useCallback(() => {
@@ -262,130 +263,133 @@ const Home = () => {
     }, [Data, ShowDay]);
 
     return (
-        <SafeAreaView style={{flex: 1}}>
-            {/*<React.StrictMode>*/}
-            <Portal.Host>
-                {/* 頂部toolbar */}
-                <View style={{zIndex: 2, elevation: 2}}>
-                    <Toolbar>
-                        <ToolBarView>
-                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
-                            <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
-                                <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
-                            </TouchableWithoutFeedback>
-                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
-                        </ToolBarView>
-                        <ToolBarView>
-                            {/*<IconButton
+        <SafeAreaView style={{flex: 1, backgroundColor: Color.primaryColor}} edges={['top']}>
+            <View style={{backgroundColor: theme.colors.background, flex: 1}}>
+                <Portal.Host>
+                    {/* 頂部toolbar */}
+                    <View style={{zIndex: 2, elevation: 2}}>
+                        <Toolbar>
+                            <ToolBarView>
+                                <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
+                                <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
+                                    <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                                </TouchableWithoutFeedback>
+                                <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
+                            </ToolBarView>
+                            <ToolBarView>
+                                {/*<IconButton
                                 icon={'magnify'}
                                 iconColor={Color.white}
                                 onPress={() => navigation.navigate('Search')}
                             />*/}
-                            <SmailText color={Color.white}>本月總計</SmailText>
-                            <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
-                        </ToolBarView>
-                        {monthSelect && (
-                            <DateSelect
-                                visibility={monthSelect}
-                                value={ShowDay}
-                                onSelect={setMonth}
-                                onDismiss={hideMonthSelect}
-                            />
-                        )}
-                    </Toolbar>
-                    <Toolbar containerStyle={{zIndex: -1, elevation: -1}}>
-                        <View style={{flex: 1}}>
-                            <Text
-                                style={{
-                                    color: Color.white,
-                                    fontSize: 12,
-                                    textAlign: 'center',
-                                }}>
-                                {'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}
-                            </Text>
-                        </View>
-                        <View style={{flex: 1}}>
-                            <Text
-                                style={{
-                                    color: Color.white,
-                                    fontSize: 12,
-                                    textAlign: 'center',
-                                }}>
-                                {'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}
-                            </Text>
-                        </View>
-                        <View style={{flex: 1}}>
-                            <Text
-                                style={{
-                                    color: Color.white,
-                                    fontSize: 12,
-                                    textAlign: 'center',
-                                }}>
-                                {'加收\n$ ' + formatPrice(Total.Add.toFixed(2))}
-                            </Text>
-                        </View>
-                        <View style={{flex: 1}}>
-                            <Text
-                                style={{
-                                    color: Color.white,
-                                    fontSize: 12,
-                                    textAlign: 'center',
-                                }}>
-                                {'運費\n$ ' + formatPrice(Total.Shipping.toFixed(2))}
-                            </Text>
-                        </View>
-                    </Toolbar>
-                </View>
-                {/*{monthSelect ? (
+                                <SmailText color={Color.white}>本月總計</SmailText>
+                                <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
+                            </ToolBarView>
+                            {monthSelect && (
+                                <DateSelect
+                                    visibility={monthSelect}
+                                    value={ShowDay}
+                                    onSelect={setMonth}
+                                    onDismiss={hideMonthSelect}
+                                />
+                            )}
+                        </Toolbar>
+                        <Toolbar containerStyle={{zIndex: -1, elevation: -1}}>
+                            <View style={{flex: 1}}>
+                                <Text
+                                    style={{
+                                        color: Color.white,
+                                        fontSize: 12,
+                                        textAlign: 'center',
+                                    }}>
+                                    {'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}
+                                </Text>
+                            </View>
+                            <View style={{flex: 1}}>
+                                <Text
+                                    style={{
+                                        color: Color.white,
+                                        fontSize: 12,
+                                        textAlign: 'center',
+                                    }}>
+                                    {'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}
+                                </Text>
+                            </View>
+                            <View style={{flex: 1}}>
+                                <Text
+                                    style={{
+                                        color: Color.white,
+                                        fontSize: 12,
+                                        textAlign: 'center',
+                                    }}>
+                                    {'加收\n$ ' + formatPrice(Total.Add.toFixed(2))}
+                                </Text>
+                            </View>
+                            <View style={{flex: 1}}>
+                                <Text
+                                    style={{
+                                        color: Color.white,
+                                        fontSize: 12,
+                                        textAlign: 'center',
+                                    }}>
+                                    {'運費\n$ ' + formatPrice(Total.Shipping.toFixed(2))}
+                                </Text>
+                            </View>
+                        </Toolbar>
+                    </View>
+                    {/*{monthSelect ? (
                         <TouchableWithoutFeedback onPress={hideMonthSelect}>
                             <View style={[style.cover]} />
                         </TouchableWithoutFeedback>
                     ) : null}*/}
 
-                {/* 增加紀錄 */}
-                <TouchableOpacity
-                    style={style.addRecord}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('AddRecord')}>
-                    <View>
-                        <ADIcon name={'plus'} color={Color.white} size={18} />
-                    </View>
-                </TouchableOpacity>
-                {/* 備忘錄 */}
-                <TouchableOpacity style={style.addMark} activeOpacity={0.8} onPress={() => navigation.navigate('Note')}>
-                    <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
-                </TouchableOpacity>
+                    {/* 增加紀錄 */}
+                    <TouchableOpacity
+                        style={style.addRecord}
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate('AddRecord')}>
+                        <View>
+                            <ADIcon name={'plus'} color={Color.white} size={18} />
+                        </View>
+                    </TouchableOpacity>
+                    {/* 備忘錄 */}
+                    <TouchableOpacity
+                        style={style.addMark}
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate('Note')}>
+                        <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
+                    </TouchableOpacity>
 
-                <View style={{flex: 1}}>
-                    <NewFunctionBanner />
-                    {/* 內容 */}
-                    <FlatList
-                        data={Data}
-                        ref={listRef}
-                        onRefresh={updateData}
-                        refreshing={isRefresh}
-                        renderItem={({item}) => <DataPart data={item} rate={setting.Rate} />}
-                        onScrollToIndexFailed={info => {
-                            setTimeout(() => {
-                                listRef.current.scrollToIndex({index: info.index});
-                            }, 500);
-                        }}
-                        ListFooterComponent={
-                            <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
-                                <SVGCargo height="60" width="180" />
-                                <Text>已經到底喇~~ （￣︶￣）↗ </Text>
-                            </View>
-                        }
-                        ListEmptyComponent={
-                            <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                                <SVGLostCargo height="100" width="300" />
-                                <Text>沒有資料... Σ(っ °Д °;)っ</Text>
-                            </View>
-                        }
-                    />
-                </View>
-            </Portal.Host>
-            {/*</React.StrictMode>*/}
+                    <View style={{flex: 1}}>
+                        <NewFunctionBanner />
+                        {/* 內容 */}
+                        <FlatList
+                            data={Data}
+                            ref={listRef}
+                            onRefresh={updateData}
+                            refreshing={isRefresh}
+                            renderItem={({item}) => <DataPart data={item} rate={setting.Rate} />}
+                            onScrollToIndexFailed={info => {
+                                setTimeout(() => {
+                                    listRef.current.scrollToIndex({index: info.index});
+                                }, 500);
+                            }}
+                            ListFooterComponent={
+                                <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
+                                    <SVGCargo height="60" width="180" />
+                                    <Text>已經到底喇~~ （￣︶￣）↗ </Text>
+                                </View>
+                            }
+                            ListEmptyComponent={
+                                <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                                    <SVGLostCargo height="100" width="300" />
+                                    <Text>沒有資料... Σ(っ °Д °;)っ</Text>
+                                </View>
+                            }
+                        />
+                    </View>
+                </Portal.Host>
+            </View>
         </SafeAreaView>
     );
 };
