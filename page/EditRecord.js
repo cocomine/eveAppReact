@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
 import {
     BackHandler,
     Keyboard,
@@ -6,22 +6,23 @@ import {
     ScrollView,
     StatusBar,
     StyleSheet,
+    ToastAndroid,
     useColorScheme,
     View,
-} from "react-native";
-import moment from "moment";
-import { Color } from "../module/Color";
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { DecimalInput } from "../module/NumInput";
-import { NumKeyboard } from "../module/NumKeyboard";
-import TextInput from "../module/TextInput";
-import { Button, HelperText, Text } from "react-native-paper";
-import TextInputMask from "react-native-text-input-mask";
-import { RadioButton, RadioGroup } from "../module/RadioButton";
-import { DB, useSetting } from "../module/SQLite";
-import ErrorHelperText from "../module/ErrorHelperText";
-import { ImagePicker, LocalInput, recordInitialState } from "./AddRecord";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react-native';
+import moment from 'moment';
+import {Color} from '../module/Color';
+import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
+import {DecimalInput} from '../module/NumInput';
+import {NumKeyboard} from '../module/NumKeyboard';
+import TextInput from '../module/TextInput';
+import {Button, HelperText, Text} from 'react-native-paper';
+import TextInputMask from 'react-native-text-input-mask';
+import {RadioButton, RadioGroup} from '../module/RadioButton';
+import {DB, useSetting} from '../module/SQLite';
+import ErrorHelperText from '../module/ErrorHelperText';
+import {ImagePicker, LocalInput, recordInitialState} from './AddRecord';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 //更新類型
 const [
@@ -157,6 +158,7 @@ const EditRecord = ({navigation, route}) => {
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback(id => {
         focusingDecInput.current = id;
+        Keyboard.dismiss(); //todo: 解決鍵盤彈出問題
         NumKeyboard_refs.current.openKeyBoard();
     }, []);
 
@@ -167,31 +169,36 @@ const EditRecord = ({navigation, route}) => {
     }, []);
 
     /* 虛擬鍵盤點擊 */
-    const onKeyPress = useCallback(value => {
-        if (focusingDecInput.current) {
-            if (value === 'back')
-                inputs.current[focusingDecInput.current].setText(
-                    inputs.current[focusingDecInput.current].getText().slice(0, -1),
-                ); //刪除最後一個文字
-            else if (value === 'done')
-                focusNextField(
-                    Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1],
-                ); //完成輸入
-            else if (value === 'calculator')
-                navigation.navigate('calculator', {
-                    inputID: focusingDecInput.current,
-                    pageID: route.name,
-                });
-            //跳轉到計算機
-            else
-                inputs.current[focusingDecInput.current].setText(
-                    inputs.current[focusingDecInput.current].getText() + value,
-                ); //輸入文字
-        }
-    }, []);
+    const onKeyPress = useCallback(
+        value => {
+            if (focusingDecInput.current) {
+                if (value === 'back')
+                    inputs.current[focusingDecInput.current].setText(
+                        inputs.current[focusingDecInput.current].getText().slice(0, -1),
+                    );
+                //刪除最後一個文字
+                else if (value === 'done')
+                    focusNextField(
+                        Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1],
+                    );
+                //完成輸入
+                else if (value === 'calculator')
+                    navigation.navigate('calculator', {
+                        inputID: focusingDecInput.current,
+                        pageID: route.name,
+                    });
+                //跳轉到計算機
+                else
+                    inputs.current[focusingDecInput.current].setText(
+                        inputs.current[focusingDecInput.current].getText() + value,
+                    ); //輸入文字
+            }
+        },
+        [focusNextField, navigation, route.name],
+    );
 
     /* 遞交 */
-    const submit = useCallback(() => {
+    const submit = useCallback(async () => {
         let error = {
             cargo: null,
             location: null,
@@ -216,10 +223,10 @@ const EditRecord = ({navigation, route}) => {
 
         //通過更新資料庫
         const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
-                    'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ?, Images = ? WHERE RecordID = ?',
+        try {
+            await DB.transaction(async function (tr) {
+                await tr.executeSql(
+                    'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ?, Images = ?, Rate = ? WHERE RecordID = ?',
                     [
                         moment(state.date).format('yyyy-MM-DD'),
                         state.orderID,
@@ -232,18 +239,37 @@ const EditRecord = ({navigation, route}) => {
                         state.shipping,
                         state.remark,
                         JSON.stringify(state.image),
+                        setting.Rate,
                         recordID,
                     ],
                 );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message); //debug
-            },
-            function () {
-                navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
-            },
-        );
-    }, [state]);
+            });
+        } catch (e) {
+            console.error('傳輸錯誤: ' + e.message);
+            ToastAndroid.show('更新失敗', ToastAndroid.SHORT);
+            return;
+        }
+
+        //成功
+        navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
+    }, [
+        navigation,
+        recordID,
+        setting.Rate,
+        state.ADD,
+        state.HKD,
+        state.RMB,
+        state.cargoCheckNum,
+        state.cargoLetter,
+        state.cargoNum,
+        state.date,
+        state.image,
+        state.location,
+        state.orderID,
+        state.remark,
+        state.shipping,
+        state.type,
+    ]);
 
     /* 複製 */
     const copy = useCallback(() => {
@@ -267,49 +293,59 @@ const EditRecord = ({navigation, route}) => {
             if (route.params.value && route.params.inputID) {
                 inputs.current[route.params.inputID].setText(route.params.value.toString());
             }
+
             //取得紀錄
             if (route.params.recordID) {
-                DB.transaction(
-                    function (tr) {
-                        console.log('顯示: ', route.params.recordID); //debug
-                        tr.executeSql(
-                            'SELECT * FROM Record WHERE RecordID = ?',
-                            [route.params.recordID],
-                            function (tx, rs) {
-                                const row = rs.rows.item(0);
-                                dispatch({
-                                    payload: {
-                                        date: new Date(row.DateTime),
-                                        orderID: row.OrderNum,
-                                        type: row.Type,
-                                        cargoLetter: row.CargoNum.slice(0, 4),
-                                        cargoNum: row.CargoNum.slice(4, 10),
-                                        cargoCheckNum: row.CargoNum.slice(10),
-                                        location: row.Local,
-                                        RMB: row.RMB,
-                                        HKD: row.HKD,
-                                        ADD: row.Add,
-                                        shipping: row.Shipping,
-                                        remark: row.Remark,
-                                        image: JSON.parse(row.Images),
-                                    },
-                                });
-                            },
-                            function (tx, error) {
-                                console.log('取得資料錯誤: ' + error.message);
-                            },
-                        );
-                    },
-                    function (error) {
-                        console.log('傳輸錯誤: ' + error.message);
-                    },
-                    function () {
-                        console.log('已取得資料');
-                    },
-                );
+                const extracted = async () => {
+                    try {
+                        await DB.transaction(async function (tr) {
+                            console.log('顯示: ', route.params.recordID);
+                            const [, rs] = await tr.executeSql('SELECT * FROM Record WHERE RecordID = ?', [
+                                route.params.recordID,
+                            ]);
+
+                            //無此紀錄
+                            if (rs.rows.length <= 0) {
+                                console.log('找不到紀錄');
+                                ToastAndroid.show('找不到紀錄', ToastAndroid.SHORT);
+                                navigation.goBack();
+                                return;
+                            }
+
+                            //有此紀錄
+                            const row = rs.rows.item(0);
+                            dispatch({
+                                payload: {
+                                    date: new Date(row.DateTime),
+                                    orderID: row.OrderNum,
+                                    type: row.Type,
+                                    cargoLetter: row.CargoNum.slice(0, 4),
+                                    cargoNum: row.CargoNum.slice(4, 10),
+                                    cargoCheckNum: row.CargoNum.slice(10),
+                                    location: row.Local,
+                                    RMB: row.RMB,
+                                    HKD: row.HKD,
+                                    ADD: row.Add,
+                                    shipping: row.Shipping,
+                                    remark: row.Remark,
+                                    image: JSON.parse(row.Images),
+                                },
+                            });
+                        });
+                    } catch (e) {
+                        console.log('取得資料錯誤: ' + e.message);
+                        ToastAndroid.show('取得資料失敗', ToastAndroid.SHORT);
+                        return;
+                    }
+
+                    //成功
+                    console.log('已取得資料');
+                };
+
+                extracted().then();
             }
         }
-    }, [route]);
+    }, [navigation, route]);
 
     /* 處理返回按鈕 */
     useEffect(() => {
@@ -522,7 +558,7 @@ const EditRecord = ({navigation, route}) => {
                                     onBlur={DecimalInput_Blur}
                                     value={state.RMB}
                                 />
-                                <HelperText type={"info"}>匯率: 100 港幣 = {(100 * Rate).toFixed(2)} 人民幣</HelperText>
+                                <HelperText type={'info'}>匯率: 100 港幣 = {(100 * Rate).toFixed(2)} 人民幣</HelperText>
                             </View>
                             <Text>折算 HK$ {(state.RMB / Rate).toFixed(2)}</Text>
                         </View>

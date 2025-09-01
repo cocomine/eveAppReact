@@ -213,7 +213,6 @@ const Home = () => {
                 console.log('已取得資料', rs.rows.length);
                 const [data, total] = group_data(rs, setting.Rate);
                 setTotal(total);
-                setData(data);
 
                 console.log('備忘錄顯示:', moment(ShowDay).format('DD/MM/YYYY'));
                 const rs1 = await queryNotes(ShowDay);
@@ -285,12 +284,14 @@ const Home = () => {
                             <SmailText color={Color.white}>本月總計</SmailText>
                             <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
                         </ToolBarView>
-                        <DateSelect
-                            visibility={monthSelect}
-                            value={ShowDay}
-                            onSelect={setMonth}
-                            onDismiss={hideMonthSelect}
-                        />
+                        {monthSelect && (
+                            <DateSelect
+                                visibility={monthSelect}
+                                value={ShowDay}
+                                onSelect={setMonth}
+                                onDismiss={hideMonthSelect}
+                            />
+                        )}
                     </Toolbar>
                     <Toolbar containerStyle={{zIndex: -1, elevation: -1}}>
                         <View style={{flex: 1}}>
@@ -335,9 +336,11 @@ const Home = () => {
                         </View>
                     </Toolbar>
                 </View>
-                <TouchableWithoutFeedback onPress={hideMonthSelect}>
-                    <View style={[style.cover, {display: monthSelect ? undefined : 'none'}]} />
-                </TouchableWithoutFeedback>
+                {/*{monthSelect ? (
+                        <TouchableWithoutFeedback onPress={hideMonthSelect}>
+                            <View style={[style.cover]} />
+                        </TouchableWithoutFeedback>
+                    ) : null}*/}
 
                 {/* 增加紀錄 */}
                 <TouchableOpacity
@@ -381,8 +384,8 @@ const Home = () => {
                         }
                     />
                 </View>
-                {/*</React.StrictMode>*/}
             </Portal.Host>
+            {/*</React.StrictMode>*/}
         </SafeAreaView>
     );
 };
@@ -655,7 +658,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                             item.Add,
                             item.Shipping,
                             item.Remark,
-                            item.Images,
+                            item.Images.toString(),
                             item.Rate,
                         ],
                     );
@@ -900,6 +903,7 @@ const style = StyleSheet.create({
         right: 0,
         elevation: 1,
         zIndex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
     },
     row: {
         justifyContent: 'space-between',

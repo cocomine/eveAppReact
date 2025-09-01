@@ -186,6 +186,7 @@ const AddRecord = ({navigation, route}) => {
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
     const DecimalInput_Focus = useCallback(id => {
         focusingDecInput.current = id;
+        Keyboard.dismiss(); //todo: 修復鍵盤閃爍
         NumKeyboard_refs.current.openKeyBoard();
     }, []);
 
