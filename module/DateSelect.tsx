@@ -52,8 +52,7 @@ const DateSelect: React.FC<{
         onSelect(tmp.toDate());
     };
 
-    console.log(show);
-    //if (!show) return null;
+    if (!show) return null;
     return (
         <Animated.View
             style={[style.dateSelect, {backgroundColor: colors.background}]}

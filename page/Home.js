@@ -186,7 +186,7 @@ const Home = () => {
             return new Promise(async resolve => {
                 await DB.readTransaction(async tr => {
                     const [, rs] = await tr.executeSql(
-                        "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
+                        'SELECT * FROM Record WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime DESC',
                         [moment(ShowDay1).format('MM'), moment(ShowDay1).format('YYYY')],
                     );
                     resolve(rs);
@@ -199,7 +199,7 @@ const Home = () => {
             return new Promise(async resolve => {
                 await DB.readTransaction(async tr => {
                     const [, rs] = await tr.executeSql(
-                        "SELECT * FROM Note WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
+                        'SELECT * FROM Note WHERE STRFTIME(\'%m\', DateTime) = ? AND STRFTIME(\'%Y\', DateTime) = ? ORDER BY DateTime DESC',
                         [moment(ShowDay2).format('MM'), moment(ShowDay2).format('YYYY')],
                     );
                     resolve(rs);
@@ -285,14 +285,12 @@ const Home = () => {
                                 <SmailText color={Color.white}>本月總計</SmailText>
                                 <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
                             </ToolBarView>
-                            {monthSelect && (
-                                <DateSelect
-                                    visibility={monthSelect}
-                                    value={ShowDay}
-                                    onSelect={setMonth}
-                                    onDismiss={hideMonthSelect}
-                                />
-                            )}
+                            <DateSelect
+                                visibility={monthSelect}
+                                value={ShowDay}
+                                onSelect={setMonth}
+                                onDismiss={hideMonthSelect}
+                            />
                         </Toolbar>
                         <Toolbar containerStyle={{zIndex: -1, elevation: -1}}>
                             <View style={{flex: 1}}>
@@ -337,11 +335,11 @@ const Home = () => {
                             </View>
                         </Toolbar>
                     </View>
-                    {/*{monthSelect ? (
+                    {monthSelect && (
                         <TouchableWithoutFeedback onPress={hideMonthSelect}>
                             <View style={[style.cover]} />
                         </TouchableWithoutFeedback>
-                    ) : null}*/}
+                    )}
 
                     {/* 增加紀錄 */}
                     <TouchableOpacity
@@ -907,7 +905,6 @@ const style = StyleSheet.create({
         right: 0,
         elevation: 1,
         zIndex: 1,
-        backgroundColor: 'rgba(0,0,0,0.3)',
     },
     row: {
         justifyContent: 'space-between',
