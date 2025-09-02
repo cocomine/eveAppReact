@@ -3,7 +3,6 @@ import {
     Alert,
     Keyboard,
     KeyboardAvoidingView,
-    SafeAreaView,
     StyleSheet,
     ToastAndroid,
     TouchableWithoutFeedback,
@@ -17,6 +16,7 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import Animated, {SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {convertColor} from './Note';
 import {DB} from '../module/SQLite';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const initialState = {
     date: new Date(),
@@ -37,10 +37,11 @@ const reducer = (state, action) => {
 
 const AddNote = ({navigation, route}) => {
     const {colors} = useTheme();
-
+    const [isRemove, setIsRemove] = useState(false);
     const [state, dispatch] = useReducer(reducer, initialState);
     const [showColorSelector, setShowColorSelector] = useState(false);
     const contentInput = useRef(null);
+    const insets = useSafeAreaInsets(); // 取得安全區域的邊距
 
     /* 開啟顏色選擇 */
     const openColorSelector = useCallback(() => {
@@ -61,7 +62,7 @@ const AddNote = ({navigation, route}) => {
     /* 處理退出頁面 儲存 */
     useEffect(() => {
         const save = async () => {
-            if (state.title === '' && state.content === '') return;
+            if ((state.title === '' && state.content === '') || isRemove) return;
 
             try {
                 await DB.transaction(async tr => {
@@ -106,7 +107,7 @@ const AddNote = ({navigation, route}) => {
 
         navigation.addListener('beforeRemove', save);
         return () => navigation.removeListener('beforeRemove', save);
-    }, [navigation, state]);
+    }, [isRemove, navigation, state]);
 
     /* 讀取備忘錄 */
     useEffect(() => {
@@ -155,25 +156,23 @@ const AddNote = ({navigation, route}) => {
 
             console.log('備忘錄已刪除');
             ToastAndroid.show('備忘錄已刪除', ToastAndroid.SHORT);
+            navigation.navigate('Note', {ShowDay: state.date.toString()}); //go back notePage
         };
 
+        setIsRemove(true);
         Alert.alert('刪除', '確認刪除?', [{text: '確認', onPress: sql}, {text: '取消'}], {cancelable: true});
-    }, [state.id]);
+    }, [navigation, state.date, state.id]);
 
     return (
-        <SafeAreaView style={{flex: 1}}>
-            {/*<React.StrictMode>*/}
+        <View style={{flex: 1, paddingBottom: insets.bottom}}>
+            <Appbar.Header>
+                <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
+                <Appbar.Content title={'備忘錄'} />
+                <Appbar.Action icon={'palette-outline'} onPress={toggleColorSelector} />
+                <Appbar.Action icon={state.top ? 'pin' : 'pin-outline'} onPress={() => dispatch({top: !state.top})} />
+                {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={deleteNote} /> : null}
+            </Appbar.Header>
             <View style={{flex: 1}}>
-                <Appbar style={{backgroundColor: Color.primaryColor}}>
-                    <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
-                    <Appbar.Content title={'備忘錄'} />
-                    <Appbar.Action icon={'palette-outline'} onPress={toggleColorSelector} />
-                    <Appbar.Action
-                        icon={state.top ? 'pin' : 'pin-outline'}
-                        onPress={() => dispatch({top: !state.top})}
-                    />
-                    {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={deleteNote} /> : null}
-                </Appbar>
                 <KeyboardAvoidingView
                     style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}}
                     behavior={'height'}>
@@ -217,7 +216,7 @@ const AddNote = ({navigation, route}) => {
                     />
                 </KeyboardAvoidingView>
             </View>
-            {showColorSelector ? (
+            {showColorSelector && (
                 <Animated.View
                     style={[style.colorSelect, {backgroundColor: colors.background}]}
                     entering={SlideInDown}
@@ -246,9 +245,8 @@ const AddNote = ({navigation, route}) => {
                         </TouchableWithoutFeedback>
                     ))}
                 </Animated.View>
-            ) : null}
-            {/*</React.StrictMode>*/}
-        </SafeAreaView>
+            )}
+        </View>
     );
 };
 
@@ -290,6 +288,8 @@ const style = StyleSheet.create({
         justifyContent: 'space-between',
         alignContent: 'stretch',
         flexWrap: 'wrap',
+        borderTopWidth: 1,
+        borderColor: Color.darkColorLight,
     },
 });
 export {AddNote};

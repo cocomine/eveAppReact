@@ -1,27 +1,29 @@
 import React from 'react';
-import {StyleSheet, View, ViewStyle} from "react-native";
-import {Color} from "./Color";
+import {StyleSheet, View, ViewStyle} from 'react-native';
+import {Color} from './Color';
 
 /* 頂部toolbar */
-const Toolbar: React.FC<{ containerStyle?: ViewStyle, children?: React.ReactNode | React.ReactNode[] }> = ({containerStyle, children}) => {
-    return (<View style={[style.toolBar, containerStyle]}>
-        {children}
-    </View>);
-}
+const Toolbar: React.FC<{
+    containerStyle?: ViewStyle;
+    children?: React.ReactNode | React.ReactNode[];
+}> = ({containerStyle, children}) => {
+    return <View style={[style.toolBar, containerStyle]}>{children}</View>;
+};
 /* toolbar 內部 View */
-const ToolBarView: React.FC<{ style?: ViewStyle, children?: React.ReactNode | React.ReactNode[] }> = ({style, children}) => {
-    return (<View style={[style, {flexDirection: "row", alignItems: 'center'}]}>
-        {children}
-    </View>);
-}
+const ToolBarView: React.FC<{style?: ViewStyle; children?: React.ReactNode | React.ReactNode[]}> = ({
+    style,
+    children,
+}) => {
+    return <View style={[style, {flexDirection: 'row', alignItems: 'center'}]}>{children}</View>;
+};
 
 /* toolbar style */
 const style = StyleSheet.create({
     toolBar: {
-        flexDirection: "row",
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: 44,
+        minHeight: 44,
         backgroundColor: Color.primaryColor,
         color: Color.white,
         paddingRight: 10,

@@ -9,9 +9,9 @@ import {
     View,
 } from 'react-native';
 import SVGCargo from '../module/SVGCargo';
-import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title, useTheme} from 'react-native-paper';
+import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title} from 'react-native-paper';
 import SVGLostCargo from '../module/SVGLostCargo';
-import {Toolbar, ToolBarView} from '../module/Toolbar';
+import {ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import moment from 'moment';
 import {DB} from '../module/SQLite';
@@ -19,7 +19,7 @@ import Animated, {useAnimatedStyle, useSharedValue, withSequence, withTiming} fr
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {DateSelect} from '../module/DateSelect';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 /* 備忘錄分組 */
 function group_note(ResultSet) {
@@ -118,7 +118,7 @@ const Note = ({navigation, route}) => {
     const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
     const listRef = useRef(null); //FlatList Ref
     const [isRefresh, setIsRefresh] = useState(false); //是否重新更新
-    const theme = useTheme();
+    const insets = useSafeAreaInsets(); //安全區域
 
     /* 更新資料 */
     useEffect(() => {
@@ -209,68 +209,74 @@ const Note = ({navigation, route}) => {
     }, [Data, ShowDay]);
 
     return (
-        <SafeAreaView style={{flex: 1, backgroundColor: Color.primaryColor}} edges={['top']}>
-            <View style={{backgroundColor: theme.colors.background, flex: 1}}>
-                <View style={{zIndex: 2, elevation: 2}}>
-                    <Toolbar>
-                        <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
-                        <Appbar.Content title={'備忘錄'} />
-                        <ToolBarView>
-                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
-                            <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
-                                <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
-                            </TouchableWithoutFeedback>
-                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
-                        </ToolBarView>
-                        <DateSelect
-                            visibility={monthSelect}
-                            value={ShowDay}
-                            onSelect={setMonth}
-                            onDismiss={hideMonthSelect}
-                        />
-                    </Toolbar>
-                </View>
-                <TouchableWithoutFeedback onPress={hideMonthSelect}>
-                    <View style={[style.cover, {display: monthSelect ? undefined : 'none'}]} />
-                </TouchableWithoutFeedback>
-
-                <TouchableOpacity
-                    style={style.addRecord}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('AddNote')}>
-                    <View>
-                        <MaterialCommunityIcons name={'notebook-plus-outline'} color={Color.white} size={23} />
-                    </View>
-                </TouchableOpacity>
-
-                <View style={{paddingTop: 5, flex: 1}}>
-                    <FlatList
-                        data={Data}
-                        ref={listRef}
-                        onRefresh={() => null}
-                        refreshing={isRefresh}
-                        renderItem={({item}) => <NotePart data={item} />}
-                        onScrollToIndexFailed={info => {
-                            setTimeout(() => {
-                                listRef.current.scrollToIndex({index: info.index});
-                            }, 500);
-                        }}
-                        ListFooterComponent={
-                            <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
-                                <SVGCargo height="60" width="180" />
-                                <Text>已經到底喇~~ （￣︶￣）↗ </Text>
-                            </View>
-                        }
-                        ListEmptyComponent={
-                            <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
-                                <SVGLostCargo height="100" width="300" />
-                                <Text>沒有資料... Σ(っ °Д °;)っ</Text>
-                            </View>
-                        }
+        <View style={{flex: 1}}>
+            <View style={{zIndex: 2, elevation: 2}}>
+                <Appbar.Header>
+                    <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
+                    <Appbar.Content title={'備忘錄'} />
+                    <ToolBarView>
+                        <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
+                        <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
+                            <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                        </TouchableWithoutFeedback>
+                        <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
+                    </ToolBarView>
+                    <DateSelect
+                        visibility={monthSelect}
+                        value={ShowDay}
+                        onSelect={setMonth}
+                        onDismiss={hideMonthSelect}
                     />
-                </View>
+                </Appbar.Header>
             </View>
-        </SafeAreaView>
+            {monthSelect && (
+                <TouchableWithoutFeedback onPress={hideMonthSelect}>
+                    <View style={[style.cover]} />
+                </TouchableWithoutFeedback>
+            )}
+
+            <TouchableOpacity
+                style={style.addRecord}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('AddNote')}>
+                <View>
+                    <MaterialCommunityIcons name={'notebook-plus-outline'} color={Color.white} size={23} />
+                </View>
+            </TouchableOpacity>
+
+            <View style={{paddingTop: 5, flex: 1}}>
+                <FlatList
+                    data={Data}
+                    ref={listRef}
+                    onRefresh={() => null}
+                    refreshing={isRefresh}
+                    renderItem={({item}) => <NotePart data={item} />}
+                    onScrollToIndexFailed={info => {
+                        setTimeout(() => {
+                            listRef.current.scrollToIndex({index: info.index});
+                        }, 500);
+                    }}
+                    ListFooterComponent={
+                        <View
+                            style={{
+                                height: 120,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                marginBottom: insets.bottom,
+                            }}>
+                            <SVGCargo height="60" width="180" />
+                            <Text>已經到底喇~~ （￣︶￣）↗ </Text>
+                        </View>
+                    }
+                    ListEmptyComponent={
+                        <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                            <SVGLostCargo height="100" width="300" />
+                            <Text>沒有資料... Σ(っ °Д °;)っ</Text>
+                        </View>
+                    }
+                />
+            </View>
+        </View>
     );
 };
 
@@ -378,7 +384,7 @@ const style = StyleSheet.create({
     addRecord: {
         backgroundColor: Color.primaryColor,
         position: 'absolute',
-        bottom: 20,
+        bottom: 40,
         right: 20,
         width: 57,
         height: 57,

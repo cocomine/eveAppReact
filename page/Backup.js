@@ -1,20 +1,11 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {
-    FlatList,
-    Image,
-    Linking,
-    StatusBar,
-    StyleSheet,
-    ToastAndroid,
-    useColorScheme,
-    View,
-} from 'react-native';
+import {FlatList, Image, Linking, StatusBar, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import {Color} from '../module/Color';
 import {Appbar, Button, Dialog, Headline, Portal, Subheading, Switch, Text, Title, useTheme} from 'react-native-paper';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import Lottie from 'lottie-react-native';
 import {GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes} from '@react-native-google-signin/google-signin';
-import {GDrive, ListQueryBuilder, MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
+import {GDrive, MimeTypes} from '@robinbobin/react-native-google-drive-api-wrapper';
 import RNFS, {CachesDirectoryPath} from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
@@ -26,7 +17,7 @@ import SVGLostCargo from '../module/SVGLostCargo';
 import {base64ToBytes, bytesToBase64} from 'byte-base64';
 import RNRestart from 'react-native-restart';
 import notifee from '@notifee/react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 /* google設定 */
 GoogleSignin.configure({scopes: ['https://www.googleapis.com/auth/drive.file', 'profile']});
@@ -55,7 +46,7 @@ const Backup = ({navigation}) => {
     const [autoBackupEnable, setAutoBackupEnable] = useState(false); //自動備份狀態
     const [autoBackupCycle, setAutoBackupCycle] = useState('Week'); //自動備份狀態
     const folderID = useRef(null); //資料夾id
-    const themes = useTheme();
+    const insets = useSafeAreaInsets(); //安全區域
 
     /* 初始化 */
     useEffect(() => {
@@ -239,7 +230,7 @@ const Backup = ({navigation}) => {
     }, []);
 
     return (
-        <SafeAreaView style={{flex: 1}} edges={['bottom']}>
+        <View style={{flex: 1}}>
             {/*<React.StrictMode>*/}
             <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true} />
             <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
@@ -333,7 +324,7 @@ const Backup = ({navigation}) => {
                         </Animated.View>
                     ) : null}
                 </View>
-                <View style={[style.button, {backgroundColor: BG_color}]}>
+                <View style={[style.button, {backgroundColor: BG_color, paddingBottom: insets.bottom}]}>
                     <View style={{display: isLogin ? 'none' : undefined}}>
                         <Button mode={'contained'} buttonColor={Color.green} icon={'link-variant'} onPress={link}>
                             連接
@@ -424,7 +415,7 @@ const Backup = ({navigation}) => {
                 </Dialog>
             </Portal>
             {/*</React.StrictMode>*/}
-        </SafeAreaView>
+        </View>
     );
 };
 
