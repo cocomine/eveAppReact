@@ -42,6 +42,7 @@ const AddNote = ({navigation, route}) => {
     const [showColorSelector, setShowColorSelector] = useState(false);
     const contentInput = useRef(null);
     const insets = useSafeAreaInsets(); // 取得安全區域的邊距
+    const [keyboardVisible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
 
     /* 開啟顏色選擇 */
     const openColorSelector = useCallback(() => {
@@ -141,6 +142,17 @@ const AddNote = ({navigation, route}) => {
         }
     }, [route]);
 
+    // 監聽鍵盤顯示隱藏
+    useEffect(() => {
+        // 虛擬鍵盤顯示狀態
+        Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        // 虛擬鍵盤隱藏狀態
+        Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+
+        // 清除事件
+        return () => Keyboard.removeAllListeners('keyboardDidShow keyboardDidHide');
+    }, []);
+
     /* 刪除備忘錄 */
     const deleteNote = useCallback(() => {
         const sql = async () => {
@@ -165,7 +177,7 @@ const AddNote = ({navigation, route}) => {
 
     return (
         <View style={{flex: 1, paddingBottom: insets.bottom}}>
-            <Appbar.Header>
+            <Appbar.Header style={{backgroundColor: Color.primaryColor}} statusBarHeight={insets.top} elevated={true}>
                 <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
                 <Appbar.Content title={'備忘錄'} />
                 <Appbar.Action icon={'palette-outline'} onPress={toggleColorSelector} />
@@ -174,46 +186,50 @@ const AddNote = ({navigation, route}) => {
             </Appbar.Header>
             <View style={{flex: 1}}>
                 <KeyboardAvoidingView
-                    style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}}
-                    behavior={'height'}>
-                    <Text
-                        style={[style.date, {borderColor: colors.text}]}
-                        onPress={() => null}
-                        onPressOut={() => {
-                            DateTimePickerAndroid.open({
-                                value: state.date,
-                                onChange: (event, newDate) => {
-                                    dispatch({date: newDate});
-                                },
-                            });
-                        }}>
-                        {moment(state.date).locale('zh-hk').format('D.M (ddd)')}
-                    </Text>
-                    <TextInput
-                        placeholder={'Title'}
-                        style={{fontWeight: 'bold'}}
-                        value={state.title}
-                        onSubmitEditing={() => contentInput.current.focus()}
-                        onChangeText={text => dispatch({title: text})}
-                        selectionColor={Color.primaryColor}
-                        onFocus={closeColorSelector}
-                        underlineColor={Color.transparent}
-                        activeUnderlineColor={Color.transparent}
-                        returnKeyType={'next'}
-                    />
-                    <TextInput
-                        placeholder={'內容'}
-                        style={[style.contentInput, {height: undefined}]}
-                        value={state.content}
-                        onFocus={closeColorSelector}
-                        onChangeText={text => dispatch({content: text})}
-                        multiline={true}
-                        selectionColor={Color.primaryColor}
-                        underlineColor={Color.transparent}
-                        activeUnderlineColor={Color.transparent}
-                        maxLength={200}
-                        ref={contentInput}
-                    />
+                    style={{flex: 1}}
+                    behavior={'padding'}
+                    keyboardVerticalOffset={insets.top + 64}
+                    enabled={keyboardVisible}>
+                    <View style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}}>
+                        <Text
+                            style={[style.date, {borderColor: colors.text}]}
+                            onPress={() => null}
+                            onPressOut={() => {
+                                DateTimePickerAndroid.open({
+                                    value: state.date,
+                                    onChange: (event, newDate) => {
+                                        dispatch({date: newDate});
+                                    },
+                                });
+                            }}>
+                            {moment(state.date).locale('zh-hk').format('D.M (ddd)')}
+                        </Text>
+                        <TextInput
+                            placeholder={'Title'}
+                            style={{fontWeight: 'bold'}}
+                            value={state.title}
+                            onSubmitEditing={() => contentInput.current.focus()}
+                            onChangeText={text => dispatch({title: text})}
+                            selectionColor={Color.primaryColor}
+                            onFocus={closeColorSelector}
+                            underlineColor={Color.transparent}
+                            activeUnderlineColor={Color.transparent}
+                            returnKeyType={'next'}
+                        />
+                        <TextInput
+                            placeholder={'內容'}
+                            style={[style.contentInput, {height: undefined}]}
+                            value={state.content}
+                            onFocus={closeColorSelector}
+                            onChangeText={text => dispatch({content: text})}
+                            multiline={true}
+                            selectionColor={Color.primaryColor}
+                            underlineColor={Color.transparent}
+                            activeUnderlineColor={Color.transparent}
+                            maxLength={200}
+                            ref={contentInput}
+                        />
+                    </View>
                 </KeyboardAvoidingView>
             </View>
             {showColorSelector && (

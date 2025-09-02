@@ -211,7 +211,7 @@ const Note = ({navigation, route}) => {
     return (
         <View style={{flex: 1}}>
             <View style={{zIndex: 2, elevation: 2}}>
-                <Appbar.Header>
+                <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
                     <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
                     <Appbar.Content title={'備忘錄'} />
                     <ToolBarView>
@@ -236,7 +236,7 @@ const Note = ({navigation, route}) => {
             )}
 
             <TouchableOpacity
-                style={style.addRecord}
+                style={[style.addRecord, {bottom: 20 + insets.bottom}]}
                 activeOpacity={0.8}
                 onPress={() => navigation.navigate('AddNote')}>
                 <View>

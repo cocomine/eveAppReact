@@ -1,33 +1,33 @@
-import {EntryAnimationsValues, ExitAnimationsValues, withTiming} from "react-native-reanimated";
+import {EntryAnimationsValues, ExitAnimationsValues, withTiming} from 'react-native-reanimated';
 
 function FoldIn(values: EntryAnimationsValues) {
-    'worklet'
+    'worklet';
     const animations = {
         height: withTiming(values.targetHeight),
     };
     const initialValues = {
         height: 0,
-        overflow: 'hidden'
+        overflow: 'hidden',
     };
     return {
         initialValues,
         animations,
-    }
+    };
 }
 
 function FoldOut(values: ExitAnimationsValues) {
-    'worklet'
+    'worklet';
     const animations = {
         height: withTiming(0),
     };
     const initialValues = {
         height: values.currentHeight,
-        overflow: 'hidden'
+        overflow: 'hidden',
     };
     return {
         initialValues,
         animations,
-    }
+    };
 }
 
-export {FoldIn, FoldOut}
+export {FoldIn, FoldOut};

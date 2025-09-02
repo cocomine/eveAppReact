@@ -1,14 +1,15 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Alert, Animated, SafeAreaView, ScrollView, StatusBar, StyleSheet, ToastAndroid, View} from 'react-native';
+import {Alert, SafeAreaView, ScrollView, StatusBar, StyleSheet, ToastAndroid, View} from 'react-native';
 import {Caption, Divider, List, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
-import {Swipeable} from 'react-native-gesture-handler';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import FW5Icon from '@react-native-vector-icons/fontawesome5';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNRestart from 'react-native-restart';
 import RNFS, {CachesDirectoryPath} from 'react-native-fs';
 import prompt from 'react-native-prompt-android';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, {interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle} from 'react-native-reanimated';
 
 const ChangeSave = () => {
     const [dbname, set_dbname] = useState([]);
@@ -77,12 +78,13 @@ const ChangeSave = () => {
 
     /* 刪除 */
     const deleteDB = useCallback(
-        db_number => {
+        async db_number => {
+            if ((await AsyncStorage.getItem('openDB')) === 'eveApp' + (db_number === 0 ? '' : db_number) + '.db') {
+                ToastAndroid.show('不能刪除已開啟存檔', ToastAndroid.SHORT);
+                return;
+            }
+
             const del = async () => {
-                if ((await AsyncStorage.getItem('openDB')) === 'eveApp' + (db_number === 0 ? '' : db_number) + '.db') {
-                    ToastAndroid.show('不能刪除已開啟存檔', ToastAndroid.SHORT);
-                    return;
-                }
                 //刪除名稱
                 dbname[db_number] = null;
                 set_dbname([...dbname]);
@@ -194,57 +196,58 @@ const ChangeSave = () => {
     );
 };
 
-/* 列表 */
-const ListItem = ({title, description, onSwipe, ...props}) => {
+/* 向左滑動 */
+const SwipeRight = (progress, translation) => {
     const canHaptic = useRef(true); //可否震動
-    const {colors} = useTheme();
-    const ref = useRef(null);
 
-    /* 向左滑動 */
-    const swipeRight = useCallback((progress, dragX) => {
-        //背景動畫
-        const translateX = dragX.interpolate({
-            inputRange: [-120, 0],
-            outputRange: [-20, 20],
-            extrapolate: 'clamp',
-        });
-        const rotate = dragX.interpolate({
-            inputRange: [-120, 0],
-            outputRange: ['0deg', '70deg'],
-            extrapolate: 'clamp',
-        });
+    //背景動畫
+    const styleAnimation = useAnimatedStyle(() => {
+        const translateX = interpolate(translation.value, [-120, 0], [-20, 20], 'clamp');
+        const rotate = interpolate(translation.value, [-120, 0], [0, 70], 'clamp');
 
-        //體感觸摸
-        dragX.addListener(({value}) => {
-            if (value < 120 * -1) {
-                if (canHaptic.current === true) {
-                    ReactNativeHapticFeedback.trigger('effectTick');
-                    canHaptic.current = false;
-                }
-            } else {
+        return {
+            marginLeft: 'auto',
+            transform: [{translateX: translateX}, {rotate: rotate.toString() + 'deg'}],
+        };
+    });
+
+    //體感觸摸
+    useAnimatedReaction(
+        () => translation.value,
+        current => {
+            if (current > 150 && canHaptic.current === true) {
+                runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
+                canHaptic.current = false;
+            } else if (current < -150 && canHaptic.current === true) {
+                runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
+                canHaptic.current = false;
+            } else if (current <= 150 && current >= -150) {
                 canHaptic.current = true;
             }
-        });
+        },
+        [canHaptic],
+    );
 
-        //背景圖片
-        return (
-            <Animated.View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
-                <Animated.View
-                    style={{
-                        marginLeft: 'auto',
-                        transform: [{translateX}, {rotate}],
-                    }}>
-                    <FW5Icon name={'trash-alt'} size={40} color={Color.white} />
-                </Animated.View>
+    //背景圖片
+    return (
+        <View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
+            <Animated.View style={styleAnimation}>
+                <FW5Icon name={'trash-alt'} size={40} color={Color.white} />
             </Animated.View>
-        );
-    }, []);
+        </View>
+    );
+};
+
+/* 列表 */
+const ListItem = ({title, description, onSwipe, ...props}) => {
+    const {colors} = useTheme();
+    const ref = useRef(null);
 
     /* 確認動作 */
     const swipeOpen = useCallback(
         direction => {
             //移除
-            if (direction === 'right') {
+            if (direction === 'left') {
                 ref.current.close();
                 onSwipe();
             }
@@ -255,9 +258,9 @@ const ListItem = ({title, description, onSwipe, ...props}) => {
     return (
         <Swipeable
             ref={ref}
-            leftThreshold={120}
-            rightThreshold={120}
-            renderRightActions={swipeRight}
+            leftThreshold={150}
+            rightThreshold={150}
+            renderRightActions={SwipeRight}
             onSwipeableOpen={swipeOpen}
             overshootFriction={20}>
             <List.Item
