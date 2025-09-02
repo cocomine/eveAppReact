@@ -280,11 +280,12 @@ const Note = ({navigation, route}) => {
     );
 };
 
-/* 備忘錄 */
-const NotePart = ({data}) => {
+/* 備忘錄卡片 */
+const NoteBody = ({item}) => {
+    const navigation = useNavigation();
     const route = useRoute();
-
-    const date = moment(data.dateTime).locale('zh-hk');
+    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+    const BG_color = isDarkMode ? Color.darkBlock : Color.white;
 
     const bg = useSharedValue('rgba(18,125,255,0)');
     const animatedStyles = useAnimatedStyle(() => {
@@ -296,11 +297,7 @@ const NotePart = ({data}) => {
     /* 播放動畫 */
     useEffect(() => {
         let id;
-        if (
-            route.params &&
-            route.params.ShowDay &&
-            new Date(route.params.ShowDay).getDate() === date.toDate().getDate()
-        ) {
+        if (route.params && route.params.id && route.params.id === item.id) {
             id = setTimeout(() => {
                 bg.value = withSequence(
                     withTiming('rgba(18,125,255,0.6)'),
@@ -312,53 +309,26 @@ const NotePart = ({data}) => {
         }
 
         return () => clearTimeout(id); //清除計時器
-    }, [bg, date, route.params]);
-
-    /* 備忘錄卡片 */
-    const NoteBody = ({item}) => {
-        const navigation = useNavigation();
-        const route = useRoute();
-        const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-        const BG_color = isDarkMode ? Color.darkBlock : Color.white;
-
-        const bg = useSharedValue('rgba(18,125,255,0)');
-        const animatedStyles = useAnimatedStyle(() => {
-            return {
-                backgroundColor: bg.value,
-            };
-        });
-
-        /* 播放動畫 */
-        useEffect(() => {
-            let id;
-            if (route.params && route.params.id && route.params.id === item.id) {
-                id = setTimeout(() => {
-                    bg.value = withSequence(
-                        withTiming('rgba(18,125,255,0.6)'),
-                        withTiming('rgba(18,125,255,0.3)'),
-                        withTiming('rgba(18,125,255,0.6)'),
-                        withTiming('rgba(18,125,255,0)'),
-                    );
-                }, 300);
-            }
-
-            return () => clearTimeout(id); //清除計時器
-        }, [bg, item.id, route.params]);
-
-        return (
-            <Animated.View style={[style.surfaceOut, animatedStyles]}>
-                <TouchableWithoutFeedback onPress={() => navigation.navigate('AddNote', {id: item.id})}>
-                    <Surface style={[style.surface, {backgroundColor: item.color ?? BG_color}]}>
-                        {item.title != null ? <Title>{item.title}</Title> : null}
-                        {item.content != null ? <Paragraph>{item.content}</Paragraph> : null}
-                    </Surface>
-                </TouchableWithoutFeedback>
-            </Animated.View>
-        );
-    };
+    }, [bg, item.id, route.params]);
 
     return (
-        <Animated.View style={[style.notePart, animatedStyles]}>
+        <Animated.View style={[style.surfaceOut, animatedStyles]}>
+            <TouchableWithoutFeedback onPress={() => navigation.navigate('AddNote', {id: item.id})}>
+                <Surface style={[style.surface, {backgroundColor: item.color ?? BG_color}]}>
+                    {item.title != null ? <Title>{item.title}</Title> : null}
+                    {item.content != null ? <Paragraph>{item.content}</Paragraph> : null}
+                </Surface>
+            </TouchableWithoutFeedback>
+        </Animated.View>
+    );
+};
+
+/* 備忘錄 */
+const NotePart = ({data}) => {
+    const date = moment(data.dateTime).locale('zh-hk');
+
+    return (
+        <View style={[style.notePart]}>
             <Caption style={{paddingHorizontal: 10}}>
                 {data.dateTime != null ? moment(date).format('D.M (ddd)') : '置頂'}
             </Caption>
@@ -367,7 +337,7 @@ const NotePart = ({data}) => {
                     <NoteBody item={item} key={index} />
                 ))}
             </View>
-        </Animated.View>
+        </View>
     );
 };
 

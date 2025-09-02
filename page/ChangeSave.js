@@ -38,78 +38,79 @@ const ChangeSave = () => {
     }, []);
 
     /* 打開資料庫 */
-    const openDB = db => {
-        const save = async db => {
-            await AsyncStorage.setItem('openDB', 'eveApp' + (db === 0 ? '' : db) + '.db');
+    const openDB = useCallback(
+        async db_number => {
+            await AsyncStorage.setItem('openDB', 'eveApp' + (db_number === 0 ? '' : db_number) + '.db');
 
             //新存檔
-            if (dbname[db] === null) {
-                dbname[db] = '未命名';
+            if (dbname[db_number] === null) {
+                dbname[db_number] = '未命名';
                 await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
                 set_dbname([...dbname]);
             }
-        };
 
-        save(db).then(restartApp);
-    };
+            restartApp();
+        },
+        [dbname],
+    );
 
     /* 更改名稱 */
-    const changeName = db => {
-        const change = async name => {
-            if (!/\S+/g.test(name)) {
-                ToastAndroid.show('輸入格式不正確', ToastAndroid.SHORT);
-                return;
-            }
-            dbname[db] = name;
-            set_dbname([...dbname]);
-            await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
-        };
+    const changeName = useCallback(
+        db_number => {
+            const change = async name => {
+                if (!/\S+/g.test(name)) {
+                    ToastAndroid.show('輸入格式不正確', ToastAndroid.SHORT);
+                    return;
+                }
+                dbname[db_number] = name;
+                set_dbname([...dbname]);
+                await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
+            };
 
-        prompt('存檔名稱', '請輸入名稱', [{text: '取消'}, {text: '確認', onPress: change}], {
-            cancelable: true,
-            defaultValue: dbname[db],
-        });
-    };
+            prompt('存檔名稱', '請輸入名稱', [{text: '取消'}, {text: '確認', onPress: change}], {
+                cancelable: true,
+                defaultValue: dbname[db_number],
+            });
+        },
+        [dbname],
+    );
 
     /* 刪除 */
-    const deleteDB = db => {
-        const del = async () => {
-            if ((await AsyncStorage.getItem('openDB')) === 'eveApp' + (db === 0 ? '' : db) + '.db') {
-                ToastAndroid.show('不能刪除已開啟存檔', ToastAndroid.SHORT);
+    const deleteDB = useCallback(
+        db_number => {
+            const del = async () => {
+                if ((await AsyncStorage.getItem('openDB')) === 'eveApp' + (db_number === 0 ? '' : db_number) + '.db') {
+                    ToastAndroid.show('不能刪除已開啟存檔', ToastAndroid.SHORT);
+                    return;
+                }
+                //刪除名稱
+                dbname[db_number] = null;
+                set_dbname([...dbname]);
+                await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
+                //刪除檔案
+                await RNFS.unlink(
+                    CachesDirectoryPath + '/../databases/eveApp' + (db_number === 0 ? '' : db_number) + '.db',
+                ).catch(() => null);
+                await RNFS.unlink(
+                    CachesDirectoryPath + '/../databases/eveApp' + (db_number === 0 ? '' : db_number) + '.db-journal',
+                ).catch(() => null);
+            };
+
+            //檔案不存在
+            if (dbname[db_number] === null) {
+                ToastAndroid.show('該位置沒有存檔', ToastAndroid.SHORT);
                 return;
             }
-            //刪除名稱
-            dbname[db] = null;
-            set_dbname([...dbname]);
-            await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
-            //刪除檔案
-            await RNFS.unlink(CachesDirectoryPath + '/../databases/eveApp' + (db === 0 ? '' : db) + '.db').catch(
-                () => null,
-            );
-            await RNFS.unlink(
-                CachesDirectoryPath + '/../databases/eveApp' + (db === 0 ? '' : db) + '.db-journal',
-            ).catch(() => null);
-        };
-
-        //檔案不存在
-        if (dbname[db] === null) {
-            ToastAndroid.show('該位置沒有存檔', ToastAndroid.SHORT);
-            return;
-        }
-        Alert.alert('刪除', '確認刪除?', [{text: '確認', onPress: del}, {text: '取消'}], {cancelable: true});
-    };
-
-    // useEffect(() => {
-    //     RNFS.readDir(CachesDirectoryPath + '/../databases/').then((list) => {
-    //         console.log(list)
-    //     })
-    // }); //debug
+            Alert.alert('刪除', '確認刪除?', [{text: '確認', onPress: del}, {text: '取消'}], {cancelable: true});
+        },
+        [dbname],
+    );
 
     return (
         <SafeAreaView style={{flex: 1}}>
             <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true} />
             {/*<React.StrictMode>*/}
-            <ScrollView >
+            <ScrollView>
                 <View style={{paddingHorizontal: 10, paddingTop: 10}}>
                     <Caption>不同存檔之間的數據及設定均是獨立並不通用, 最多只能開十個存檔</Caption>
                     <Caption>(名稱只作用識別用途, 不會更改真實檔案名稱)</Caption>
