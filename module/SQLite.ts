@@ -69,9 +69,9 @@ const checkUpdate = async () => {
                 case '1.5.5':
                     await doUpdate.To_1_5_6();
                     break;
-                /*case '1.5.6':
+                case '1.5.6':
                     await doUpdate.To_1_5_7();
-                    break;*/
+                    break;
                 default:
                     console.log('DatabaseVer_Helper:', '已是最新');
                     break;
