@@ -8,6 +8,7 @@ import {
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
     useFocusEffect,
+    useNavigationContainerRef,
 } from '@react-navigation/native';
 import {
     Appbar,
@@ -30,6 +31,7 @@ import {Search} from './page/Search';
 import {Note} from './page/Note';
 import {AddNote} from './page/AddNote';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {useLogger} from '@react-navigation/devtools';
 
 const Stack = createNativeStackNavigator();
 
@@ -50,11 +52,14 @@ function App() {
         },
     };
 
+    const navigationRef = useNavigationContainerRef();
+    useLogger(navigationRef); //導航紀錄
+
     return (
         <SafeAreaProvider>
             <GestureHandlerRootView style={{flex: 1}}>
                 <PaperProvider theme={theme}>
-                    <NavigationContainer theme={theme}>
+                    <NavigationContainer theme={theme} ref={navigationRef}>
                         <Stack.Navigator
                             initialRouteName={'StartUp'}
                             screenOptions={{header: props => <CustomNavigationBar {...props} />}}>
@@ -107,7 +112,7 @@ function App() {
                             />
                             <Stack.Group screenOptions={{presentation: 'modal'}}>
                                 <Stack.Screen //計算機
-                                    name="calculator"
+                                    name="Calculator"
                                     component={Calculator}
                                     options={{headerShown: false}}
                                 />

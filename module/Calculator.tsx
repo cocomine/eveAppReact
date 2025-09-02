@@ -1,17 +1,21 @@
 import React, {useCallback, useRef, useState} from 'react';
-import {SafeAreaView, StatusBar, StyleSheet, useColorScheme, View} from 'react-native';
+import {StatusBar, StyleSheet, useColorScheme, View} from 'react-native';
 import {IconButton, MD2Theme, Text, useTheme} from 'react-native-paper';
 import {Color} from './Color';
-import {NavigationProp, RouteProp} from '@react-navigation/core/src/types';
-import {ParamListBase} from '@react-navigation/routers';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AutoSizeText, ResizeTextMode} from 'react-native-auto-size-text';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {Ripple} from './Ripple';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import type {RouteProp} from '@react-navigation/native';
+import type {RootStackParamList} from './RootStackParamList';
 
-const Calculator: React.FC<{
-    navigation: NavigationProp<ReactNavigation.RootParamList>;
-    route: RouteProp<ParamListBase>;
-}> = ({navigation, route}) => {
+interface Props {
+    route: RouteProp<RootStackParamList, 'Calculator'>;
+    navigation: NativeStackNavigationProp<RootStackParamList, 'Calculator'>;
+}
+
+const Calculator: React.FC<Props> = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const {colors} = useTheme<MD2Theme>();
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;
@@ -135,7 +139,7 @@ const Calculator: React.FC<{
     /* Close */
     const onClose = useCallback(() => {
         navigation.goBack();
-    }, []);
+    }, [navigation]);
 
     /* AC */
     const onAC = useCallback(() => {
@@ -147,12 +151,12 @@ const Calculator: React.FC<{
     /* Done (send data) */
     const onDone = useCallback(() => {
         onCalculator();
-        // @ts-ignore
-        navigation.navigate(route.params.pageID, {value: array.current[0], ...route.params});
-    }, [navigation]);
+
+        navigation.popTo('AddRecord', {value: array.current[0], ...route.params});
+    }, [navigation, onCalculator, route.params]);
 
     return (
-        <SafeAreaView style={{flex: 1}}>
+        <SafeAreaView style={{flex: 1}} edges={['top', 'right', 'bottom']}>
             {/*<React.StrictMode>*/}
             <StatusBar
                 backgroundColor={colors.background}
@@ -326,25 +330,25 @@ const style = StyleSheet.create({
     row: {
         flex: 1,
         flexDirection: 'row',
-        borderTopWidth: .7,
-        borderColor: Color.darkColorLight
+        borderTopWidth: 0.7,
+        borderColor: Color.darkColorLight,
     },
     button: {
         flex: 1,
-        borderRightWidth: .7,
+        borderRightWidth: 0.7,
         borderColor: Color.darkColorLight,
         flexDirection: 'row',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     },
     text: {
         textAlign: 'right',
-        fontSize: 20
+        fontSize: 20,
     },
     show: {
         flex: 1,
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        alignItems: 'center'
-    }
+        alignItems: 'center',
+    },
 });

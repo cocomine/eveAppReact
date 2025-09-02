@@ -30,6 +30,9 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import REAnimated, {LinearTransition, StretchInX} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import {useHeaderHeight} from '@react-navigation/elements';
+/** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
+/** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
+/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
 
 const IconButton = REAnimated.createAnimatedComponent(PaperIconButton);
 
@@ -154,7 +157,11 @@ const reducer = (state, action) => {
     }
 };
 
-/* 增加紀錄 */
+/**
+ * 增加紀錄
+ * @type {React.FC<{navigation: NativeStackNavigationProp<RootStackParamList, 'AddRecord'>;
+ *                  route: RouteProp<RootStackParamList, 'AddRecord'>}>}
+ */
 const AddRecord = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [state, dispatch] = useReducer(reducer, recordInitialState); //輸入資料
@@ -214,9 +221,8 @@ const AddRecord = ({navigation, route}) => {
                     );
                 } else if (value === 'calculator') {
                     //跳轉到計算機
-                    navigation.navigate('calculator', {
+                    navigation.navigate('Calculator', {
                         inputID: focusingDecInput.current,
-                        pageID: route.name,
                     });
                 } else {
                     //輸入文字
@@ -226,8 +232,15 @@ const AddRecord = ({navigation, route}) => {
                 }
             }
         },
-        [focusNextField, navigation, route.name],
+        [focusNextField, navigation],
     );
+
+    /* 計算機返回輸入欄位id */
+    useEffect(() => {
+        if (route.params && route.params.value && route.params.inputID) {
+            inputs.current[route.params.inputID].setText(route.params.value.toString());
+        }
+    }, [route.params]);
 
     /* 遞交 */
     const submit = useCallback(async () => {
@@ -304,13 +317,6 @@ const AddRecord = ({navigation, route}) => {
         state.shipping,
         state.type,
     ]);
-
-    /* 計算機返回輸入欄位id */
-    useEffect(() => {
-        if (route.params && route.params.value && route.params.inputID) {
-            inputs.current[route.params.inputID].setText(route.params.value.toString());
-        }
-    }, [route]);
 
     /* 讀取草稿 */
     useEffect(() => {
@@ -895,8 +901,8 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
                 ]}>
                 <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
                     {autoComplete.map((data, index) => (
-                        <TouchableWithoutFeedback onPress={() => onChange(data)}>
-                            <View key={index} style={{flex: 1, paddingVertical: 8}}>
+                        <TouchableWithoutFeedback onPress={() => onChange(data)} key={index}>
+                            <View style={{flex: 1, paddingVertical: 8}}>
                                 <ListText item={data} />
                             </View>
                         </TouchableWithoutFeedback>
