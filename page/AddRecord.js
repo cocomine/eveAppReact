@@ -223,6 +223,7 @@ const AddRecord = ({navigation, route}) => {
                     //跳轉到計算機
                     navigation.navigate('Calculator', {
                         inputID: focusingDecInput.current,
+                        pageName: 'AddRecord',
                     });
                 } else {
                     //輸入文字
@@ -299,7 +300,7 @@ const AddRecord = ({navigation, route}) => {
         //成功
         needSaveDraft.current = false;
         AsyncStorage.removeItem('Draft').then();
-        navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
+        navigation.popTo('Main', {showDay: state.date.toString()}); //go back home
     }, [
         navigation,
         setting.Rate,

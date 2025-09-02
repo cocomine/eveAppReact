@@ -152,7 +152,7 @@ const Calculator: React.FC<Props> = ({navigation, route}) => {
     const onDone = useCallback(() => {
         onCalculator();
 
-        navigation.popTo('AddRecord', {value: array.current[0], ...route.params});
+        navigation.popTo(route.params.pageName, {value: array.current[0], ...route.params});
     }, [navigation, onCalculator, route.params]);
 
     return (

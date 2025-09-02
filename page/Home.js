@@ -21,7 +21,7 @@ import 'moment/min/locales';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text, useTheme} from 'react-native-paper';
+import {ActivityIndicator, Banner, IconButton, Portal, Snackbar, Text} from 'react-native-paper';
 import {DB, useSetting} from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
@@ -40,6 +40,9 @@ import REAnimated, {
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+/** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
+/** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
+/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate) {
@@ -148,10 +151,14 @@ function grouping_note(package_list = [], ResultSet) {
     return package_list;
 }
 
-/* "紀錄"介面 */
+/**
+ * "紀錄"介面
+ */
 const Home = () => {
+    /** @type {ativeStackNavigationProp<RootStackParamList, 'Main'>} **/
     const navigation = useNavigation(); //導航
-    const RNroute = useRoute(); //路由
+    /** @type {RouteProp<RootStackParamList, 'Main'>} **/
+    const route = useRoute(); //路由
     const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
@@ -242,10 +249,10 @@ const Home = () => {
 
     /* 自動跳轉顯示月份 */
     useEffect(() => {
-        if (RNroute.params && RNroute.params.ShowDay) {
-            setShowDay(new Date(RNroute.params.ShowDay));
+        if (route.params && route.params.showDay) {
+            setShowDay(new Date(route.params.showDay));
         }
-    }, [RNroute]);
+    }, [route.params]);
 
     /* first time 更新資料 */
     useEffect(() => {
@@ -531,6 +538,7 @@ const SwipeRight = (progress, translation) => {
 /* 數據內容 */
 const DataPartBody = ({item, rate, id, dateTime}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+    /** @type {NativeStackNavigationProp<RootStackParamList, 'Main'>} **/
     const navigation = useNavigation(); //導航
     const isRMBShow = useRef(false); //人民幣顯示
     const [confirmMSG, setConfirmMSG] = useState(false); //確認刪除訊息

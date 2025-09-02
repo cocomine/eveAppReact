@@ -25,6 +25,9 @@ import ErrorHelperText from '../module/ErrorHelperText';
 import {ImagePicker, LocalInput, recordInitialState} from './AddRecord';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useHeaderHeight} from '@react-navigation/elements';
+/** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
+/** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
+/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
 
 //更新類型
 const [
@@ -127,7 +130,10 @@ const reducer = (state, action) => {
     }
 };
 
-/* 增加紀錄 */
+/**
+ * 編輯紀錄頁面
+ * @type {React.FC<{navigation: NativeStackNavigationProp<RootStackParamList, 'EditRecord'>, route: RouteProp<RootStackParamList, 'EditRecord'>}>}
+ */
 const EditRecord = ({navigation, route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const [state, dispatch] = useReducer(reducer, recordInitialState); //輸入資料
@@ -186,9 +192,9 @@ const EditRecord = ({navigation, route}) => {
                     );
                 //完成輸入
                 else if (value === 'calculator')
-                    navigation.navigate('calculator', {
+                    navigation.navigate('Calculator', {
                         inputID: focusingDecInput.current,
-                        pageID: route.name,
+                        pageName: 'EditRecord',
                     });
                 //跳轉到計算機
                 else
@@ -197,7 +203,7 @@ const EditRecord = ({navigation, route}) => {
                     ); //輸入文字
             }
         },
-        [focusNextField, navigation, route.name],
+        [focusNextField, navigation],
     );
 
     /* 遞交 */
@@ -254,7 +260,7 @@ const EditRecord = ({navigation, route}) => {
         }
 
         //成功
-        navigation.navigate('Main', {ShowDay: state.date.toString()}); //go back home
+        navigation.popTo('Main', {showDay: state.date.toString()}); //go back home
     }, [
         navigation,
         recordID,
@@ -348,7 +354,7 @@ const EditRecord = ({navigation, route}) => {
                 extracted().then();
             }
         }
-    }, [navigation, route]);
+    }, [navigation, route.params]);
 
     // 監聽鍵盤顯示隱藏
     useEffect(() => {
