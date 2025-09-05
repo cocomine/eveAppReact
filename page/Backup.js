@@ -323,7 +323,7 @@ const Backup = ({navigation}) => {
                         </Animated.View>
                     ) : null}
                 </View>
-                <View style={[style.button, {backgroundColor: BG_color, paddingBottom: insets.bottom}]}>
+                <View style={[style.button, {backgroundColor: BG_color, paddingBottom: insets.bottom + 10}]}>
                     <View style={{display: isLogin ? 'none' : undefined}}>
                         <Button mode={'contained'} buttonColor={Color.green} icon={'link-variant'} onPress={link}>
                             連接
@@ -391,7 +391,7 @@ const Backup = ({navigation}) => {
                         </View>
                     </Animated.View>
                 ) : null}
-                <Dialog onDismiss={closeRestoreList} visible={fileList != null} style={{maxHeight: '100%', top: -15}}>
+                <Dialog onDismiss={closeRestoreList} visible={fileList != null} style={{maxHeight: '90%', top: -15}}>
                     <Dialog.Title>恢復備份</Dialog.Title>
                     <Dialog.ScrollArea>
                         <FlatList

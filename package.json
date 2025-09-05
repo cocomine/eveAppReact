@@ -1,6 +1,6 @@
 {
   "name": "eveapp",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -8,7 +8,8 @@
     "start": "react-native start",
     "test": "jest",
     "lint": "eslint .",
-    "pwd": "env"
+    "build_apk": "cd android && ./gradlew assembleRelease",
+    "build_aab": "cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@cocomine/react-native-print": "^0.11.6",

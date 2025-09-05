@@ -337,8 +337,7 @@ const startUp = async () => {
             //創建紀錄table
             sql_promise.push(
                 tr.executeSql(
-                    //"CREATE TABLE IF NOT EXISTS Record ( `RecordID` INTEGER NOT NULL , `DateTime` DATETIME NOT NULL, `OrderNum` CHAR(9) NOT NULL , `Type` CHAR(2) NOT NULL , `CargoNum` CHAR(11) NOT NULL , `Local` VARCHAR(50) NOT NULL , `RMB` DOUBLE NOT NULL DEFAULT '0' , /*`Rate` DOUBLE DEFAULT NULL,*/ `HKD` DOUBLE NOT NULL DEFAULT '0' , `Add` DOUBLE NOT NULL DEFAULT '0' , `Shipping` DOUBLE NOT NULL DEFAULT '0' , `Remark` VARCHAR(50) DEFAULT NULL, `Images` TEXT NOT NULL DEFAULT '[]', PRIMARY KEY (`RecordID`))",
-                    "CREATE TABLE Record ( `RecordID` INTEGER NOT NULL , `DateTime` DATETIME NOT NULL, `OrderNum` CHAR(9) NOT NULL , `Type` CHAR(2) NOT NULL , `CargoNum` CHAR(11) NOT NULL , `Local` VARCHAR(50) NOT NULL , `RMB` DOUBLE NOT NULL DEFAULT '0', `HKD` DOUBLE NOT NULL DEFAULT '0' , `Add` DOUBLE NOT NULL DEFAULT '0' , `Shipping` DOUBLE NOT NULL DEFAULT '0' , `Remark` VARCHAR(50) DEFAULT NULL, `Images` TEXT NOT NULL DEFAULT '[]', PRIMARY KEY (`RecordID`))",
+                    "CREATE TABLE IF NOT EXISTS Record ( `RecordID` INTEGER NOT NULL , `DateTime` DATETIME NOT NULL, `OrderNum` CHAR(9) NOT NULL , `Type` CHAR(2) NOT NULL , `CargoNum` CHAR(11) NOT NULL , `Local` VARCHAR(50) NOT NULL , `RMB` DOUBLE NOT NULL DEFAULT '0' , /*`Rate` DOUBLE DEFAULT NULL,*/ `HKD` DOUBLE NOT NULL DEFAULT '0' , `Add` DOUBLE NOT NULL DEFAULT '0' , `Shipping` DOUBLE NOT NULL DEFAULT '0' , `Remark` VARCHAR(50) DEFAULT NULL, `Images` TEXT NOT NULL DEFAULT '[]', PRIMARY KEY (`RecordID`))",
                 ),
             );
             sql_promise.push(tr.executeSql('CREATE INDEX `DateTime` ON Record (`DateTime`)'));
@@ -370,7 +369,7 @@ const startUp = async () => {
                 tr.executeSql("INSERT INTO Setting (Target, value) VALUES ('Driver-license', 'RT XXXX')", []),
             );
             sql_promise.push(
-                tr.executeSql("INSERT INTO Setting (Target, value) VALUES ('database_version', '1.5.6')", []),
+                tr.executeSql("INSERT INTO Setting (Target, value) VALUES ('database_version', '1.5.7')", []),
             );
             sql_promise.push(
                 tr.executeSql("INSERT INTO Setting (Target, value) VALUES ('Email-to', 'mail@example.com')", []),
