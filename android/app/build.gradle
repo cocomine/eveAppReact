@@ -90,7 +90,7 @@ android {
         applicationId "com.cocomine.eveapp2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 224
+        versionCode 226
         versionName "2.3.1"
         resConfigs "zh"
     }

@@ -154,7 +154,7 @@ const Calculator: React.FC<Props> = ({navigation, route}) => {
         onCalculator();
 
         // @ts-ignore
-        navigation.popTo(targetPage, {value: array.current[0], inputID: route.params.inputID});
+        navigation.popTo(route.params.pageName, {value: array.current[0], inputID: route.params.inputID});
     }, [navigation, onCalculator, route.params]);
 
     return (
