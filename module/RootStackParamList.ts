@@ -15,4 +15,11 @@ export type RootStackParamList = {
         value?: string;
         recordID?: number;
     };
+    AddNote: {
+        id?: number;
+    };
+    NotePage: {
+        id?: number;
+        showDay?: string;
+    };
 };

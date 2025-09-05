@@ -20,6 +20,9 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import {DateSelect} from '../module/DateSelect';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+/** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
+/** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
+/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
 
 /* 備忘錄分組 */
 function group_note(ResultSet) {
@@ -112,6 +115,11 @@ function convertColor(color) {
     }
 }
 
+/**
+ * 備忘錄
+ * @type {React.FC<{navigation: NativeStackNavigationProp<RootStackParamList, 'NotePage'>;
+ *         route: RouteProp<RootStackParamList, 'NotePage'>}>}
+ */
 const Note = ({navigation, route}) => {
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
@@ -191,10 +199,10 @@ const Note = ({navigation, route}) => {
 
     /* 自動跳轉顯示月份 */
     useEffect(() => {
-        if (route.params) {
-            setShowDay(new Date(route.params.ShowDay));
+        if (route.params && route.params.showDay) {
+            setShowDay(new Date(route.params.showDay));
         }
-    }, [route]);
+    }, [route.params]);
 
     /* 自動滑動最新紀錄 */
     useEffect(() => {
@@ -282,7 +290,9 @@ const Note = ({navigation, route}) => {
 
 /* 備忘錄卡片 */
 const NoteBody = ({item}) => {
+    /** @type {NativeStackNavigationProp<RootStackParamList, 'NotePage'>} */
     const navigation = useNavigation();
+    /** @type {RouteProp<RootStackParamList, 'NotePage'>} */
     const route = useRoute();
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;

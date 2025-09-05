@@ -17,6 +17,9 @@ import Animated, {SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {convertColor} from './Note';
 import {DB} from '../module/SQLite';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+/** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
+/** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
+/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
 
 const initialState = {
     date: new Date(),
@@ -35,6 +38,11 @@ const reducer = (state, action) => {
     return {...state, ...action};
 };
 
+/**
+ * 新增/編輯備忘錄頁面
+ * @type {React.FC<{navigation: NativeStackNavigationProp<RootStackParamList, 'AddNote'>;
+ *         route: RouteProp<RootStackParamList, 'AddNote'>}>}
+ */
 const AddNote = ({navigation, route}) => {
     const {colors} = useTheme();
     const [isRemove, setIsRemove] = useState(false);
@@ -79,7 +87,7 @@ const AddNote = ({navigation, route}) => {
                                 state.content === '' ? null : state.content,
                             ],
                         );
-                        navigation.navigate('Note', {ShowDay: state.date.toString(), id: rs.insertId}); //go back notePage
+                        navigation.popTo('Note', {showDay: state.date.toString(), id: rs.insertId}); //go back notePage
                     } else {
                         //修改備忘錄
                         await tr.executeSql(
@@ -137,10 +145,10 @@ const AddNote = ({navigation, route}) => {
             console.log('已取得資料');
         };
 
-        if (route.params) {
+        if (route.params && route.params.id) {
             extracted().then();
         }
-    }, [route]);
+    }, [route.params]);
 
     // 監聽鍵盤顯示隱藏
     useEffect(() => {
@@ -168,7 +176,7 @@ const AddNote = ({navigation, route}) => {
 
             console.log('備忘錄已刪除');
             ToastAndroid.show('備忘錄已刪除', ToastAndroid.SHORT);
-            navigation.navigate('Note', {ShowDay: state.date.toString()}); //go back notePage
+            navigation.popTo('Note', {showDay: state.date.toString()}); //go back notePage
         };
 
         setIsRemove(true);
