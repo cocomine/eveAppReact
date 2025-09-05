@@ -6,7 +6,6 @@ import {
     KeyboardAvoidingView,
     Modal,
     ScrollView,
-    StatusBar,
     StyleSheet,
     ToastAndroid,
     TouchableWithoutFeedback,
@@ -20,7 +19,15 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DecimalInput} from '../module/NumInput';
 import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
-import {ActivityIndicator, Button, HelperText, IconButton as PaperIconButton, Menu, Text} from 'react-native-paper';
+import {
+    ActivityIndicator,
+    Button,
+    HelperText,
+    IconButton as PaperIconButton,
+    Menu,
+    Text,
+    useTheme,
+} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
@@ -30,6 +37,7 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import REAnimated, {LinearTransition, StretchInX} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import {useHeaderHeight} from '@react-navigation/elements';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
@@ -172,6 +180,8 @@ const AddRecord = ({navigation, route}) => {
     const [scrollOffset, setScrollOffset] = useState(0); //滾動位移
     const height = useHeaderHeight(); //取得標題欄高度
     const [keyboardVisible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const insets = useSafeAreaInsets(); //安全區域
+    const theme = useTheme(); //主題
 
     //textInput refs
     let inputs = useRef({
@@ -393,7 +403,6 @@ const AddRecord = ({navigation, route}) => {
 
     return (
         <View style={{flex: 1}}>
-            <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true} />
             <KeyboardAvoidingView
                 style={{flex: 1}}
                 behavior={'padding'}
@@ -403,8 +412,16 @@ const AddRecord = ({navigation, route}) => {
                     nestedScrollEnabled={true}
                     onScroll={scroll}
                     keyboardShouldPersistTaps={'handled'}
-                    style={{flex: 1}}>
-                    <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    style={{
+                        flex: 1,
+                    }}>
+                    <View
+                        style={[
+                            style.Data,
+                            {
+                                backgroundColor: isDarkMode ? Color.darkBlock : Color.white,
+                            },
+                        ]}>
                         {/* 日期 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>日期</Text>
@@ -669,7 +686,13 @@ const AddRecord = ({navigation, route}) => {
                         </View>
                     </View>
                     {/* 備註 */}
-                    <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    <View
+                        style={[
+                            style.Remark,
+                            {
+                                backgroundColor: isDarkMode ? Color.darkBlock : Color.white,
+                            },
+                        ]}>
                         <View style={[style.formGroup, {marginTop: -10}]}>
                             <TextInput
                                 ref={ref => {
@@ -696,7 +719,13 @@ const AddRecord = ({navigation, route}) => {
                         </View>
                     </View>
                     {/* 儲存 */}
-                    <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    <View
+                        style={[
+                            style.Remark,
+                            {
+                                backgroundColor: isDarkMode ? Color.darkBlock : Color.white,
+                            },
+                        ]}>
                         <View style={[style.Flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
                             <Text style={{color: Color.primaryColor, fontSize: 20}}>
@@ -707,6 +736,7 @@ const AddRecord = ({navigation, route}) => {
                             儲存
                         </Button>
                     </View>
+                    <View style={{height: 100}} />
                 </ScrollView>
             </KeyboardAvoidingView>
             <NumKeyboard ref={NumKeyboard_refs} onKeyPress={onKeyPress} />

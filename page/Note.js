@@ -11,7 +11,7 @@ import {
 import SVGCargo from '../module/SVGCargo';
 import {Appbar, Caption, IconButton, Paragraph, Surface, Text, Title} from 'react-native-paper';
 import SVGLostCargo from '../module/SVGLostCargo';
-import {ToolBarView} from '../module/Toolbar';
+import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import moment from 'moment';
 import {DB} from '../module/SQLite';
@@ -219,7 +219,7 @@ const Note = ({navigation, route}) => {
     return (
         <View style={{flex: 1}}>
             <View style={{zIndex: 2, elevation: 2}}>
-                <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
+                <Toolbar containerStyle={{paddingTop: insets.top}}>
                     <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
                     <Appbar.Content title={'備忘錄'} />
                     <ToolBarView>
@@ -235,7 +235,7 @@ const Note = ({navigation, route}) => {
                         onSelect={setMonth}
                         onDismiss={hideMonthSelect}
                     />
-                </Appbar.Header>
+                </Toolbar>
             </View>
             {monthSelect && (
                 <TouchableWithoutFeedback onPress={hideMonthSelect}>

@@ -1,11 +1,12 @@
 import React from 'react';
-import {Dimensions, SafeAreaView} from 'react-native';
+import {Dimensions, View} from 'react-native';
 import {Appbar, Provider as PaperProvider, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
 import Sound from 'react-native-sound';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
 import ExportPDF from './ExportPDF';
 import ExportExcel from './ExportExcel';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -26,12 +27,14 @@ const Export = ({route}) => {
         },
     };
 
+    const insets = useSafeAreaInsets();
+
     return (
         <PaperProvider theme={theme}>
-            <SafeAreaView style={{flex: 1}}>
-                <Appbar.Header style={{backgroundColor: route.color}}>
+            <View style={{flex: 1}}>
+                <Appbar style={{backgroundColor: route.color, height: 'auto'}} safeAreaInsets={{top: insets.top}}>
                     <Appbar.Content title={route.title} color={Color.white} />
-                </Appbar.Header>
+                </Appbar>
                 <Tab.Navigator
                     screenOptions={{
                         tabBarStyle: {backgroundColor: route.color},
@@ -53,7 +56,7 @@ const Export = ({route}) => {
                         initialParams={{theme}}
                     />
                 </Tab.Navigator>
-            </SafeAreaView>
+            </View>
         </PaperProvider>
     );
 };

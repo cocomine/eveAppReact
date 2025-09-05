@@ -1,7 +1,7 @@
 export type RootStackParamList = {
     Calculator: {
-        inputID: string;
-        pageName: string;
+        inputID?: string;
+        pageName?: string;
     };
     AddRecord: {
         inputID?: string;

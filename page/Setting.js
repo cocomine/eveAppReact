@@ -1,18 +1,11 @@
 import React, {useCallback, useEffect, useReducer, useState} from 'react';
 import {Appbar, Divider, IconButton, List, Provider as PaperProvider, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
-import {
-    ActivityIndicator,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    ToastAndroid,
-    useColorScheme,
-    View,
-} from 'react-native';
-import {DB, updateSetting, useSetting} from '../module/SQLite';
+import {ActivityIndicator, ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
+import {DB, useSetting} from '../module/SQLite';
 import {useNavigation} from '@react-navigation/native';
 import prompt from 'react-native-prompt-android';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const initialState = {
     Rate: '0.836',
@@ -73,6 +66,7 @@ const Setting = ({route}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const BG_color = isDarkMode ? Color.darkBlock : Color.white;
     const navigation = useNavigation();
+    const insets = useSafeAreaInsets();
 
     const [state, dispatch] = useReducer(reducer, initialState); //setting value
     const [onlineRate_load, set_onlineRate_load] = useState(false);
@@ -259,11 +253,15 @@ const Setting = ({route}) => {
 
     return (
         <PaperProvider theme={theme}>
-            <SafeAreaView style={{flex: 1}}>
-                <Appbar.Header style={{backgroundColor: route.color}}>
+            <View style={{flex: 1}}>
+                <Appbar
+                    style={{backgroundColor: route.color, height: 'auto', paddingBottom: 10}}
+                    safeAreaInsets={{top: insets.top}}>
                     <Appbar.Content title={route.title} color={Color.white} />
-                </Appbar.Header>
-                {/*<React.StrictMode>*/}
+                </Appbar>
+                {/*<Appbar.Header style={{backgroundColor: route.color}}>
+                    <Appbar.Content title={route.title} color={Color.white} />
+                </Appbar.Header>*/}
                 <ScrollView>
                     <List.Section>
                         <List.Subheader style={style.header}>匯率</List.Subheader>
@@ -346,11 +344,12 @@ const Setting = ({route}) => {
                                 description={'點擊更換'}
                                 onPress={() => navigation.navigate('ChangeSave')}
                             />
+                            <Divider />
                         </View>
                     </List.Section>
+                    <View style={{height: 100}} />
                 </ScrollView>
-                {/*</React.StrictMode>*/}
-            </SafeAreaView>
+            </View>
         </PaperProvider>
     );
 };

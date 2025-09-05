@@ -3,9 +3,7 @@ import {
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
-    SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     ToastAndroid,
     useColorScheme,
@@ -387,8 +385,7 @@ const EditRecord = ({navigation, route}) => {
     }, []);
 
     return (
-        <SafeAreaView style={{flex: 1}}>
-            <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true} />
+        <View style={{flex: 1}}>
             <KeyboardAvoidingView
                 behavior={'height'}
                 style={{flex: 1}}
@@ -707,10 +704,11 @@ const EditRecord = ({navigation, route}) => {
                             </Button>
                         </View>
                     </View>
+                    <View style={{height: 100}} />
                 </ScrollView>
             </KeyboardAvoidingView>
             <NumKeyboard ref={NumKeyboard_refs} onKeyPress={onKeyPress} />
-        </SafeAreaView>
+        </View>
     );
 };
 

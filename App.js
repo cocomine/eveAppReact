@@ -1,13 +1,12 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {AddRecord} from './page/AddRecord';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {StatusBar, useColorScheme} from 'react-native';
+import {useColorScheme} from 'react-native';
 import {
     DarkTheme as NavigationDarkTheme,
     DefaultTheme as NavigationDefaultTheme,
     NavigationContainer,
-    useFocusEffect,
     useNavigationContainerRef,
 } from '@react-navigation/native';
 import {
@@ -30,7 +29,7 @@ import {Backup} from './page/Backup';
 import {Search} from './page/Search';
 import {Note} from './page/Note';
 import {AddNote} from './page/AddNote';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {SafeAreaProvider, SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useLogger} from '@react-navigation/devtools';
 
 const Stack = createNativeStackNavigator();
@@ -59,66 +58,68 @@ function App() {
         <SafeAreaProvider>
             <GestureHandlerRootView style={{flex: 1}}>
                 <PaperProvider theme={theme}>
-                    <NavigationContainer theme={theme} ref={navigationRef}>
-                        <Stack.Navigator
-                            initialRouteName={'StartUp'}
-                            screenOptions={{header: props => <CustomNavigationBar {...props} />}}>
-                            <Stack.Group>
-                                <Stack.Screen //主要介面
-                                    name="Main"
-                                    component={MainScreen}
+                    <SafeAreaView style={{flex: 1, backgroundColor: '#000'}} edges={['left', 'right']}>
+                        <NavigationContainer theme={theme} ref={navigationRef}>
+                            <Stack.Navigator
+                                initialRouteName={'StartUp'}
+                                screenOptions={{header: props => <CustomNavigationBar {...props} />}}>
+                                <Stack.Group>
+                                    <Stack.Screen //主要介面
+                                        name="Main"
+                                        component={MainScreen}
+                                        options={{headerShown: false}}
+                                    />
+                                    <Stack.Screen //增加紀錄
+                                        name="AddRecord"
+                                        component={AddRecord}
+                                        options={{title: '增加紀錄'}}
+                                    />
+                                    <Stack.Screen //編輯紀錄
+                                        name="EditRecord"
+                                        component={EditRecord}
+                                        options={{title: '編輯紀錄'}}
+                                    />
+                                    <Stack.Screen //選擇存檔
+                                        name="ChangeSave"
+                                        component={ChangeSave}
+                                        options={{title: '選擇存檔'}}
+                                    />
+                                    <Stack.Screen //備份
+                                        name="Backup"
+                                        component={Backup}
+                                        options={{title: '備份', headerShown: false}}
+                                    />
+                                    <Stack.Screen //搜尋
+                                        name="Search"
+                                        component={Search}
+                                        options={{title: '搜尋', headerShown: false}}
+                                    />
+                                    <Stack.Screen //備忘錄
+                                        name="Note"
+                                        component={Note}
+                                        options={{title: '備忘錄', headerShown: false}}
+                                    />
+                                    <Stack.Screen //備忘錄
+                                        name="AddNote"
+                                        component={AddNote}
+                                        options={{title: '備忘錄', headerShown: false}}
+                                    />
+                                </Stack.Group>
+                                <Stack.Screen //啟動介面
+                                    name="StartUp"
+                                    component={StartUp}
                                     options={{headerShown: false}}
                                 />
-                                <Stack.Screen //增加紀錄
-                                    name="AddRecord"
-                                    component={AddRecord}
-                                    options={{title: '增加紀錄'}}
-                                />
-                                <Stack.Screen //編輯紀錄
-                                    name="EditRecord"
-                                    component={EditRecord}
-                                    options={{title: '編輯紀錄'}}
-                                />
-                                <Stack.Screen //選擇存檔
-                                    name="ChangeSave"
-                                    component={ChangeSave}
-                                    options={{title: '選擇存檔'}}
-                                />
-                                <Stack.Screen //備份
-                                    name="Backup"
-                                    component={Backup}
-                                    options={{title: '備份', headerShown: false}}
-                                />
-                                <Stack.Screen //搜尋
-                                    name="Search"
-                                    component={Search}
-                                    options={{title: '搜尋', headerShown: false}}
-                                />
-                                <Stack.Screen //備忘錄
-                                    name="Note"
-                                    component={Note}
-                                    options={{title: '備忘錄', headerShown: false}}
-                                />
-                                <Stack.Screen //備忘錄
-                                    name="AddNote"
-                                    component={AddNote}
-                                    options={{title: '備忘錄', headerShown: false}}
-                                />
-                            </Stack.Group>
-                            <Stack.Screen //啟動介面
-                                name="StartUp"
-                                component={StartUp}
-                                options={{headerShown: false}}
-                            />
-                            <Stack.Group screenOptions={{presentation: 'modal'}}>
-                                <Stack.Screen //計算機
-                                    name="Calculator"
-                                    component={Calculator}
-                                    options={{headerShown: false}}
-                                />
-                            </Stack.Group>
-                        </Stack.Navigator>
-                    </NavigationContainer>
+                                <Stack.Group screenOptions={{presentation: 'modal'}}>
+                                    <Stack.Screen //計算機
+                                        name="Calculator"
+                                        component={Calculator}
+                                        options={{headerShown: false}}
+                                    />
+                                </Stack.Group>
+                            </Stack.Navigator>
+                        </NavigationContainer>
+                    </SafeAreaView>
                 </PaperProvider>
             </GestureHandlerRootView>
         </SafeAreaProvider>
@@ -126,23 +127,26 @@ function App() {
 }
 
 function CustomNavigationBar({navigation, back, options}) {
+    const insets = useSafeAreaInsets(); // 取得安全區域的邊距
+
     return (
-        <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
+        <Appbar style={{backgroundColor: Color.primaryColor, height: 'auto'}} safeAreaInsets={{top: insets.top}}>
             {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack} />}
             <Appbar.Content title={options.title} />
-        </Appbar.Header>
+        </Appbar>
     );
 }
 
 /* 主要介面 */
 const MainScreen = ({navigation}) => {
+    const insets = useSafeAreaInsets(); // 取得安全區域的邊距
     const [index, setIndex] = useState(0);
     const [routes] = useState([
         {key: 'Home', title: '紀錄', focusedIcon: 'book', color: Color.primaryColor},
         {key: 'Export', title: '匯出', focusedIcon: 'export-variant', color: Color.orange},
         //{key: 'Statistics', title: '統計', focusedIcon: 'chart-bar', color: Color.success},
         {key: 'Search', title: '搜尋', focusedIcon: 'magnify', color: 'darkslateblue'},
-        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.indigo},
+        {key: 'Setting', title: '設定', focusedIcon: 'cog', color: Color.success},
     ]);
 
     const renderScene = BottomNavigation.SceneMap({
@@ -152,18 +156,6 @@ const MainScreen = ({navigation}) => {
         Search: Search,
         Setting: Setting,
     });
-
-    useFocusEffect(
-        useCallback(() => {
-            StatusBar.setBarStyle('light-content');
-            StatusBar.setBackgroundColor(routes[index].color, true);
-        }, [index, routes]),
-    );
-
-    useEffect(() => {
-        StatusBar.setBarStyle('light-content');
-        StatusBar.setBackgroundColor(routes[index].color, true);
-    }, [index, routes]);
 
     const indexChange = index => {
         setIndex(index);
@@ -177,6 +169,7 @@ const MainScreen = ({navigation}) => {
             sceneAnimationEnabled={true}
             sceneAnimationType={'shifting'}
             style={{flex: 1}}
+            safeAreaInsets={{left: 0, right: 0, bottom: insets.bottom, top: insets.top}}
         />
     );
 };

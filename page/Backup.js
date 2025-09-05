@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {FlatList, Image, Linking, StatusBar, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
+import {FlatList, Image, Linking, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import {Color} from '../module/Color';
 import {Appbar, Button, Dialog, Headline, Portal, Subheading, Switch, Text, Title, useTheme} from 'react-native-paper';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
@@ -232,12 +232,11 @@ const Backup = ({navigation}) => {
     return (
         <View style={{flex: 1}}>
             {/*<React.StrictMode>*/}
-            <StatusBar backgroundColor={Color.primaryColor} barStyle={'light-content'} animated={true} />
-            <Appbar.Header style={{backgroundColor: Color.primaryColor}}>
+            <Appbar style={{backgroundColor: Color.primaryColor, height: 'auto'}} safeAreaInsets={{top: insets.top}}>
                 <Appbar.BackAction onPress={navigation.goBack} />
                 <Appbar.Content title={'備份'} color={Color.white} />
                 <Appbar.Action icon={'link-variant-off'} onPress={unlink} disabled={!isLogin} />
-            </Appbar.Header>
+            </Appbar>
             <View style={{flex: 1, justifyContent: 'space-between'}}>
                 <View>
                     <View style={[style.backup, {backgroundColor: BG_color}]}>

@@ -1,14 +1,14 @@
 import React, {useCallback, useRef, useState} from 'react';
-import {StatusBar, StyleSheet, useColorScheme, View} from 'react-native';
+import {StyleSheet, useColorScheme, View} from 'react-native';
 import {IconButton, MD2Theme, Text, useTheme} from 'react-native-paper';
 import {Color} from './Color';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AutoSizeText, ResizeTextMode} from 'react-native-auto-size-text';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {Ripple} from './Ripple';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import type {RouteProp} from '@react-navigation/native';
 import type {RootStackParamList} from './RootStackParamList';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 interface Props {
     route: RouteProp<RootStackParamList, 'Calculator'>;
@@ -22,6 +22,7 @@ const Calculator: React.FC<Props> = ({navigation, route}) => {
     const [row1, setRow1] = useState('');
     const [row2, setRow2] = useState('');
     const array = useRef<string[]>([]);
+    const insets = useSafeAreaInsets();
 
     /* Key Press */
     const onPress = useCallback((value: string) => {
@@ -152,17 +153,13 @@ const Calculator: React.FC<Props> = ({navigation, route}) => {
     const onDone = useCallback(() => {
         onCalculator();
 
-        navigation.popTo(route.params.pageName, {value: array.current[0], ...route.params});
+        // @ts-ignore
+        navigation.popTo(targetPage, {value: array.current[0], inputID: route.params.inputID});
     }, [navigation, onCalculator, route.params]);
 
     return (
-        <SafeAreaView style={{flex: 1}} edges={['top', 'right', 'bottom']}>
+        <View style={{flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom}}>
             {/*<React.StrictMode>*/}
-            <StatusBar
-                backgroundColor={colors.background}
-                barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                animated={true}
-            />
             <View style={{flex: 1, flexDirection: 'column'}}>
                 <View style={{alignItems: 'flex-end'}}>
                     <IconButton icon={'close'} iconColor={colors.text} animated={true} onPress={onClose} />
@@ -307,7 +304,7 @@ const Calculator: React.FC<Props> = ({navigation, route}) => {
                 </View>
             </View>
             {/*</React.StrictMode>*/}
-        </SafeAreaView>
+        </View>
     );
 };
 

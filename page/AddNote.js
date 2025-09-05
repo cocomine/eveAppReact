@@ -17,6 +17,7 @@ import Animated, {SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {convertColor} from './Note';
 import {DB} from '../module/SQLite';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Toolbar} from '../module/Toolbar';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
@@ -184,14 +185,18 @@ const AddNote = ({navigation, route}) => {
     }, [navigation, state.date, state.id]);
 
     return (
-        <View style={{flex: 1, paddingBottom: insets.bottom}}>
-            <Appbar.Header style={{backgroundColor: Color.primaryColor}} statusBarHeight={insets.top} elevated={true}>
+        <View style={{flex: 1}}>
+            <Toolbar containerStyle={{paddingTop: insets.top}}>
                 <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
                 <Appbar.Content title={'備忘錄'} />
-                <Appbar.Action icon={'palette-outline'} onPress={toggleColorSelector} />
-                <Appbar.Action icon={state.top ? 'pin' : 'pin-outline'} onPress={() => dispatch({top: !state.top})} />
+                <Appbar.Action icon={'palette-outline'} onPress={toggleColorSelector} color={Color.white} />
+                <Appbar.Action
+                    icon={state.top ? 'pin' : 'pin-outline'}
+                    onPress={() => dispatch({top: !state.top})}
+                    color={Color.white}
+                />
                 {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={deleteNote} /> : null}
-            </Appbar.Header>
+            </Toolbar>
             <View style={{flex: 1}}>
                 <KeyboardAvoidingView
                     style={{flex: 1}}
