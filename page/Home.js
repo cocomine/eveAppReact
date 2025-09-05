@@ -31,18 +31,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DateSelect} from '../module/DateSelect';
 import {convertColor} from './Note';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import REAnimated, {
-    interpolate,
-    runOnJS,
-    SharedValue,
-    useAnimatedReaction,
-    useAnimatedStyle,
-} from 'react-native-reanimated';
+import REAnimated, {interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle} from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
-/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
+/** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
+/** @typedef {import('react-native-reanimated').SharedValue} SharedValue */
 
 /* 紀錄分組 */
 function group_data(ResultSet, Rate) {
@@ -155,7 +150,7 @@ function grouping_note(package_list = [], ResultSet) {
  * "紀錄"介面
  */
 const Home = () => {
-    /** @type {ativeStackNavigationProp<RootStackParamList, 'Main'>} **/
+    /** @type {NativeStackNavigationProp<RootStackParamList, 'Main'>} **/
     const navigation = useNavigation(); //導航
     /** @type {RouteProp<RootStackParamList, 'Main'>} **/
     const route = useRoute(); //路由
@@ -164,7 +159,7 @@ const Home = () => {
     const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
     const [isRefresh, setIsRefresh] = useState(true); //是否重新更新
     const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
-    const [setting] = useSetting(); //設定
+    const [setting, settingForceRefresh] = useSetting(); //設定
     const listRef = useRef(null); //FlatList Ref
     const insets = useSafeAreaInsets(); //安全區域
 
@@ -185,8 +180,9 @@ const Home = () => {
     }, [ShowDay]);
 
     /* 更新資料 */
-    const updateData = useCallback(() => {
+    const updateData = useCallback(async () => {
         setIsRefresh(true);
+        settingForceRefresh();
 
         /* 讀取紀錄 */
         function queryRecords(ShowDay1) {
@@ -214,29 +210,25 @@ const Home = () => {
             });
         }
 
-        async function extracted() {
-            try {
-                console.log('顯示:', moment(ShowDay).format('DD/MM/YYYY'));
-                const rs = await queryRecords(ShowDay);
-                console.log('已取得資料', rs.rows.length);
-                const [data, total] = group_data(rs, setting.Rate);
-                setTotal(total);
+        try {
+            console.log('顯示:', moment(ShowDay).format('DD/MM/YYYY'));
+            const rs = await queryRecords(ShowDay);
+            console.log('已取得資料', rs.rows.length);
+            const [data, total] = group_data(rs, setting.Rate);
+            setTotal(total);
 
-                console.log('備忘錄顯示:', moment(ShowDay).format('DD/MM/YYYY'));
-                const rs1 = await queryNotes(ShowDay);
-                console.log('已取得資料', rs1.rows.length);
-                const data_have_note = rs1.rows.length > 0 ? grouping_note(data, rs1) : data;
-                setData(data_have_note);
-            } catch (e) {
-                console.log('傳輸錯誤: ' + e.message);
-                ToastAndroid.show('傳輸錯誤', ToastAndroid.SHORT);
-            } finally {
-                setIsRefresh(false);
-            }
+            console.log('備忘錄顯示:', moment(ShowDay).format('DD/MM/YYYY'));
+            const rs1 = await queryNotes(ShowDay);
+            console.log('已取得資料', rs1.rows.length);
+            const data_have_note = rs1.rows.length > 0 ? grouping_note(data, rs1) : data;
+            setData(data_have_note);
+        } catch (e) {
+            console.log('傳輸錯誤: ' + e.message);
+            ToastAndroid.show('傳輸錯誤', ToastAndroid.SHORT);
+        } finally {
+            setIsRefresh(false);
         }
-
-        extracted().then();
-    }, [ShowDay, setting]);
+    }, [ShowDay, setting.Rate, settingForceRefresh]);
 
     /* 直接選擇月份 */
     const setMonth = useCallback(date => {
@@ -247,6 +239,14 @@ const Home = () => {
     /* 隱藏直接選擇月份 */
     const hideMonthSelect = useCallback(() => setMonthSelect(false), []);
 
+    /* 重新整理資料 */
+    useEffect(() => {
+        if (route.params && route.params.settingForceRefreshAlert) {
+            console.log('重新整理資料');
+            updateData().then();
+        }
+    }, [route.params, updateData]);
+
     /* 自動跳轉顯示月份 */
     useEffect(() => {
         if (route.params && route.params.showDay) {
@@ -256,7 +256,7 @@ const Home = () => {
 
     /* first time 更新資料 */
     useEffect(() => {
-        updateData();
+        updateData().then();
     }, [updateData]);
 
     /* 自動滑動最新紀錄 */

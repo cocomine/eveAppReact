@@ -1,6 +1,6 @@
 import {Button, Checkbox, Dialog, Portal, Text, Title, useTheme} from 'react-native-paper';
 import {DB, useSetting} from '../module/SQLite';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useRef, useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useFocusEffect} from '@react-navigation/native';
 import {Picker} from '@react-native-picker/picker';
@@ -16,11 +16,12 @@ import formatPrice from '../module/formatPrice';
 import Share from 'react-native-share';
 import {sound} from './Export';
 import moment from 'moment/moment';
+import {RouteParamsContext} from '../module/RouteParamsContext';
 
 const ExportPDF = () => {
     const theme = useTheme();
 
-    const [setting] = useSetting();
+    const [setting, settingForceRefresh] = useSetting();
     const [remark, setRemark] = useState(false); //是否包含備註
     const [year, setYear] = useState(''); //選擇年份
     const [month, setMonth] = useState(''); //選擇月份
@@ -29,6 +30,16 @@ const ExportPDF = () => {
     const [okDialogVisible, setOkDialogVisible] = useState(false); //成功動畫
     const choseType = useRef(null); //匯出類型
     const toCompany = useRef(null);
+    /** @type {{settingForceRefreshAlert?: number}} */
+    const routeParamsContext = useContext(RouteParamsContext);
+
+    /* 重新整理資料 */
+    useEffect(() => {
+        if (routeParamsContext && routeParamsContext.settingForceRefreshAlert) {
+            console.log('重新整理資料');
+            settingForceRefresh();
+        }
+    }, [routeParamsContext, settingForceRefresh]);
 
     /* 取得 致... 公司名稱 */
     useEffect(() => {
@@ -46,6 +57,44 @@ const ExportPDF = () => {
             }
         });
     }, []);
+
+    /* 取得有資料的月份 */
+    const getMonth = useCallback(
+        async year1 => {
+            try {
+                await DB.readTransaction(async function (tr) {
+                    const [, rs] = await tr.executeSql(
+                        "SELECT DISTINCT STRFTIME('%m', DateTime) AS Month FROM Record WHERE STRFTIME('%Y', DateTime) = ? ORDER BY Month DESC",
+                        [year1],
+                    );
+
+                    let tmp = [];
+                    for (let i = 0; i < rs.rows.length; i++) {
+                        const row = rs.rows.item(i);
+                        tmp.push(
+                            <Picker.Item
+                                label={row.Month + '月'}
+                                value={row.Month}
+                                color={theme.colors.text}
+                                key={i}
+                            />,
+                        );
+                    }
+
+                    //填充選項
+                    setMonthOpt(tmp);
+                    setMonth(rs.rows.item(0).Month);
+                });
+            } catch (e) {
+                console.error('傳輸錯誤: ' + e.message);
+                ToastAndroid.show('傳輸錯誤: ' + e.message, ToastAndroid.SHORT);
+                return;
+            }
+
+            console.log('已取得有資料的月份');
+        },
+        [theme.colors.text],
+    );
 
     /* 取得有資料的年份 */
     useFocusEffect(
@@ -85,46 +134,9 @@ const ExportPDF = () => {
                 console.log('已取得有資料的年份');
             };
 
+            console.log('畫面聚焦, 重新取得有資料的年份');
             extracted().then();
         }, [getMonth, theme.colors.text]),
-    );
-
-    /* 取得有資料的月份 */
-    const getMonth = useCallback(
-        async year1 => {
-            try {
-                await DB.readTransaction(async function (tr) {
-                    const [, rs] = await tr.executeSql(
-                        "SELECT DISTINCT STRFTIME('%m', DateTime) AS Month FROM Record WHERE STRFTIME('%Y', DateTime) = ? ORDER BY Month DESC",
-                        [year1],
-                    );
-
-                    let tmp = [];
-                    for (let i = 0; i < rs.rows.length; i++) {
-                        const row = rs.rows.item(i);
-                        tmp.push(
-                            <Picker.Item
-                                label={row.Month + '月'}
-                                value={row.Month}
-                                color={theme.colors.text}
-                                key={i}
-                            />,
-                        );
-                    }
-
-                    //填充選項
-                    setMonthOpt(tmp);
-                    setMonth(rs.rows.item(0).Month);
-                });
-            } catch (e) {
-                console.error('傳輸錯誤: ' + e.message);
-                ToastAndroid.show('傳輸錯誤: ' + e.message, ToastAndroid.SHORT);
-                return;
-            }
-
-            console.log('已取得有資料的月份');
-        },
-        [theme.colors.text],
     );
 
     /* 更新月份選項 */

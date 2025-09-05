@@ -241,10 +241,11 @@ const Setting = ({route}) => {
 
             console.log('更新成功');
             forceRefresh();
+            navigation.setParams({settingForceRefreshAlert: Math.random()}); //通知其他頁面更新
         };
 
         extracted().then();
-    }, [forceRefresh, state]);
+    }, [forceRefresh, navigation, state]);
 
     //debug
     // useEffect(() => {

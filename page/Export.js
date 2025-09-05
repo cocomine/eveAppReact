@@ -7,6 +7,8 @@ import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs
 import ExportPDF from './ExportPDF';
 import ExportExcel from './ExportExcel';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useRoute} from '@react-navigation/native';
+import {RouteParamsContext} from '../module/RouteParamsContext';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -27,6 +29,8 @@ const Export = ({route}) => {
         },
     };
 
+    /** @type {RouteProp<RootStackParamList, 'Main'>} **/
+    const RNroute = useRoute();
     const insets = useSafeAreaInsets();
 
     return (
@@ -35,27 +39,19 @@ const Export = ({route}) => {
                 <Appbar style={{backgroundColor: route.color, height: 'auto'}} safeAreaInsets={{top: insets.top}}>
                     <Appbar.Content title={route.title} color={Color.white} />
                 </Appbar>
-                <Tab.Navigator
-                    screenOptions={{
-                        tabBarStyle: {backgroundColor: route.color},
-                        tabBarLabelStyle: {color: Color.white},
-                        tabBarIndicatorStyle: {backgroundColor: Color.white},
-                        tabBarPressColor: Color.white,
-                    }}
-                    initialLayout={{width: Dimensions.get('window').width}}>
-                    <Tab.Screen
-                        name="ExportPDF"
-                        component={ExportPDF}
-                        options={{title: '匯出 PDF'}}
-                        initialParams={{theme}}
-                    />
-                    <Tab.Screen
-                        name="ExportExcel"
-                        component={ExportExcel}
-                        options={{title: '匯出 Excel'}}
-                        initialParams={{theme}}
-                    />
-                </Tab.Navigator>
+                <RouteParamsContext value={RNroute.params}>
+                    <Tab.Navigator
+                        screenOptions={{
+                            tabBarStyle: {backgroundColor: route.color},
+                            tabBarLabelStyle: {color: Color.white},
+                            tabBarIndicatorStyle: {backgroundColor: Color.white},
+                            tabBarPressColor: Color.white,
+                        }}
+                        initialLayout={{width: Dimensions.get('window').width}}>
+                        <Tab.Screen name="ExportPDF" component={ExportPDF} options={{title: '匯出 PDF'}} />
+                        <Tab.Screen name="ExportExcel" component={ExportExcel} options={{title: '匯出 Excel'}} />
+                    </Tab.Navigator>
+                </RouteParamsContext>
             </View>
         </PaperProvider>
     );

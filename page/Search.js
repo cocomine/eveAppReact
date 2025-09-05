@@ -12,6 +12,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DataPart, group_data} from './Home';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useRoute} from '@react-navigation/native';
 
 /* 顯示模式List */
 const showModeList = [
@@ -22,7 +23,7 @@ const showModeList = [
     {label: '自訂', value: 4},
 ];
 
-const Search = ({navigation}) => {
+const Search = () => {
     const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
     const [Data, setData] = useState(null); //紀錄資料
     const [ShowDay, setShowDay] = useState(moment()); //顯示日期
@@ -30,8 +31,10 @@ const Search = ({navigation}) => {
     const [keyword, setKeyword] = useState(''); //搜尋keyword
     const [showMode, setShowMode] = useState(2); //顯示模式, 0 全部, 1 週, 2 月, 3 年, 4 自訂
     const [showModeDropdown, setShowModeDropdown] = useState(false); //顯示模式, 下拉式選單是否開啟
-    const [setting] = useSetting(); //設定
+    const [setting, settingForceRefresh] = useSetting(); //設定
     const insets = useSafeAreaInsets(); //安全區域
+    /** @type {RouteProp<RootStackParamList, 'Main'>} **/
+    const route = useRoute(); //路由
 
     /* 更新資料 */
     useEffect(() => {
@@ -75,7 +78,7 @@ const Search = ({navigation}) => {
                 await DB.readTransaction(async tr => {
                     console.log('顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
                     const [, rs] = await tr.executeSql(
-                        'SELECT * FROM Record ${sqlQuery} ORDER BY DateTime ASC',
+                        `SELECT * FROM Record ${sqlQuery} ORDER BY DateTime ASC`,
                         sqlValue,
                     );
 
@@ -94,6 +97,14 @@ const Search = ({navigation}) => {
 
         extracted().then();
     }, [ShowDay, setting, keyword, showMode, ShowDayEnd]);
+
+    /* 重新整理資料 */
+    useEffect(() => {
+        if (route.params && route.params.settingForceRefreshAlert) {
+            console.log('重新整理資料');
+            settingForceRefresh();
+        }
+    }, [route.params, settingForceRefresh]);
 
     /* 選擇顯示月份 */
     const NextMonth = useCallback(() => {

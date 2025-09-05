@@ -20,7 +20,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Toolbar} from '../module/Toolbar';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
-/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
+/** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 
 const initialState = {
     date: new Date(),

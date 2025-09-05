@@ -22,7 +22,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
-/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
+/** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 
 /* 備忘錄分組 */
 function group_note(ResultSet) {

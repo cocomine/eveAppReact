@@ -7,12 +7,12 @@ import {AutoSizeText, ResizeTextMode} from 'react-native-auto-size-text';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {Ripple} from './Ripple';
 import type {RouteProp} from '@react-navigation/native';
-import type {RootStackParamList} from './RootStackParamList';
+import type {IRootStackParamList} from './IRootStackParamList.ts';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 interface Props {
-    route: RouteProp<RootStackParamList, 'Calculator'>;
-    navigation: NativeStackNavigationProp<RootStackParamList, 'Calculator'>;
+    route: RouteProp<IRootStackParamList, 'Calculator'>;
+    navigation: NativeStackNavigationProp<IRootStackParamList, 'Calculator'>;
 }
 
 const Calculator: React.FC<Props> = ({navigation, route}) => {

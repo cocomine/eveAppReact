@@ -1,4 +1,4 @@
-export type RootStackParamList = {
+export type IRootStackParamList = {
     Calculator: {
         inputID?: string;
         pageName?: string;
@@ -8,6 +8,7 @@ export type RootStackParamList = {
         value?: string;
     };
     Main: {
+        settingForceRefreshAlert?: number;
         showDay?: string;
     };
     EditRecord: {

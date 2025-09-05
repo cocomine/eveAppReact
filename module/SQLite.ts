@@ -407,14 +407,12 @@ interface SettingType {
     Decimal_places: string; // 可選屬性，可能在某些版本中
 }
 
-let settingRefresh = true; //設定刷新錨定參數
-
 /**
  * 設定Hook
  */
 function useSetting() {
     const [setting, setSetting] = useState<Partial<SettingType>>({});
-    const [refresh, setRefresh] = useState(settingRefresh);
+    const [refresh, setRefresh] = useState(true);
 
     const forceRefresh = useCallback(() => setRefresh(prev => !prev), []);
 
@@ -448,11 +446,4 @@ function useSetting() {
     return [setting, forceRefresh];
 }
 
-/**
- * 刷新設定
- */
-function updateSetting() {
-    settingRefresh = !settingRefresh;
-}
-
-export {DB, useSetting, openDB, closeDB, updateSetting};
+export {DB, useSetting, openDB, closeDB};

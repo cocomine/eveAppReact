@@ -25,7 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useHeaderHeight} from '@react-navigation/elements';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
-/** @typedef {import('../module/RootStackParamList').RootStackParamList} RootStackParamList */
+/** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 
 //更新類型
 const [

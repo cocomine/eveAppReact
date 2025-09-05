@@ -1,6 +1,6 @@
 import {StyleSheet, ToastAndroid, View} from 'react-native';
 import {Button, Dialog, Portal, Title, useTheme} from 'react-native-paper';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {DB, useSetting} from '../module/SQLite';
 import {Picker} from '@react-native-picker/picker';
@@ -12,14 +12,25 @@ import FileViewer from 'react-native-file-viewer';
 import Share from 'react-native-share';
 import * as XLSX from 'xlsx-js-style';
 import moment from 'moment';
+import {RouteParamsContext} from '../module/RouteParamsContext';
 
 const ExportExcel = () => {
     const theme = useTheme();
 
-    const [setting] = useSetting();
+    const [setting, settingForceRefresh] = useSetting();
     const [mode, setMode] = useState(1); //匯出模式
     const [YearOpt, setYearOpt] = useState([]); //年份選項
     const [okDialogVisible, setOkDialogVisible] = useState(false); //成功動畫
+    /** @type {{settingForceRefreshAlert?: number}} */
+    const routeParamsContext = useContext(RouteParamsContext);
+
+    /* 重新整理資料 */
+    useEffect(() => {
+        if (routeParamsContext && routeParamsContext.settingForceRefreshAlert) {
+            console.log('重新整理資料');
+            settingForceRefresh();
+        }
+    }, [routeParamsContext, settingForceRefresh]);
 
     /* 取得有資料的年份 */
     useFocusEffect(
@@ -43,6 +54,7 @@ const ExportExcel = () => {
                 console.log('已取得有資料的年份');
             };
 
+            console.log('畫面聚焦, 重新取得有資料的年份');
             extracted().then();
         }, []),
     );
