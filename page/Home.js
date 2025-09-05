@@ -128,7 +128,7 @@ function grouping_note(package_list = [], ResultSet) {
             match_item.Mark.push({
                 ID: row.ID,
                 Color: convertColor(row.Color),
-                Title: row.Title ?? row.Contact,
+                Title: row.Title ?? row.Contact.replaceAll('\n', ' '),
             });
         } else {
             //不存在
@@ -140,7 +140,7 @@ function grouping_note(package_list = [], ResultSet) {
                     {
                         ID: row.ID,
                         Color: convertColor(row.Color),
-                        Title: row.Title ?? row.Contact,
+                        Title: row.Title ?? row.Contact.replaceAll('\n', ' '),
                     },
                 ],
                 Record: [],
