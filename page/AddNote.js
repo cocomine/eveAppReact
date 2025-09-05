@@ -246,34 +246,36 @@ const AddNote = ({navigation, route}) => {
                 </KeyboardAvoidingView>
             </View>
             {showColorSelector && (
-                <Animated.View
-                    style={[style.colorSelect, {backgroundColor: colors.background}]}
-                    entering={SlideInDown}
-                    exiting={SlideOutDown}>
-                    {colorList.map((color, index) => (
-                        <TouchableWithoutFeedback onPress={() => dispatch({color: color})} key={color}>
-                            <View style={style.colorBox}>
-                                <View
-                                    style={[
-                                        style.colorOut,
-                                        state.color === color ? {borderColor: Color.primaryColor} : null,
-                                    ]}>
+                <View style={{position: 'absolute', bottom: 0, width: '100%', height: '50%'}}>
+                    <Animated.View
+                        style={[style.colorSelect, {backgroundColor: colors.background}]}
+                        entering={SlideInDown}
+                        exiting={SlideOutDown}>
+                        {colorList.map((color, index) => (
+                            <TouchableWithoutFeedback onPress={() => dispatch({color: color})} key={color}>
+                                <View style={style.colorBox}>
                                     <View
                                         style={[
-                                            style.color,
-                                            color === null
-                                                ? {
-                                                      borderWidth: 0.7,
-                                                      borderColor: Color.darkColorLight,
-                                                  }
-                                                : {backgroundColor: convertColor(color)},
-                                        ]}
-                                    />
+                                            style.colorOut,
+                                            state.color === color ? {borderColor: Color.primaryColor} : null,
+                                        ]}>
+                                        <View
+                                            style={[
+                                                style.color,
+                                                color === null
+                                                    ? {
+                                                          borderWidth: 0.7,
+                                                          borderColor: Color.darkColorLight,
+                                                      }
+                                                    : {backgroundColor: convertColor(color)},
+                                            ]}
+                                        />
+                                    </View>
                                 </View>
-                            </View>
-                        </TouchableWithoutFeedback>
-                    ))}
-                </Animated.View>
+                            </TouchableWithoutFeedback>
+                        ))}
+                    </Animated.View>
+                </View>
             )}
         </View>
     );
@@ -312,7 +314,7 @@ const style = StyleSheet.create({
         alignSelf: 'flex-start',
     },
     colorSelect: {
-        flex: 1 / 2,
+        flex: 1,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignContent: 'stretch',
