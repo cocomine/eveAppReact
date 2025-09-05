@@ -72,12 +72,10 @@ const Search = ({navigation}) => {
         /* 讀取紀錄 */
         const extracted = async () => {
             try {
-                await DB.transaction(async tr => {
+                await DB.readTransaction(async tr => {
                     console.log('顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
                     const [, rs] = await tr.executeSql(
-                        `SELECT *
-                         FROM Record ${sqlQuery}
-                         ORDER BY DateTime ASC`,
+                        'SELECT * FROM Record ${sqlQuery} ORDER BY DateTime ASC',
                         sqlValue,
                     );
 

@@ -1,11 +1,11 @@
 import React, {useCallback, useEffect} from 'react';
-import {Alert, SafeAreaView, StatusBar, useColorScheme, View} from 'react-native';
+import {Alert, SafeAreaView, StatusBar, ToastAndroid, useColorScheme, View} from 'react-native';
 import {Headline, useTheme} from 'react-native-paper';
 import {openDB} from '../module/SQLite';
 import Lottie from 'lottie-react-native';
 import {autoBackup} from './Backup';
 import SpInAppUpdates, {IAUUpdateKind} from 'sp-react-native-in-app-updates';
-import notifee, {AndroidImportance} from '@notifee/react-native';
+import notifee, {AndroidImportance, AuthorizationStatus} from '@notifee/react-native';
 
 const inAppUpdates = new SpInAppUpdates(false);
 
@@ -29,7 +29,16 @@ const StartUp = ({navigation}) => {
     /* 創建通知頻道 */
     const createChannel = useCallback(async () => {
         // Request permissions (required for iOS)
-        await notifee.requestPermission();
+        const settings = await notifee.requestPermission();
+
+        if (settings.authorizationStatus === AuthorizationStatus.DENIED) {
+            console.log('User denied permissions request');
+            ToastAndroid.show('您已拒絕通知權限，無法顯示備份狀態', ToastAndroid.LONG);
+        } else if (settings.authorizationStatus === AuthorizationStatus.AUTHORIZED) {
+            console.log('User granted permissions request');
+        } else if (settings.authorizationStatus === AuthorizationStatus.PROVISIONAL) {
+            console.log('User provisionally granted permissions request');
+        }
 
         // Create a channel (required for Android)
         const channelId = await notifee.createChannel({

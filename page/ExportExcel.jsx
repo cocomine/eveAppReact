@@ -24,26 +24,26 @@ const ExportExcel = () => {
     /* 取得有資料的年份 */
     useFocusEffect(
         useCallback(() => {
-            DB.transaction(
-                function (tr) {
-                    tr.executeSql(
-                        "SELECT DISTINCT STRFTIME('%Y', DateTime) AS Year FROM Record ORDER BY Year DESC",
-                        [],
-                        function (tx, rs) {
-                            setYearOpt(rs.rows.raw()); //填充選項
-                        },
-                        function (tx, error) {
-                            console.log('取得資料錯誤: ' + error.message);
-                        },
-                    );
-                },
-                function (error) {
-                    console.log('傳輸錯誤: ' + error.message);
-                },
-                function () {
-                    console.log('已取得有資料的年份');
-                },
-            );
+            const extracted = async () => {
+                try {
+                    await DB.readTransaction(async function (tr) {
+                        const [, rs] = await tr.executeSql(
+                            "SELECT DISTINCT STRFTIME('%Y', DateTime) AS Year FROM Record ORDER BY Year DESC",
+                            [],
+                        );
+
+                        setYearOpt(rs.rows.raw()); //填充選項
+                    });
+                } catch (e) {
+                    console.error('傳輸錯誤: ' + e.message);
+                    ToastAndroid.show('傳輸錯誤: ' + e.message, ToastAndroid.SHORT);
+                    return;
+                }
+
+                console.log('已取得有資料的年份');
+            };
+
+            extracted().then();
         }, []),
     );
 
@@ -117,34 +117,31 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
     const [MonthOpt, setMonthOpt] = useState([]); //月份選項
 
     /* 取得有資料的月份 */
-    const getMonth = useCallback(year => {
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
+    const getMonth = useCallback(async year1 => {
+        try {
+            await DB.readTransaction(async function (tr) {
+                const [, rs] = await tr.executeSql(
                     "SELECT DISTINCT STRFTIME('%m', DateTime) AS Month FROM Record WHERE STRFTIME('%Y', DateTime) = ? ORDER BY Month DESC",
-                    [year],
-                    function (tx, rs) {
-
-                        //填充選項
-                        setMonthOpt(rs.rows.raw);
-                        setMonth(rs.rows.item(0).Month);
-                    },
-                    function (tx, error) {
-                        console.log('取得資料錯誤: ' + error.message);
-                    },
+                    [year1],
                 );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message);
-            },
-            function () {
-                console.log('已取得有資料的月份');
-            },
-        );
+
+                //填充選項
+                setMonthOpt(rs.rows.raw);
+                setMonth(rs.rows.item(0).Month);
+            });
+        } catch (e) {
+            console.error('傳輸錯誤: ' + e.message);
+            ToastAndroid.show('傳輸錯誤: ' + e.message, ToastAndroid.SHORT);
+            return;
+        }
+
+        console.log('已取得有資料的月份');
     }, []);
 
     /* 更新月份選項 */
-    useEffect(() => getMonth(year), [year, visible]);
+    useEffect(() => {
+        getMonth(year).then();
+    }, [year, visible, getMonth]);
 
     /* 更新年份選項 */
     useEffect(() => setYear(YearOpt.length > 0 ? YearOpt[0].Year : ''), [YearOpt]);
@@ -157,7 +154,11 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                 return;
             }
 
-            getRecordArray(setting.Rate, "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime", [month, year])
+            getRecordArray(
+                setting.Rate,
+                "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime",
+                [month, year],
+            )
                 .then(data => {
                     const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + year + '-' + month;
 
@@ -222,7 +223,7 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
                 });
         },
-        [month, year, setting],
+        [month, year, setting, onSuccess],
     );
 
     if (!visible) return null;
@@ -235,14 +236,9 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     onValueChange={itemValue => setYear(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇年份'}>
-                    {YearOpt.map((item, index) =>
-                            <Picker.Item
-                            label={item.Year + '年'}
-                            value={item.Year}
-                            color={theme.colors.text}
-                            key={index}
-                        />
-                    )}
+                    {YearOpt.map((item, index) => (
+                        <Picker.Item label={item.Year + '年'} value={item.Year} color={theme.colors.text} key={index} />
+                    ))}
                 </Picker>
                 <Picker
                     style={{flex: 1}}
@@ -250,18 +246,18 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     onValueChange={itemValue => setMonth(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇月份'}>
-                    {MonthOpt.map((item, index) =>
+                    {MonthOpt.map((item, index) => (
                         <Picker.Item
                             label={item.Month + '月'}
                             value={item.Month}
                             color={theme.colors.text}
                             key={index}
                         />
-                    )}
+                    ))}
                 </Picker>
             </View>
             <View style={style.buttonGroup}>
-                <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
                     電郵傳送
                 </Button>
                 <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
@@ -283,13 +279,16 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
     useEffect(() => setYear(YearOpt.length > 0 ? YearOpt[0].Year : ''), [YearOpt]);
 
     /* 匯出 */
-    const export_ = useCallback(type => {
+    const export_ = useCallback(
+        type => {
             if (year === '') {
                 ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
                 return;
             }
 
-            getRecordArray(setting.Rate, "SELECT * FROM Record WHERE STRFTIME('%Y', DateTime) = ? ORDER BY DateTime", [year])
+            getRecordArray(setting.Rate, "SELECT * FROM Record WHERE STRFTIME('%Y', DateTime) = ? ORDER BY DateTime", [
+                year,
+            ])
                 .then(data => {
                     const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + year;
 
@@ -354,7 +353,7 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
                 });
         },
-        [year, setting],
+        [year, setting, onSuccess],
     );
 
     if (!visible) return null;
@@ -367,18 +366,13 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     onValueChange={itemValue => setYear(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇年份'}>
-                    {YearOpt.map((item, index) =>
-                        <Picker.Item
-                            label={item.Year + '年'}
-                            value={item.Year}
-                            color={theme.colors.text}
-                            key={index}
-                        />
-                    )}
+                    {YearOpt.map((item, index) => (
+                        <Picker.Item label={item.Year + '年'} value={item.Year} color={theme.colors.text} key={index} />
+                    ))}
                 </Picker>
             </View>
             <View style={style.buttonGroup}>
-                <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
                     電郵傳送
                 </Button>
                 <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
@@ -395,13 +389,14 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
 /* 全部 */
 const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
     /* 匯出 */
-    const export_ = useCallback(type => {
+    const export_ = useCallback(
+        type => {
             if (YearOpt.length <= 0) {
                 ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
                 return;
             }
 
-            getRecordArray(setting.Rate, "SELECT * FROM Record ORDER BY DateTime", [])
+            getRecordArray(setting.Rate, 'SELECT * FROM Record ORDER BY DateTime', [])
                 .then(data => {
                     const fileName = setting['company-name-ZH'].slice(0, 2);
 
@@ -466,14 +461,14 @@ const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
                 });
         },
-        [YearOpt, setting],
+        [YearOpt.length, onSuccess, setting],
     );
 
     if (!visible) return null;
     return (
         <View>
             <View style={style.buttonGroup}>
-                <Button icon={'email-send-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
                     電郵傳送
                 </Button>
                 <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
@@ -502,84 +497,77 @@ const style = StyleSheet.create({
 
 /* 取得資料 */
 function getRecordArray(rate, sql, args) {
-    return new Promise((resolve, reject) => {
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
-                    sql, args,
-                    function (tx, rs) {
-                        if (rs.rows.length <= 0) {
-                            reject('沒有任何資料');
-                            return;
-                        }
+    return new Promise(async (resolve, reject) => {
+        try {
+            await DB.readTransaction(async function (tr) {
+                const [, rs] = await tr.executeSql(sql, args);
 
-                        const recordArray = [];
-                        let lastDate = moment(rs.rows.item(0).DateTime)
-                        let tmp = [];
+                if (rs.rows.length <= 0) {
+                    reject('沒有任何資料');
+                    return;
+                }
 
-                        for (let i = 0; i < rs.rows.length; i++) {
-                            const row = rs.rows.item(i);
+                const recordArray = [];
+                let lastDate = moment(rs.rows.item(0).DateTime);
+                let tmp = [];
 
-                            // 檢查是否要換月份
-                            const currentDate = moment(row.DateTime);
-                            if (!currentDate.isSame(lastDate, 'month') || i >= rs.rows.length - 1) {
-                                recordArray.push({date: lastDate.format("yyyy-M"), record: tmp});
-                                tmp = [];
-                            }
-                            lastDate = currentDate;
+                for (let i = 0; i < rs.rows.length; i++) {
+                    const row = rs.rows.item(i);
 
-                            //進行計算
-                            let Change = parseFloat((row.RMB / rate).toFixed(2));
-                            let rowTotal = Change + row.HKD + row.Add + row.Shipping;
+                    // 檢查是否要換月份
+                    const currentDate = moment(row.DateTime);
+                    if (!currentDate.isSame(lastDate, 'month') || i >= rs.rows.length - 1) {
+                        recordArray.push({date: lastDate.format('yyyy-M'), record: tmp});
+                        tmp = [];
+                    }
+                    lastDate = currentDate;
 
-                            //填充資料
-                            tmp.push([
-                                {v: row.DateTime, t: 'd', z: 'yyyy-mm-dd'},
-                                {v: row.OrderNum, t: 's'},
-                                {v: row.CargoNum, t: 's'},
-                                {v: row.Type, t: 's'},
-                                {v: row.Local, t: 's'},
-                                {
-                                    v: row.RMB,
-                                    t: 'n',
-                                    z: '_("CN¥"* #,##0.00_);_("CN¥"* (#,##0.00);_("CN¥"* "-"??_);_(@_)',
-                                    s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
-                                },
-                                {v: Change, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
-                                {
-                                    v: row.HKD,
-                                    t: 'n',
-                                    z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
-                                    s: {border: {right: {style: 'thin', color: {rgb: '000000'}}}},
-                                },
-                                {v: row.Add, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
-                                {v: row.Shipping, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
-                                {
-                                    v: rowTotal,
-                                    t: 'n',
-                                    z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
-                                    f: 'SUM(G' + (i + 3) + ':J' + (i + 3) + ')',
-                                },
-                                {v: row.Remark || '' , t: 's'},
-                            ]);
-                        }
+                    //進行計算
+                    let Change = parseFloat((row.RMB / rate).toFixed(2));
+                    let rowTotal = Change + row.HKD + row.Add + row.Shipping;
 
-                        resolve(recordArray);
-                    },
-                    function (tx, error) {
-                        console.log('取得資料錯誤: ' + error.message);
-                        reject(error);
-                    },
-                );
-            },
-            function (error) {
-                console.log('傳輸錯誤: ' + error.message);
-                reject(error);
-            },
-            function () {
-                console.log('已取得資料');
-            },
-        );
+                    //填充資料
+                    tmp.push([
+                        {v: row.DateTime, t: 'd', z: 'yyyy-mm-dd'},
+                        {v: row.OrderNum, t: 's'},
+                        {v: row.CargoNum, t: 's'},
+                        {v: row.Type, t: 's'},
+                        {v: row.Local, t: 's'},
+                        {
+                            v: row.RMB,
+                            t: 'n',
+                            z: '_("CN¥"* #,##0.00_);_("CN¥"* (#,##0.00);_("CN¥"* "-"??_);_(@_)',
+                            s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
+                        },
+                        {v: Change, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
+                        {
+                            v: row.HKD,
+                            t: 'n',
+                            z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
+                            s: {border: {right: {style: 'thin', color: {rgb: '000000'}}}},
+                        },
+                        {v: row.Add, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
+                        {v: row.Shipping, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
+                        {
+                            v: rowTotal,
+                            t: 'n',
+                            z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
+                            f: 'SUM(G' + (i + 3) + ':J' + (i + 3) + ')',
+                        },
+                        {v: row.Remark || '', t: 's'},
+                    ]);
+                }
+
+                resolve(recordArray);
+            });
+        } catch (e) {
+            console.error('傳輸錯誤: ' + e.message);
+            ToastAndroid.show('傳輸錯誤: ' + e.message, ToastAndroid.SHORT);
+            reject(e);
+            return;
+        }
+
+        console.log('已取得資料');
     });
 }
 
@@ -633,7 +621,7 @@ function generateExcel(recordArray) {
             const wb = XLSX.utils.book_new();
 
             // 填充數據
-            recordArray.forEach((item) => {
+            recordArray.forEach(item => {
                 const record = item.record;
                 record.unshift(...excelHeard);
                 const ws = XLSX.utils.aoa_to_sheet(record);
@@ -673,7 +661,7 @@ function generateExcel(recordArray) {
 
                 // 儲存檔案
                 XLSX.utils.book_append_sheet(wb, ws, item.date);
-            })
+            });
 
             // 產生檔案
             const savePath = CachesDirectoryPath + '/test.xlsx';

@@ -443,7 +443,6 @@ function useSetting() {
 
         console.log('刷新設定');
         fetchSetting().then();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refresh]);
 
     return [setting, forceRefresh];

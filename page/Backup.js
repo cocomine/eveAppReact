@@ -68,22 +68,25 @@ const Backup = ({navigation}) => {
             .then()
             .catch(() => ToastAndroid.show('發生錯誤請, 檢查網絡狀態', ToastAndroid.SHORT));
 
-        DB.transaction(
-            function (tr) {
-                tr.executeSql(
-                    "SELECT value FROM Setting WHERE Target IN('AutoBackup', 'AutoBackup_cycle')",
-                    [],
-                    (tr, rs) => {
-                        setAutoBackupEnable(rs.rows.item(0).value === 'On');
-                        setAutoBackupCycle(rs.rows.item(1).value);
-                        //console.log(rs.rows.item(0).value, rs.rows.item(1).value)
-                    },
-                );
-            },
-            function (e) {
-                console.log('自動備份獲取資料失敗', e.message);
-            },
-        );
+        const extracted = async () => {
+            try {
+                await DB.readTransaction(async function (tr) {
+                    const [, rs] = await tr.executeSql(
+                        "SELECT value FROM Setting WHERE Target IN('AutoBackup', 'AutoBackup_cycle')",
+                        [],
+                    );
+
+                    setAutoBackupEnable(rs.rows.item(0).value === 'On');
+                    setAutoBackupCycle(rs.rows.item(1).value);
+                    //console.log(rs.rows.item(0).value, rs.rows.item(1).value)
+                });
+            } catch (e) {
+                console.error('自動備份獲取資料失敗', e.message);
+                ToastAndroid.show('自動備份獲取資料失敗', ToastAndroid.SHORT);
+            }
+        };
+
+        extracted().then();
     }, []);
 
     /* 斷開連接 */
@@ -197,36 +200,36 @@ const Backup = ({navigation}) => {
     }, [navigation, BackingUp, Restoring]);
 
     /* 開關自動備份 */
-    const switchAutoBackup = useCallback(status => {
+    const switchAutoBackup = useCallback(async status => {
         setAutoBackupEnable(status);
 
         const checked = status ? 'On' : 'Off';
-        DB.transaction(
-            function (tr) {
-                tr.executeSql("UPDATE Setting SET value = ? WHERE Target = 'AutoBackup'", [checked]);
-            },
-            function (e) {
-                console.log('自動備份更新失敗', e.message);
-            },
-            function () {
-                console.log('自動備份更新成功');
-            },
-        );
+        try {
+            await DB.transaction(async function (tr) {
+                await tr.executeSql("UPDATE Setting SET value = ? WHERE Target = 'AutoBackup'", [checked]);
+            });
+        } catch (e) {
+            console.error('開關自動備份更新失敗', e.message);
+            ToastAndroid.show('開關自動備份更新失敗', ToastAndroid.SHORT);
+            return;
+        }
+
+        console.log('開關自動備份更新成功');
     }, []);
 
     /* 設置自動備份週期 */
-    const changeAutoBackupCycle = useCallback(value => {
-        DB.transaction(
-            function (tr) {
-                tr.executeSql("UPDATE Setting SET value = ? WHERE Target = 'AutoBackup_cycle'", [value]);
-            },
-            function (e) {
-                console.log('自動備份週期更新失敗', e.message);
-            },
-            function () {
-                console.log('自動備份週期更新成功');
-            },
-        );
+    const changeAutoBackupCycle = useCallback(async value => {
+        try {
+            await DB.transaction(async function (tr) {
+                await tr.executeSql("UPDATE Setting SET value = ? WHERE Target = 'AutoBackup_cycle'", [value]);
+            });
+        } catch (e) {
+            console.error('自動備份週期更新失敗', e.message);
+            ToastAndroid.show('自動備份週期更新失敗', ToastAndroid.SHORT);
+            return;
+        }
+
+        console.log('自動備份週期更新成功');
     }, []);
 
     return (
@@ -570,73 +573,72 @@ notifee.registerForegroundService(notification => {
 
 /* 自動備份 */
 const autoBackup = async () => {
-    DB.transaction(
-        function (tr) {
-            tr.executeSql(
+    try {
+        await DB.transaction(async function (tr) {
+            const [, rs] = await tr.executeSql(
                 "SELECT value FROM Setting WHERE Target IN('AutoBackup', 'AutoBackup_cycle')",
                 [],
-                async (tr, rs) => {
-                    const setting = {
-                        enable: rs.rows.item(0).value === 'On',
-                        cycle: rs.rows.item(1).value,
-                    };
-
-                    let Last_Backup = await AsyncStorage.getItem('Last_Backup');
-                    if (setting.enable) {
-                        //如果自動備份開啟
-
-                        if (Last_Backup == null) {
-                            //如果沒有備份過
-                            await notifee.displayNotification({
-                                title: '備份進行中...',
-                                body: '正在進行自動備份',
-                                android: {
-                                    smallIcon: 'ic_notification',
-                                    channelId: 'backingup',
-                                    largeIcon: 'ic_launcher',
-                                    asForegroundService: true,
-                                    color: Color.primaryColor,
-                                    colorized: true,
-                                    localOnly: true,
-                                },
-                            }); //顯示通知, start foreground service
-                            return;
-                        }
-
-                        const now = new Date();
-                        const Last_Backup_Date = new Date(Last_Backup);
-                        let diff = now.getTime() - Last_Backup_Date.getTime();
-
-                        if (
-                            (setting.cycle === 'Day' && diff >= 1000 * 60 * 60 * 24) ||
-                            (setting.cycle === 'Week' && diff >= 1000 * 60 * 60 * 24 * 7) ||
-                            (setting.cycle === 'Month' && diff >= 1000 * 60 * 60 * 24 * 30)
-                        ) {
-                            await notifee.displayNotification({
-                                title: '備份進行中...',
-                                body: '正在進行自動備份',
-                                android: {
-                                    smallIcon: 'ic_notification',
-                                    channelId: 'backingup',
-                                    largeIcon: 'ic_launcher',
-                                    asForegroundService: true,
-                                    color: Color.primaryColor,
-                                    colorized: true,
-                                    localOnly: true,
-                                },
-                            }); //顯示通知, start foreground service
-                        }
-                    }
-                },
             );
-        },
-        function (e) {
-            console.log('自動備份檢查失敗', e.message);
-        },
-        function () {
-            console.log('自動備份檢查成功');
-        },
-    );
+
+            const setting = {
+                enable: rs.rows.item(0).value === 'On',
+                cycle: rs.rows.item(1).value,
+            };
+
+            let Last_Backup = await AsyncStorage.getItem('Last_Backup');
+            if (setting.enable) {
+                //如果自動備份開啟
+
+                if (Last_Backup == null) {
+                    //如果沒有備份過
+                    await notifee.displayNotification({
+                        title: '備份進行中...',
+                        body: '正在進行自動備份',
+                        android: {
+                            smallIcon: 'ic_notification',
+                            channelId: 'backingup',
+                            largeIcon: 'ic_launcher',
+                            asForegroundService: true,
+                            color: Color.primaryColor,
+                            colorized: true,
+                            localOnly: true,
+                        },
+                    }); //顯示通知, start foreground service
+                    return;
+                }
+
+                const now = new Date();
+                const Last_Backup_Date = new Date(Last_Backup);
+                let diff = now.getTime() - Last_Backup_Date.getTime();
+
+                if (
+                    (setting.cycle === 'Day' && diff >= 1000 * 60 * 60 * 24) ||
+                    (setting.cycle === 'Week' && diff >= 1000 * 60 * 60 * 24 * 7) ||
+                    (setting.cycle === 'Month' && diff >= 1000 * 60 * 60 * 24 * 30)
+                ) {
+                    await notifee.displayNotification({
+                        title: '備份進行中...',
+                        body: '正在進行自動備份',
+                        android: {
+                            smallIcon: 'ic_notification',
+                            channelId: 'backingup',
+                            largeIcon: 'ic_launcher',
+                            asForegroundService: true,
+                            color: Color.primaryColor,
+                            colorized: true,
+                            localOnly: true,
+                        },
+                    }); //顯示通知, start foreground service
+                }
+            }
+        });
+    } catch (e) {
+        console.error('自動備份檢查失敗', e.message);
+        ToastAndroid.show('自動備份檢查失敗', ToastAndroid.SHORT);
+        return;
+    }
+
+    console.log('自動備份檢查成功');
 };
 
 const style = StyleSheet.create({
