@@ -202,7 +202,7 @@ const Note = ({navigation, route}) => {
         if (route.params && route.params.showDay) {
             setShowDay(new Date(route.params.showDay));
         }
-    }, [route.params]);
+    }, [navigation, route.params]);
 
     /* 自動滑動最新紀錄 */
     useEffect(() => {
@@ -215,6 +215,19 @@ const Note = ({navigation, route}) => {
             }
         }
     }, [Data, ShowDay]);
+
+    /* 處理退出頁面 儲存 */
+    useEffect(() => {
+        const save = async ev => {
+            if (ev.data.action.type === 'GO_BACK' && route.params && route.params.showDay) {
+                ev.preventDefault();
+                navigation.popTo('Main', {showDay: route.params.showDay});
+            }
+        };
+
+        navigation.addListener('beforeRemove', save);
+        return () => navigation.removeListener('beforeRemove', save);
+    }, [navigation, route.params]);
 
     return (
         <View style={{flex: 1}}>

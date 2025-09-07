@@ -19,15 +19,7 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DecimalInput} from '../module/NumInput';
 import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
-import {
-    ActivityIndicator,
-    Button,
-    HelperText,
-    IconButton as PaperIconButton,
-    Menu,
-    Text,
-    useTheme,
-} from 'react-native-paper';
+import {ActivityIndicator, Button, HelperText, IconButton as PaperIconButton, Menu, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
@@ -37,7 +29,6 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import REAnimated, {LinearTransition, StretchInX} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import {useHeaderHeight} from '@react-navigation/elements';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
@@ -180,8 +171,6 @@ const AddRecord = ({navigation, route}) => {
     const [scrollOffset, setScrollOffset] = useState(0); //滾動位移
     const height = useHeaderHeight(); //取得標題欄高度
     const [keyboardVisible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
-    const insets = useSafeAreaInsets(); //安全區域
-    const theme = useTheme(); //主題
 
     //textInput refs
     let inputs = useRef({
@@ -297,7 +286,7 @@ const AddRecord = ({navigation, route}) => {
                         state.shipping,
                         state.remark,
                         JSON.stringify(state.image),
-                        setting.Rate,
+                        Rate,
                     ],
                 );
             });
@@ -312,8 +301,8 @@ const AddRecord = ({navigation, route}) => {
         AsyncStorage.removeItem('Draft').then();
         navigation.popTo('Main', {showDay: state.date.toString()}); //go back home
     }, [
+        Rate,
         navigation,
-        setting.Rate,
         state.ADD,
         state.HKD,
         state.RMB,

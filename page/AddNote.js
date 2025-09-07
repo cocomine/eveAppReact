@@ -20,6 +20,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Toolbar} from '../module/Toolbar';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
+/** @typedef {import('@react-navigation/native').EventMapBase} EventMapBase */
+/** @typedef {import('@react-navigation/native').EventListenerCallback} EventListenerCallback */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 
 const initialState = {
@@ -71,8 +73,9 @@ const AddNote = ({navigation, route}) => {
 
     /* 處理退出頁面 儲存 */
     useEffect(() => {
-        const save = async () => {
-            if ((state.title === '' && state.content === '') || isRemove) return;
+        const save = async ev => {
+            if ((state.title === '' && state.content === '') || isRemove || ev.data.action.type !== 'GO_BACK') return;
+            ev.preventDefault();
 
             try {
                 await DB.transaction(async tr => {
@@ -102,7 +105,8 @@ const AddNote = ({navigation, route}) => {
                                 state.id,
                             ],
                         );
-                        navigation.navigate('Note', {ShowDay: state.date.toString(), id: state.id}); //go back notePage
+
+                        navigation.popTo('Note', {showDay: state.date.toString(), id: state.id}); //go back notePage
                     }
                 });
             } catch (e) {
@@ -159,7 +163,10 @@ const AddNote = ({navigation, route}) => {
         Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
 
         // 清除事件
-        return () => Keyboard.removeAllListeners('keyboardDidShow keyboardDidHide');
+        return () => {
+            Keyboard.removeAllListeners('keyboardDidHide');
+            Keyboard.removeAllListeners('keyboardDidShow');
+        };
     }, []);
 
     /* 刪除備忘錄 */
@@ -195,7 +202,9 @@ const AddNote = ({navigation, route}) => {
                     onPress={() => dispatch({top: !state.top})}
                     color={Color.white}
                 />
-                {state.id != null ? <Appbar.Action icon={'delete-outline'} onPress={deleteNote} /> : null}
+                {state.id != null ? (
+                    <Appbar.Action icon={'delete-outline'} onPress={deleteNote} color={Color.white} />
+                ) : null}
             </Toolbar>
             <View style={{flex: 1}}>
                 <KeyboardAvoidingView
