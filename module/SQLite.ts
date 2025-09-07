@@ -19,7 +19,6 @@ async function openDB() {
     }
     console.log('Loading database: ' + dbname);
 
-    if (DB != null) await closeDB();
     DB = await SQLite.openDatabase({name: dbname, location: 'default'});
     await checkUpdate();
 }

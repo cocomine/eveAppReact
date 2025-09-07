@@ -137,25 +137,24 @@ const Backup = ({navigation}) => {
     }, [unlink]);
 
     /* 備份 */
-    const backup = useCallback(() => {
+    const backup = useCallback(async () => {
         setBackingUp(true);
-        closeDB();
-        doBackup(folderID.current)
-            .then(() => ToastAndroid.show('備份成功', ToastAndroid.SHORT))
-            .catch(e => {
-                ToastAndroid.show('備份失敗', ToastAndroid.SHORT);
-                console.log('備份失敗: ' + e.message);
-                console.log(e);
-            })
-            .finally(() => {
-                listAllBackup().then(([folder, BackupDate]) => {
-                    folderID.current = folder;
-                    setNewBackupDate(BackupDate);
-                });
-                openDB().then(r => {
-                    setBackingUp(false);
-                });
-            });
+        await closeDB();
+
+        try {
+            await doBackup(folderID.current);
+        } catch (e) {
+            ToastAndroid.show('備份失敗', ToastAndroid.SHORT);
+            console.log('備份失敗: ' + e.message);
+            console.error(e);
+        } finally {
+            const [folder, BackupDate] = await listAllBackup();
+            folderID.current = folder;
+            setNewBackupDate(BackupDate);
+
+            await openDB();
+            setBackingUp(false);
+        }
     }, []);
 
     /* 恢復列表 */
@@ -509,7 +508,11 @@ const doBackup = async folderID => {
     let tryTime = 0;
     while (tryTime < 10) {
         try {
-            await uploader_req.uploadChunk(U8byteArray);
+            const transferredByteCount = uploader_req.transferredByteCount;
+            console.log('已上傳了 ' + transferredByteCount + ' / ' + U8byteArray.length);
+
+            // 上載剩餘部分
+            await uploader_req.uploadChunk(U8byteArray.slice(transferredByteCount));
             console.log('完成上載 (' + fileName + ')');
             break;
         } catch (e) {
