@@ -35,7 +35,7 @@ import {useHeaderHeight} from '@react-navigation/elements';
 
 const IconButton = REAnimated.createAnimatedComponent(PaperIconButton);
 
-const recordInitialState = {
+const RECORD_INITIAL_STATE = {
     date: new Date(),
     orderID: '',
     type: '40',
@@ -162,15 +162,15 @@ const reducer = (state, action) => {
  *                  route: RouteProp<RootStackParamList, 'AddRecord'>}>}
  */
 const AddRecord = ({navigation, route}) => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [state, dispatch] = useReducer(reducer, recordInitialState); //輸入資料
-    const focusingDecInput = useRef(null); //目前聚焦銀碼輸入框
-    const needSaveDraft = useRef(true); //是否儲存草稿
+    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
+    const [state, dispatch] = useReducer(reducer, RECORD_INITIAL_STATE); //輸入資料
+    const focusing_dec_input = useRef(null); //目前聚焦銀碼輸入框
+    const need_save_draft = useRef(true); //是否儲存草稿
     const [setting] = useSetting(); //設定
-    const Rate = parseFloat(setting ? setting.Rate : 0);
-    const [scrollOffset, setScrollOffset] = useState(0); //滾動位移
+    const rate = parseFloat(setting ? setting.Rate : 0);
+    const [scroll_offset, setScrollOffset] = useState(0); //滾動位移
     const height = useHeaderHeight(); //取得標題欄高度
-    const [keyboardVisible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const [keyboard_visible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
 
     //textInput refs
     let inputs = useRef({
@@ -185,7 +185,7 @@ const AddRecord = ({navigation, route}) => {
         shipping: null,
         remark: null,
     });
-    let NumKeyboard_refs = useRef(null);
+    let num_keyboard_refs = useRef(null);
 
     /* 對焦到下一個輸入欄 */
     const focusNextField = useCallback(id => {
@@ -193,41 +193,41 @@ const AddRecord = ({navigation, route}) => {
     }, []);
 
     /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
-    const DecimalInput_Focus = useCallback(id => {
-        focusingDecInput.current = id;
-        NumKeyboard_refs.current.openKeyBoard();
+    const decimalInputFocus = useCallback(id => {
+        focusing_dec_input.current = id;
+        num_keyboard_refs.current.openKeyBoard();
     }, []);
 
     /* 失焦金錢輸入欄 => 關閉虛擬鍵盤 */
-    const DecimalInput_Blur = useCallback(() => {
-        focusingDecInput.current = null;
-        NumKeyboard_refs.current.closeKeyBoard();
+    const decimalInputBlur = useCallback(() => {
+        focusing_dec_input.current = null;
+        num_keyboard_refs.current.closeKeyBoard();
     }, []);
 
     /* 虛擬鍵盤點擊 */
     const onKeyPress = useCallback(
         value => {
-            if (focusingDecInput.current) {
+            if (focusing_dec_input.current) {
                 if (value === 'back') {
                     //刪除最後一個文字
-                    inputs.current[focusingDecInput.current].setText(
-                        inputs.current[focusingDecInput.current].getText().slice(0, -1),
+                    inputs.current[focusing_dec_input.current].setText(
+                        inputs.current[focusing_dec_input.current].getText().slice(0, -1),
                     );
                 } else if (value === 'done') {
                     //完成輸入
                     focusNextField(
-                        Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1],
+                        Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusing_dec_input.current) + 1],
                     );
                 } else if (value === 'calculator') {
                     //跳轉到計算機
                     navigation.navigate('Calculator', {
-                        inputID: focusingDecInput.current,
+                        inputID: focusing_dec_input.current,
                         pageName: 'AddRecord',
                     });
                 } else {
                     //輸入文字
-                    inputs.current[focusingDecInput.current].setText(
-                        inputs.current[focusingDecInput.current].getText() + value,
+                    inputs.current[focusing_dec_input.current].setText(
+                        inputs.current[focusing_dec_input.current].getText() + value,
                     );
                 }
             }
@@ -269,7 +269,7 @@ const AddRecord = ({navigation, route}) => {
         if (Object.values(error).findIndex(value => value !== null) >= 0) return; //是否全部已通過
 
         //通過放入資料庫
-        const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum; //組合櫃號
+        const cargo_num = state.cargoLetter + state.cargoNum + state.cargoCheckNum; //組合櫃號
         try {
             await DB.transaction(async function (tr) {
                 await tr.executeSql(
@@ -278,7 +278,7 @@ const AddRecord = ({navigation, route}) => {
                         moment(state.date).format('yyyy-MM-DD'),
                         state.orderID,
                         state.type,
-                        CargoNum,
+                        cargo_num,
                         state.location,
                         state.RMB,
                         state.HKD,
@@ -286,7 +286,7 @@ const AddRecord = ({navigation, route}) => {
                         state.shipping,
                         state.remark,
                         JSON.stringify(state.image),
-                        Rate,
+                        rate,
                     ],
                 );
             });
@@ -297,11 +297,11 @@ const AddRecord = ({navigation, route}) => {
         }
 
         //成功
-        needSaveDraft.current = false;
+        need_save_draft.current = false;
         AsyncStorage.removeItem('Draft').then();
         navigation.popTo('Main', {showDay: state.date.toString()}); //go back home
     }, [
-        Rate,
+        rate,
         navigation,
         state.ADD,
         state.HKD,
@@ -353,17 +353,17 @@ const AddRecord = ({navigation, route}) => {
 
     /* 處理返回按鈕 */
     useEffect(() => {
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-            if (focusingDecInput.current !== null) {
+        const back_handler = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (focusing_dec_input.current !== null) {
                 //打開了自定義數字鍵盤行為
-                inputs.current[focusingDecInput.current].blur();
+                inputs.current[focusing_dec_input.current].blur();
                 return true;
             }
         });
 
         //清除活動監聽器
-        return () => backHandler.remove();
-    }, [focusingDecInput]);
+        return () => back_handler.remove();
+    }, [focusing_dec_input]);
 
     /* 處理退出頁面 儲存草稿 */
     useEffect(() => {
@@ -381,7 +381,7 @@ const AddRecord = ({navigation, route}) => {
         //處理
         return navigation.addListener('beforeRemove', () => {
             //清除活動監聽器
-            if (needSaveDraft.current) storeDraft().then(); //儲存草稿
+            if (need_save_draft.current) storeDraft().then(); //儲存草稿
         });
     }, [navigation, state]);
 
@@ -396,7 +396,7 @@ const AddRecord = ({navigation, route}) => {
                 style={{flex: 1}}
                 behavior={'padding'}
                 keyboardVerticalOffset={height}
-                enabled={keyboardVisible}>
+                enabled={keyboard_visible}>
                 <ScrollView
                     nestedScrollEnabled={true}
                     onScroll={scroll}
@@ -408,7 +408,7 @@ const AddRecord = ({navigation, route}) => {
                         style={[
                             style.Data,
                             {
-                                backgroundColor: isDarkMode ? Color.darkBlock : Color.white,
+                                backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
                             },
                         ]}>
                         {/* 日期 */}
@@ -569,7 +569,7 @@ const AddRecord = ({navigation, route}) => {
                                 }
                                 onSubmitEditing={() => focusNextField('RMB')}
                                 error={state.error.location}
-                                scrollOffset={scrollOffset}
+                                scrollOffset={scroll_offset}
                             />
                         </View>
                         {/* 人民幣 */}
@@ -592,17 +592,17 @@ const AddRecord = ({navigation, route}) => {
                                             })
                                         }
                                         symbol={'¥ '}
-                                        keyboardRef={NumKeyboard_refs}
-                                        onFocus={() => DecimalInput_Focus('RMB')}
-                                        onBlur={DecimalInput_Blur}
+                                        keyboardRef={num_keyboard_refs}
+                                        onFocus={() => decimalInputFocus('RMB')}
+                                        onBlur={decimalInputBlur}
                                         value={state.RMB}
                                         onPressIn={() => Keyboard.dismiss()}
                                     />
                                     <HelperText type={'info'}>
-                                        匯率: 100 港幣 = {(100 * Rate).toFixed(2)} 人民幣
+                                        匯率: 100 港幣 = {(100 * rate).toFixed(2)} 人民幣
                                     </HelperText>
                                 </View>
-                                <Text>折算 HK$ {(state.RMB / Rate).toFixed(2)}</Text>
+                                <Text>折算 HK$ {(state.RMB / rate).toFixed(2)}</Text>
                             </View>
                         </View>
                         {/* 港幣 */}
@@ -619,8 +619,8 @@ const AddRecord = ({navigation, route}) => {
                                 inputProps={{showSoftInputOnFocus: false}}
                                 onValueChange={value => dispatch({type: UPDATE_HKD, payload: {HKD: value}})}
                                 symbol={'$ '}
-                                onFocus={() => DecimalInput_Focus('HKD')}
-                                onBlur={DecimalInput_Blur}
+                                onFocus={() => decimalInputFocus('HKD')}
+                                onBlur={decimalInputBlur}
                                 onPressIn={() => Keyboard.dismiss()}
                             />
                         </View>
@@ -644,8 +644,8 @@ const AddRecord = ({navigation, route}) => {
                                         })
                                     }
                                     symbol={'$ '}
-                                    onFocus={() => DecimalInput_Focus('ADD')}
-                                    onBlur={DecimalInput_Blur}
+                                    onFocus={() => decimalInputFocus('ADD')}
+                                    onBlur={decimalInputBlur}
                                     onPressIn={() => Keyboard.dismiss()}
                                 />
                             </View>
@@ -667,8 +667,8 @@ const AddRecord = ({navigation, route}) => {
                                         })
                                     }
                                     symbol={'$ '}
-                                    onFocus={() => DecimalInput_Focus('shipping')}
-                                    onBlur={DecimalInput_Blur}
+                                    onFocus={() => decimalInputFocus('shipping')}
+                                    onBlur={decimalInputBlur}
                                     onPressIn={() => Keyboard.dismiss()}
                                 />
                             </View>
@@ -679,7 +679,7 @@ const AddRecord = ({navigation, route}) => {
                         style={[
                             style.Remark,
                             {
-                                backgroundColor: isDarkMode ? Color.darkBlock : Color.white,
+                                backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
                             },
                         ]}>
                         <View style={[style.formGroup, {marginTop: -10}]}>
@@ -712,13 +712,13 @@ const AddRecord = ({navigation, route}) => {
                         style={[
                             style.Remark,
                             {
-                                backgroundColor: isDarkMode ? Color.darkBlock : Color.white,
+                                backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
                             },
                         ]}>
                         <View style={[style.Flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
                             <Text style={{color: Color.primaryColor, fontSize: 20}}>
-                                HK$ {(state.shipping + state.ADD + state.HKD + state.RMB / Rate).toFixed(2)}
+                                HK$ {(state.shipping + state.ADD + state.HKD + state.RMB / rate).toFixed(2)}
                             </Text>
                         </View>
                         <Button icon={'content-save-outline'} mode={'contained'} onPress={submit}>
@@ -728,22 +728,22 @@ const AddRecord = ({navigation, route}) => {
                     <View style={{height: 100}} />
                 </ScrollView>
             </KeyboardAvoidingView>
-            <NumKeyboard ref={NumKeyboard_refs} onKeyPress={onKeyPress} />
+            <NumKeyboard ref={num_keyboard_refs} onKeyPress={onKeyPress} />
         </View>
     );
 };
 
 /* 地點input */
 const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffset, onChangeText}, ref) => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [autoComplete, setAutoComplete] = useState([]); //自動完成
-    const [inputText, setInputText] = useState('');
-    const [showList, setShowList] = useState(false);
-    const [upDown, setUpDown] = useState('down'); //列表在上方顯示還在下方顯示
-    const deviceHeight = useWindowDimensions().height; //
-    const [keybordHeight, set_keybordHeight] = useState(0); //
-    const isFocus = useRef(false); //是否聚焦
-    const aref = useRef(null); //列表ref
+    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
+    const [auto_complete, setAutoComplete] = useState([]); //自動完成
+    const [input_text, setInputText] = useState('');
+    const [show_list, setShowList] = useState(false);
+    const [up_down, setUpDown] = useState('down'); //列表在上方顯示還在下方顯示
+    const device_height = useWindowDimensions().height; //
+    const [keyboard_height, set_keybordHeight] = useState(0); //
+    const is_focus = useRef(false); //是否聚焦
+    const a_ref = useRef(null); //列表ref
 
     /* 文字被更改 */
     const onChange = text => {
@@ -753,7 +753,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
 
     /* 聚焦 */
     const onFocus = () => {
-        isFocus.current = true;
+        is_focus.current = true;
     };
 
     /* 預設文字 */
@@ -770,11 +770,11 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
 
     /* 自動完成 表列文字 */
     const ListText = ({item}) => {
-        let wordIndex = item.search(new RegExp(inputText, 'i'));
+        let word_index = item.search(new RegExp(input_text, 'i'));
 
-        let first = item.substring(0, wordIndex);
-        let correct = item.substring(wordIndex, wordIndex + inputText.length); //符合文字
-        let last = item.substring(wordIndex + inputText.length);
+        let first = item.substring(0, word_index);
+        let correct = item.substring(word_index, word_index + input_text.length); //符合文字
+        let last = item.substring(word_index + input_text.length);
 
         return (
             <Text>
@@ -828,11 +828,11 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
 
     /* 判斷空間是否充足 */
     useEffect(() => {
-        if (!showList) return;
+        if (!show_list) return;
 
         const x = setTimeout(() => {
-            aref.current.measure((fx, fy, w, h, px, py) => {
-                const tmp = deviceHeight - keybordHeight - py - h - (upDown === 'up' ? h : 0); //如果已處於上方, 則再減高度
+            a_ref.current.measure((fx, fy, w, h, px, py) => {
+                const tmp = device_height - keyboard_height - py - h - (up_down === 'up' ? h : 0); //如果已處於上方, 則再減高度
                 // console.log(deviceHeight, keybordHeight, py, h, scrollOffset);
                 // console.log(tmp, tmp <= 10);
                 // 如果下方空間不夠側跳往上方
@@ -845,23 +845,23 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
         }, 5);
 
         return () => clearTimeout(x);
-    }, [showList, inputText, scrollOffset, deviceHeight, keybordHeight, upDown]);
+    }, [show_list, input_text, scrollOffset, device_height, keyboard_height, up_down]);
 
     /* 取得鍵盤高度 */
     useEffect(() => {
-        const showEvent = Keyboard.addListener('keyboardDidShow', e => set_keybordHeight(e.endCoordinates.height));
-        const hideEvent = Keyboard.addListener('keyboardDidHide', e => set_keybordHeight(0));
+        const show_event = Keyboard.addListener('keyboardDidShow', e => set_keybordHeight(e.endCoordinates.height));
+        const hide_event = Keyboard.addListener('keyboardDidHide', e => set_keybordHeight(0));
 
         // 清除事件
         return () => {
-            showEvent.remove();
-            hideEvent.remove();
+            show_event.remove();
+            hide_event.remove();
         };
     }, []);
 
     /* 向數據庫取數據(autocomplete) */
     useEffect(() => {
-        if (!isFocus.current) return; //非聚焦狀態不處理
+        if (!is_focus.current) return; //非聚焦狀態不處理
 
         //提取數據
         const extracted = async () => {
@@ -869,10 +869,10 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
                 await DB.readTransaction(async function (tr) {
                     const [, rs] = await tr.executeSql(
                         'SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10',
-                        ['%' + inputText + '%'],
+                        ['%' + input_text + '%'],
                     );
 
-                    if (rs.rows.length <= 0 || inputText.length <= 0) {
+                    if (rs.rows.length <= 0 || input_text.length <= 0) {
                         switchShowList(false); //關閉列表 沒有數據
                     } else {
                         switchShowList(true);
@@ -890,13 +890,13 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
         };
 
         extracted().then();
-    }, [inputText, switchShowList]);
+    }, [input_text, switchShowList]);
 
     return (
         <View style={{position: 'relative', flex: 1}}>
             <TextInput
                 onChangeText={onChange}
-                value={inputText}
+                value={input_text}
                 autoComplete={'off'}
                 onSubmitEditing={() => closeAndSave(onSubmitEditing)}
                 returnKeyType={'next'}
@@ -907,20 +907,20 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
             />
             <ErrorHelperText visible={error !== null}>{error}</ErrorHelperText>
             <Animated.View
-                ref={aref}
+                ref={a_ref}
                 style={[
                     style.autoComplete,
                     {
-                        backgroundColor: isDarkMode ? Color.darkColor : Color.white,
+                        backgroundColor: is_dark_mode ? Color.darkColor : Color.white,
                         opacity: fade,
-                        display: showList ? undefined : 'none',
+                        display: show_list ? undefined : 'none',
                         transform: [{scale}],
-                        top: upDown === 'up' ? null : '100%',
-                        bottom: upDown === 'down' ? null : '100%',
+                        top: up_down === 'up' ? null : '100%',
+                        bottom: up_down === 'down' ? null : '100%',
                     },
                 ]}>
                 <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
-                    {autoComplete.map((data, index) => (
+                    {auto_complete.map((data, index) => (
                         <TouchableWithoutFeedback onPress={() => onChange(data)} key={index}>
                             <View style={{flex: 1, paddingVertical: 8}}>
                                 <ListText item={data} />
@@ -934,7 +934,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
 });
 
 /* 圖片選擇器Options */
-const imagePickerOptions = {
+const IMAGE_PICKER_OPTIONS = {
     mediaType: 'photo',
     quality: 0.8,
     cameraType: 'back',
@@ -946,9 +946,9 @@ const imagePickerOptions = {
 
 /* 圖片選擇器 */
 const ImagePicker = ({onSelectedImage, assets = []}) => {
-    const [showModeDropdown, setShowModeDropdown] = useState(false);
+    const [show_mode_dropdown, setShowModeDropdown] = useState(false);
     const [images, setImages] = useState(assets); //圖片
-    const [bigImage, setBigImage] = useState(null); //大圖
+    const [big_image, setBigImage] = useState(null); //大圖
 
     /* 處理結果 */
     const fetchResult = useCallback(
@@ -965,12 +965,12 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
             }
 
             //處理圖片
-            const imgBase64 = [...result.assets];
-            imgBase64.push(...images);
-            imgBase64.splice(3);
+            const img_base64 = [...result.assets];
+            img_base64.push(...images);
+            img_base64.splice(3);
 
-            setImages(imgBase64);
-            onSelectedImage(imgBase64);
+            setImages(img_base64);
+            onSelectedImage(img_base64);
         },
         [images, onSelectedImage],
     );
@@ -981,17 +981,17 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
             setShowModeDropdown(false);
             if (type === 0) {
                 //相機
-                launchCamera(imagePickerOptions).then(fetchResult);
+                launchCamera(IMAGE_PICKER_OPTIONS).then(fetchResult);
             } else if (type === 1) {
                 //相簿
-                launchImageLibrary(imagePickerOptions).then(fetchResult);
+                launchImageLibrary(IMAGE_PICKER_OPTIONS).then(fetchResult);
             }
         },
         [fetchResult],
     );
 
     /* 圖片檢視器列表 */
-    const imagesViewerList = useMemo(() => {
+    const images_viewer_list = useMemo(() => {
         return images.map((assets1, index) => ({
             url: 'data:image/jpeg;base64,' + assets1.base64,
             width: assets1.width,
@@ -1010,7 +1010,7 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
     return (
         <View style={{flex: 1}}>
             <Menu
-                visible={showModeDropdown}
+                visible={show_mode_dropdown}
                 onDismiss={() => setShowModeDropdown(false)}
                 anchor={
                     <Button icon={'camera'} mode={'outlined'} onPress={() => setShowModeDropdown(true)}>
@@ -1050,14 +1050,14 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                 ))}
             </View>
             <Modal
-                visible={bigImage !== null}
+                visible={big_image !== null}
                 transparent={true}
                 animationType={'fade'}
                 onRequestClose={() => setBigImage(null)}>
                 <ImageViewer
                     backgroundColor={'rgba(0,0,0,0.6)'}
-                    imageUrls={imagesViewerList}
-                    index={bigImage}
+                    imageUrls={images_viewer_list}
+                    index={big_image}
                     onCancel={() => setBigImage(null)}
                     loadingRender={() => <ActivityIndicator animating={true} />}
                     enableSwipeDown={true}
@@ -1125,4 +1125,4 @@ const style = StyleSheet.create({
     },
 });
 
-export {AddRecord, LocalInput, ImagePicker, recordInitialState};
+export {AddRecord, LocalInput, ImagePicker, RECORD_INITIAL_STATE as recordInitialState};
