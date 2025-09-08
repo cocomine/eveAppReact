@@ -20,10 +20,12 @@ import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
-import {ImagePicker, LocalInput, RECORD_INITIAL_STATE} from './AddRecord';
+import {RECORD_INITIAL_STATE} from './AddRecord';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useHeaderHeight} from '@react-navigation/elements';
 import {Decimal} from 'decimal.js';
+import {LocalInput} from '../module/LocalInput';
+import {ImagePicker} from '../module/ImagePicker';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */

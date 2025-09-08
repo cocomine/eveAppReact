@@ -1,15 +1,13 @@
-import React, {forwardRef, useCallback, useEffect, useMemo, useReducer, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
 import {
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
-    Modal,
     ScrollView,
     StyleSheet,
     ToastAndroid,
     TouchableWithoutFeedback,
     useColorScheme,
-    useWindowDimensions,
     View,
 } from 'react-native';
 import moment from 'moment';
@@ -18,42 +16,17 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DecimalInput} from '../module/NumInput';
 import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
-import {
-    ActivityIndicator,
-    Button,
-    HelperText,
-    IconButton as PaperIconButton,
-    Menu,
-    Portal,
-    Text,
-    useTheme,
-} from 'react-native-paper';
+import {Button, HelperText, Portal, Text, useTheme} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import Animated, {
-    FadeIn,
-    FadeOut,
-    LinearTransition,
-    runOnJS,
-    SlideInDown,
-    SlideOutDown,
-    StretchInX,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
-} from 'react-native-reanimated';
-import ImageViewer from 'react-native-image-zoom-viewer';
+import Animated, {FadeIn, FadeOut, SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {useHeaderHeight} from '@react-navigation/elements';
 import {Decimal} from 'decimal.js';
-/** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
-/** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
-/** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
-
-const IconButton = Animated.createAnimatedComponent(PaperIconButton);
+import {LocalInput} from '../module/LocalInput';
+import {ImagePicker} from '../module/ImagePicker';
 
 const RECORD_INITIAL_STATE = {
     date: new Date(),
@@ -219,7 +192,7 @@ const AddRecord = ({navigation, route}) => {
         num_keyboard_refs.current.openKeyBoard();
     }, []);
 
-    /* 失焦金錢輸入欄 => 關閉虛擬鍵盤 */
+    // 失焦金錢輸入欄 => 關閉虛擬鍵盤
     const decimalInputBlur = useCallback(() => {
         focusing_dec_input.current = null;
         num_keyboard_refs.current.closeKeyBoard();
@@ -801,13 +774,13 @@ const RateEditor = ({visible, onDismiss, rate, amount, onChangeRate}) => {
     });
     let num_keyboard_refs = useRef(null);
 
-    /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
+    // 對焦金錢輸入欄 => 打開虛擬鍵盤
     const decimalInputFocus = useCallback(id => {
         focusing_dec_input.current = id;
         num_keyboard_refs.current.openKeyBoard();
     }, []);
 
-    /* 虛擬鍵盤點擊 */
+    // 虛擬鍵盤點擊
     const onKeyPress = useCallback(
         value => {
             if (focusing_dec_input.current) {
@@ -866,7 +839,7 @@ const RateEditor = ({visible, onDismiss, rate, amount, onChangeRate}) => {
         [input_amount, is_visible],
     );
 
-    /* 更新參數 */
+    // 更新參數
     useEffect(() => {
         console.log(rate);
         setInputRate(rate);
@@ -934,373 +907,11 @@ const RateEditor = ({visible, onDismiss, rate, amount, onChangeRate}) => {
     );
 };
 
-/* 地點input */
-const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffset, onChangeText}, ref) => {
-    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [auto_complete_list, setAutoCompleteList] = useState([]); //自動完成
-    const [input_text, setInputText] = useState('');
-    const [is_list_shown, setIsListShown] = useState(false);
-    const [list_position, setListPosition] = useState('down'); //列表在上方顯示還在下方顯示
-    const device_height = useWindowDimensions().height; //
-    const [keyboard_height, setKeyboardHeight] = useState(0); //
-    const is_focus = useRef(false); //是否聚焦
-    const list_ref = useRef(null); //列表ref
-
-    /* 文字被更改 */
-    const onChange = text => {
-        setInputText(text);
-        onChangeText(text);
-    };
-
-    /* 聚焦 */
-    const onFocus = () => {
-        is_focus.current = true;
-    };
-
-    /* 預設文字 */
-    useEffect(() => {
-        setInputText(value);
-    }, [value]);
-
-    /* 關閉自動完成, 並且儲存值 */
-    function closeAndSave(callback) {
-        switchShowList(false, () => {
-            callback && callback();
-        });
-    }
-
-    /* 自動完成 表列文字 */
-    const ListText = ({item}) => {
-        let word_index = item.search(new RegExp(input_text, 'i'));
-
-        let first = item.substring(0, word_index);
-        let correct = item.substring(word_index, word_index + input_text.length); //符合文字
-        let last = item.substring(word_index + input_text.length);
-
-        return (
-            <Text>
-                <Text>{first}</Text>
-                <Text style={{color: Color.primaryColor}}>{correct}</Text>
-                <Text>{last}</Text>
-            </Text>
-        );
-    };
-
-    /* 動畫 */
-    const fade_anim = useSharedValue(0);
-    const scale_anim = useSharedValue(0.8);
-
-    const animated_style = useAnimatedStyle(() => {
-        return {
-            opacity: fade_anim.value,
-            transform: [{scale: scale_anim.value}],
-        };
-    });
-
-    /* 切換開啟關閉狀態 */
-    const switchShowList = useCallback(
-        (setShow, callback = () => null) => {
-            const animation_config = {duration: 200};
-
-            if (setShow) {
-                //開啟
-                runOnJS(setIsListShown)(true);
-                fade_anim.value = withTiming(1, animation_config);
-                scale_anim.value = withTiming(1, animation_config);
-            } else {
-                //關閉
-                const onFinish = finished => {
-                    if (finished) {
-                        runOnJS(setIsListShown)(false);
-                        runOnJS(callback)();
-                        runOnJS(setListPosition)('down');
-                    }
-                };
-                fade_anim.value = withTiming(0, animation_config);
-                scale_anim.value = withTiming(0.8, animation_config, onFinish);
-            }
-        },
-        [fade_anim, scale_anim],
-    );
-
-    /* 判斷空間是否充足 */
-    useEffect(() => {
-        if (!is_list_shown) return;
-
-        const timeout_id = setTimeout(() => {
-            list_ref.current.measure((fx, fy, w, h, px, py) => {
-                const tmp = device_height - keyboard_height - py - h - (list_position === 'up' ? h : 0); //如果已處於上方, 則再減高度
-                // console.log(deviceHeight, keybordHeight, py, h, scrollOffset);
-                // console.log(tmp, tmp <= 10);
-                // 如果下方空間不夠側跳往上方
-                if (tmp <= 10) {
-                    setListPosition('up');
-                } else {
-                    setListPosition('down');
-                }
-            });
-        }, 5);
-
-        return () => clearTimeout(timeout_id);
-    }, [is_list_shown, input_text, scrollOffset, device_height, keyboard_height, list_position]);
-
-    /* 取得鍵盤高度 */
-    useEffect(() => {
-        const show_event = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
-        const hide_event = Keyboard.addListener('keyboardDidHide', e => setKeyboardHeight(0));
-
-        // 清除事件
-        return () => {
-            show_event.remove();
-            hide_event.remove();
-        };
-    }, []);
-
-    /* 向數據庫取數據(autocomplete) */
-    useEffect(() => {
-        if (!is_focus.current) return; //非聚焦狀態不處理
-
-        //提取數據
-        const extractData = async () => {
-            try {
-                await DB.readTransaction(async function (tr) {
-                    const [, rs] = await tr.executeSql(
-                        'SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10',
-                        ['%' + input_text + '%'],
-                    );
-
-                    if (rs.rows.length <= 0 || input_text.length <= 0) {
-                        switchShowList(false); //關閉列表 沒有數據
-                    } else {
-                        switchShowList(true);
-                        let val = [];
-                        for (let i = 0; i < rs.rows.length; i++) {
-                            val.push(rs.rows.item(i).Local);
-                        }
-                        setAutoCompleteList(val);
-                    }
-                });
-            } catch (e) {
-                console.error('傳輸錯誤: ' + e.message);
-                ToastAndroid.show('讀取失敗', ToastAndroid.SHORT);
-            }
-        };
-
-        extractData().then();
-    }, [input_text, switchShowList]);
-
-    return (
-        <View style={{position: 'relative', flex: 1}}>
-            <TextInput
-                onChangeText={onChange}
-                value={input_text}
-                autoComplete={'off'}
-                onSubmitEditing={() => closeAndSave(onSubmitEditing)}
-                returnKeyType={'next'}
-                error={error !== null}
-                onBlur={() => closeAndSave()}
-                ref={ref}
-                onFocus={onFocus}
-            />
-            <ErrorHelperText visible={error !== null}>{error}</ErrorHelperText>
-            <Animated.View
-                ref={list_ref}
-                style={[
-                    style.auto_complete_view,
-                    {
-                        backgroundColor: is_dark_mode ? Color.darkColor : Color.white,
-                        display: is_list_shown ? undefined : 'none',
-                        top: list_position === 'up' ? null : '100%',
-                        bottom: list_position === 'down' ? null : '100%',
-                    },
-                    animated_style,
-                ]}>
-                <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
-                    {auto_complete_list.map((data, index) => (
-                        <TouchableWithoutFeedback onPress={() => onChange(data)} key={index}>
-                            <View style={{flex: 1, paddingVertical: 8}}>
-                                <ListText item={data} />
-                            </View>
-                        </TouchableWithoutFeedback>
-                    ))}
-                </ScrollView>
-            </Animated.View>
-        </View>
-    );
-});
-
-/* 圖片選擇器Options */
-const IMAGE_PICKER_OPTIONS = {
-    mediaType: 'photo',
-    quality: 0.8,
-    cameraType: 'back',
-    includeBase64: true,
-    includeExtra: false,
-    saveToPhotos: true,
-    selectionLimit: 3,
-};
-
-/* 圖片選擇器 */
-const ImagePicker = ({onSelectedImage, assets = []}) => {
-    const [is_mode_dropdown_shown, setIsModeDropdownShown] = useState(false);
-    const [images, setImages] = useState(assets); //圖片
-    const [big_image_index, setBigImageIndex] = useState(null); //大圖
-
-    /* 處理結果 */
-    const fetchResult = useCallback(
-        result => {
-            if (result.didCancel) return;
-            if (result.errorMessage) return;
-            if (result.errorCode === 'camera_unavailable') {
-                ToastAndroid.show('相機不可用', ToastAndroid.SHORT);
-                return;
-            }
-            if (result.errorCode === 'permission') {
-                ToastAndroid.show('沒有權限', ToastAndroid.SHORT);
-                return;
-            }
-
-            //處理圖片
-            const img_base64 = [...result.assets];
-            img_base64.push(...images);
-            img_base64.splice(3);
-
-            setImages(img_base64);
-            onSelectedImage(img_base64);
-        },
-        [images, onSelectedImage],
-    );
-
-    /* 打開選擇器 */
-    const openPicker = useCallback(
-        type => {
-            setIsModeDropdownShown(false);
-            if (type === 0) {
-                //相機
-                launchCamera(IMAGE_PICKER_OPTIONS).then(fetchResult);
-            } else if (type === 1) {
-                //相簿
-                launchImageLibrary(IMAGE_PICKER_OPTIONS).then(fetchResult);
-            }
-        },
-        [fetchResult],
-    );
-
-    /* 圖片檢視器列表 */
-    const images_viewer_list = useMemo(() => {
-        return images.map((assets1, index) => ({
-            url: 'data:image/jpeg;base64,' + assets1.base64,
-            width: assets1.width,
-            height: assets1.height,
-            props: {
-                key: index,
-            },
-        }));
-    }, [images]);
-
-    /* 參數更新 */
-    useEffect(() => {
-        setImages(assets);
-    }, [assets]);
-
-    return (
-        <View style={{flex: 1}}>
-            <Menu
-                visible={is_mode_dropdown_shown}
-                onDismiss={() => setIsModeDropdownShown(false)}
-                anchor={
-                    <Button icon={'camera'} mode={'outlined'} onPress={() => setIsModeDropdownShown(true)}>
-                        選擇圖片
-                    </Button>
-                }>
-                <Menu.Item onPress={() => openPicker(0)} title={'相機'} leadingIcon={'camera'} key={1} />
-                <Menu.Item onPress={() => openPicker(1)} title={'相簿'} leadingIcon={'image-album'} key={2} />
-            </Menu>
-            <View style={[style.form_group]}>
-                {images.map((assets2, index) => (
-                    <Animated.View
-                        style={[style.img_view, {marginLeft: index !== 0 && 5}]}
-                        entering={StretchInX}
-                        layout={LinearTransition.duration(300).delay(300)}
-                        key={index}>
-                        <TouchableWithoutFeedback onPress={() => setBigImageIndex(index)}>
-                            <Animated.Image
-                                source={{uri: 'data:image/jpeg;base64,' + assets2.base64}}
-                                style={{flex: 1}}
-                                layout={LinearTransition.duration(300).delay(300)}
-                            />
-                        </TouchableWithoutFeedback>
-                        <IconButton
-                            icon={'close'}
-                            size={20}
-                            iconColor={Color.white}
-                            containerColor={Color.darkBlock}
-                            style={{position: 'absolute', top: 0, right: 0}}
-                            onPress={() => {
-                                setImages(images.filter((_, i) => i !== index));
-                                onSelectedImage(images.filter((_, i) => i !== index));
-                            }}
-                            layout={LinearTransition.duration(300).delay(300)}
-                        />
-                    </Animated.View>
-                ))}
-            </View>
-            <Modal
-                visible={big_image_index !== null}
-                transparent={true}
-                animationType={'fade'}
-                onRequestClose={() => setBigImageIndex(null)}>
-                <ImageViewer
-                    backgroundColor={'rgba(0,0,0,0.6)'}
-                    imageUrls={images_viewer_list}
-                    index={big_image_index}
-                    onCancel={() => setBigImageIndex(null)}
-                    loadingRender={() => <ActivityIndicator animating={true} />}
-                    enableSwipeDown={true}
-                    footerContainerStyle={{width: '100%', position: 'absolute', bottom: 20, zIndex: 9999}}
-                    renderFooter={() => (
-                        <View style={[style.flex_row, {justifyContent: 'center'}]}>
-                            <IconButton
-                                icon={'close'}
-                                size={30}
-                                iconColor={Color.white}
-                                style={style.image_viewer_close_btn}
-                                onPress={() => setBigImageIndex(null)}
-                            />
-                        </View>
-                    )}
-                />
-            </Modal>
-        </View>
-    );
-};
-
 const style = StyleSheet.create({
-    image_viewer_close_btn: {
-        borderColor: Color.white,
-        borderStyle: 'solid',
-        borderWidth: 1,
-    },
-    img_view: {
-        flex: 1,
-        height: 150,
-        borderRadius: 5,
-        overflow: 'hidden',
-    },
     form_group: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 5,
-    },
-    auto_complete_view: {
-        flex: 1,
-        maxHeight: 200,
-        width: '90%',
-        position: 'absolute',
-        elevation: 5,
-        zIndex: 5,
-        borderRadius: 10,
-        padding: 5,
     },
     remark_view: {
         borderColor: Color.darkColorLight,
@@ -1336,4 +947,4 @@ const style = StyleSheet.create({
     },
 });
 
-export {AddRecord, LocalInput, ImagePicker, RECORD_INITIAL_STATE};
+export {AddRecord, RECORD_INITIAL_STATE};
