@@ -1,6 +1,5 @@
 import React, {forwardRef, useCallback, useEffect, useMemo, useReducer, useRef, useState} from 'react';
 import {
-    Animated,
     BackHandler,
     Keyboard,
     KeyboardAvoidingView,
@@ -19,21 +18,42 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DecimalInput} from '../module/NumInput';
 import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
-import {ActivityIndicator, Button, HelperText, IconButton as PaperIconButton, Menu, Text} from 'react-native-paper';
+import {
+    ActivityIndicator,
+    Button,
+    HelperText,
+    IconButton as PaperIconButton,
+    Menu,
+    Portal,
+    Text,
+    useTheme,
+} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import REAnimated, {LinearTransition, StretchInX} from 'react-native-reanimated';
+import Animated, {
+    FadeIn,
+    FadeOut,
+    LinearTransition,
+    runOnJS,
+    SlideInDown,
+    SlideOutDown,
+    StretchInX,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+} from 'react-native-reanimated';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import {useHeaderHeight} from '@react-navigation/elements';
+import {Decimal} from 'decimal.js';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 
-const IconButton = REAnimated.createAnimatedComponent(PaperIconButton);
+const IconButton = Animated.createAnimatedComponent(PaperIconButton);
 
 const RECORD_INITIAL_STATE = {
     date: new Date(),
@@ -43,10 +63,10 @@ const RECORD_INITIAL_STATE = {
     cargo_num: '',
     cargo_check_num: '',
     location: '',
-    rmb: 0,
-    hkd: 0,
-    add: 0,
-    shipping: 0,
+    rmb: new Decimal(0),
+    hkd: new Decimal(0),
+    add: new Decimal(0),
+    shipping: new Decimal(0),
     remark: '',
     image: [],
     error: {
@@ -114,22 +134,22 @@ const reducer = (state, action) => {
         case UPDATE_RMB:
             return {
                 ...state,
-                rmb: action.payload.rmb,
+                rmb: new Decimal(action.payload.rmb || 0),
             };
         case UPDATE_HKD:
             return {
                 ...state,
-                hkd: action.payload.hkd,
+                hkd: new Decimal(action.payload.hkd || 0),
             };
         case UPDATE_ADD:
             return {
                 ...state,
-                add: action.payload.add,
+                add: new Decimal(action.payload.add || 0),
             };
         case UPDATE_SHIPPING:
             return {
                 ...state,
-                shipping: action.payload.shipping,
+                shipping: new Decimal(action.payload.shipping || 0),
             };
         case UPDATE_REMARK:
             return {
@@ -167,10 +187,11 @@ const AddRecord = ({navigation, route}) => {
     const focusing_dec_input = useRef(null); //目前聚焦銀碼輸入框
     const need_save_draft = useRef(true); //是否儲存草稿
     const [setting] = useSetting(); //設定
-    const rate = parseFloat(setting ? setting.Rate : 0);
+    const [rate, setRate] = useState(new Decimal(0)); //匯率
     const [scroll_offset, setScrollOffset] = useState(0); //滾動位移
     const header_height = useHeaderHeight(); //取得標題欄高度
     const [is_keyboard_visible, setIsKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const [is_rate_edit_visible, setIsRateEditVisible] = useState(false); //匯率編輯器是否顯示
 
     //textInput refs
     let inputs = useRef({
@@ -178,7 +199,7 @@ const AddRecord = ({navigation, route}) => {
         cargo_letter: null,
         cargo_num: null,
         cargo_check_num: null,
-        local: null,
+        location: null,
         rmb: null,
         hkd: null,
         add: null,
@@ -187,12 +208,12 @@ const AddRecord = ({navigation, route}) => {
     });
     let num_keyboard_refs = useRef(null);
 
-    /* 對焦到下一個輸入欄 */
+    // 對焦到下一個輸入欄
     const focusNextField = useCallback(id => {
         inputs.current[id].focus();
     }, []);
 
-    /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
+    // 對焦金錢輸入欄 => 打開虛擬鍵盤
     const decimalInputFocus = useCallback(id => {
         focusing_dec_input.current = id;
         num_keyboard_refs.current.openKeyBoard();
@@ -204,7 +225,7 @@ const AddRecord = ({navigation, route}) => {
         num_keyboard_refs.current.closeKeyBoard();
     }, []);
 
-    /* 虛擬鍵盤點擊 */
+    // 虛擬鍵盤點擊
     const onKeyPress = useCallback(
         value => {
             if (focusing_dec_input.current) {
@@ -223,8 +244,8 @@ const AddRecord = ({navigation, route}) => {
                 } else if (value === 'calculator') {
                     //跳轉到計算機
                     navigation.navigate('Calculator', {
-                        input_id: focusing_dec_input.current,
-                        page_name: 'AddRecord',
+                        inputID: focusing_dec_input.current,
+                        pageName: 'AddRecord',
                     });
                 } else {
                     //輸入文字
@@ -237,14 +258,19 @@ const AddRecord = ({navigation, route}) => {
         [focusNextField, navigation],
     );
 
-    /* 計算機返回輸入欄位id */
+    // 設定變更時更新匯率
+    useEffect(() => {
+        setRate(new Decimal(setting.Rate ?? 0));
+    }, [setting.Rate]);
+
+    // 計算機返回輸入欄位id
     useEffect(() => {
         if (route.params && route.params.value && route.params.input_id) {
             inputs.current[route.params.input_id].setText(route.params.value.toString());
         }
     }, [route.params]);
 
-    /* 遞交 */
+    // 遞交
     const submit = useCallback(async () => {
         let error = {
             cargo: null,
@@ -282,19 +308,19 @@ const AddRecord = ({navigation, route}) => {
                         state.type,
                         cargo_num_full,
                         state.location,
-                        state.rmb,
-                        state.hkd,
-                        state.add,
-                        state.shipping,
+                        state.rmb.toString(),
+                        state.hkd.toString(),
+                        state.add.toString(),
+                        state.shipping.toString(),
                         state.remark,
                         JSON.stringify(state.image),
-                        rate,
+                        rate.toString(),
                     ],
                 );
             });
         } catch (e) {
-            console.log('傳輸錯誤: ' + e.message); //debug
-            ToastAndroid.show('新增失敗', ToastAndroid.SHORT);
+            console.error('傳輸錯誤: ' + e.message);
+            ToastAndroid.show('更新失敗', ToastAndroid.SHORT);
             return;
         }
 
@@ -320,7 +346,7 @@ const AddRecord = ({navigation, route}) => {
         state.type,
     ]);
 
-    /* 讀取草稿 */
+    // 讀取草稿
     useEffect(() => {
         //讀取
         const getDraft = async () => {
@@ -337,6 +363,10 @@ const AddRecord = ({navigation, route}) => {
         getDraft().then(draft => {
             if (draft != null) {
                 draft.date = new Date(draft.date);
+                draft.rmb = new Decimal(draft.rmb || 0);
+                draft.hkd = new Decimal(draft.hkd || 0);
+                draft.add = new Decimal(draft.add || 0);
+                draft.shipping = new Decimal(draft.shipping || 0);
                 dispatch({payload: {...draft}});
             }
         });
@@ -356,7 +386,7 @@ const AddRecord = ({navigation, route}) => {
         };
     }, []);
 
-    /* 處理返回按鈕 */
+    // 處理返回按鈕
     useEffect(() => {
         const back_handler = BackHandler.addEventListener('hardwareBackPress', () => {
             if (focusing_dec_input.current !== null) {
@@ -364,16 +394,23 @@ const AddRecord = ({navigation, route}) => {
                 inputs.current[focusing_dec_input.current].blur();
                 return true;
             }
+            if (is_rate_edit_visible) {
+                //打開了匯率編輯器
+                setIsRateEditVisible(false);
+                return true;
+            }
         });
 
         //清除活動監聽器
         return () => back_handler.remove();
-    }, [focusing_dec_input]);
+    }, [focusing_dec_input, is_rate_edit_visible]);
 
-    /* 處理退出頁面 儲存草稿 */
+    // 處理退出頁面 儲存草稿
     useEffect(() => {
         //儲存
         const storeDraft = async () => {
+            if (!need_save_draft.current) return;
+
             try {
                 let draft = JSON.stringify(state);
                 await AsyncStorage.setItem('Draft', draft);
@@ -384,14 +421,11 @@ const AddRecord = ({navigation, route}) => {
         };
 
         //處理
-        const before_remove_listener = navigation.addListener('beforeRemove', () => {
-            //清除活動監聽器
-            if (need_save_draft.current) storeDraft().then(); //儲存草稿
-        });
-        return before_remove_listener;
+        navigation.addListener('beforeRemove', storeDraft);
+        return () => navigation.removeListener('beforeRemove', storeDraft);
     }, [navigation, state]);
 
-    /* 滾動事件 */
+    // 滾動事件
     const onScroll = useCallback(({nativeEvent}) => {
         setScrollOffset(nativeEvent.contentOffset.y);
     }, []);
@@ -449,7 +483,7 @@ const AddRecord = ({navigation, route}) => {
                                     maxLength={9}
                                     onSubmitEditing={() => focusNextField('cargo_letter')}
                                     ref={ref => (inputs.current.order_id = ref)}
-                                    onBlur={text =>
+                                    onChangeText={text =>
                                         dispatch({
                                             type: UPDATE_ORDER_ID,
                                             payload: {order_id: text},
@@ -564,7 +598,7 @@ const AddRecord = ({navigation, route}) => {
                             <Text style={{flex: 1 / 5}}>地點</Text>
                             <LocalInput
                                 ref={ref => {
-                                    inputs.current.local = ref;
+                                    inputs.current.location = ref;
                                 }}
                                 value={state.location}
                                 onChangeText={text =>
@@ -588,7 +622,6 @@ const AddRecord = ({navigation, route}) => {
                                             inputs.current.rmb = ref;
                                         }}
                                         containerStyle={{flex: 1}}
-                                        inputStyle={style.form_input}
                                         placeholder={'¥ --'}
                                         inputProps={{showSoftInputOnFocus: false}}
                                         onValueChange={value =>
@@ -598,17 +631,18 @@ const AddRecord = ({navigation, route}) => {
                                             })
                                         }
                                         symbol={'¥ '}
-                                        keyboardRef={num_keyboard_refs}
                                         onFocus={() => decimalInputFocus('rmb')}
                                         onBlur={decimalInputBlur}
-                                        value={state.rmb}
+                                        value={state.rmb.toNumber()}
                                         onPressIn={() => Keyboard.dismiss()}
                                     />
-                                    <HelperText type={'info'}>
-                                        匯率: 100 港幣 = {(100 * rate).toFixed(2)} 人民幣
-                                    </HelperText>
+                                    <HelperText type={'info'}>100 港幣 = {rate.mul(100).toFixed(2)} 人民幣</HelperText>
                                 </View>
-                                <Text>折算 HK$ {(state.rmb / rate).toFixed(2)}</Text>
+                                {state.rmb.isZero() ? null : (
+                                    <Text onPress={() => setIsRateEditVisible(true)}>
+                                        HK$ {state.rmb.div(rate).toFixed(2)}
+                                    </Text>
+                                )}
                             </View>
                         </View>
                         {/* 港幣 */}
@@ -619,8 +653,7 @@ const AddRecord = ({navigation, route}) => {
                                     inputs.current.hkd = ref;
                                 }}
                                 containerStyle={{flex: 1}}
-                                value={state.hkd}
-                                inputStyle={style.form_input}
+                                value={state.hkd.toNumber()}
                                 placeholder={'$ --'}
                                 inputProps={{showSoftInputOnFocus: false}}
                                 onValueChange={value => dispatch({type: UPDATE_HKD, payload: {hkd: value}})}
@@ -639,8 +672,7 @@ const AddRecord = ({navigation, route}) => {
                                         inputs.current.add = ref;
                                     }}
                                     containerStyle={{flex: 1}}
-                                    value={state.add}
-                                    inputStyle={style.form_input}
+                                    value={state.add.toNumber()}
                                     placeholder={'$ --'}
                                     inputProps={{showSoftInputOnFocus: false}}
                                     onValueChange={value =>
@@ -662,8 +694,7 @@ const AddRecord = ({navigation, route}) => {
                                         inputs.current.shipping = ref;
                                     }}
                                     containerStyle={{flex: 1}}
-                                    value={state.shipping}
-                                    inputStyle={style.form_input}
+                                    value={state.shipping.toNumber()}
                                     placeholder={'$ --'}
                                     inputProps={{showSoftInputOnFocus: false}}
                                     onValueChange={value =>
@@ -724,7 +755,12 @@ const AddRecord = ({navigation, route}) => {
                         <View style={[style.flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
                             <Text style={{color: Color.primaryColor, fontSize: 20}}>
-                                HK$ {(state.shipping + state.add + state.hkd + state.rmb / rate).toFixed(2)}
+                                HK${' '}
+                                {state.shipping
+                                    .plus(state.add)
+                                    .plus(state.hkd)
+                                    .plus(rate.isZero() ? 0 : state.rmb.div(rate))
+                                    .toFixed(2)}
                             </Text>
                         </View>
                         <Button icon={'content-save-outline'} mode={'contained'} onPress={submit}>
@@ -735,7 +771,166 @@ const AddRecord = ({navigation, route}) => {
                 </ScrollView>
             </KeyboardAvoidingView>
             <NumKeyboard ref={num_keyboard_refs} onKeyPress={onKeyPress} />
+            <RateEditor
+                rate={rate}
+                visible={is_rate_edit_visible}
+                amount={state.rmb}
+                onDismiss={() => setIsRateEditVisible(false)}
+                onChangeRate={value => setRate(value)}
+            />
         </View>
+    );
+};
+
+/**
+ * 匯率編輯器
+ * @type {React.FC<{visible: boolean, onDismiss?: ()=>void, rate: Decimal, amount: Decimal, onChangeRate?: (rate: Decimal)=>void}>}
+ */
+const RateEditor = ({visible, onDismiss, rate, amount, onChangeRate}) => {
+    const [is_visible, setIsVisible] = useState(visible);
+    const [input_rate, setInputRate] = useState(rate);
+    const [input_amount, setInputAmount] = useState(new Decimal(amount || 0));
+    const [hkd_value, setHkdValue] = useState(new Decimal(amount || 0).div(rate).toFixed(2));
+    const focusing_dec_input = useRef(null); //目前聚焦銀碼輸入框
+    const theme = useTheme();
+
+    //textInput refs
+    let inputs = useRef({
+        hkd: null,
+        rate: null,
+    });
+    let num_keyboard_refs = useRef(null);
+
+    /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
+    const decimalInputFocus = useCallback(id => {
+        focusing_dec_input.current = id;
+        num_keyboard_refs.current.openKeyBoard();
+    }, []);
+
+    /* 虛擬鍵盤點擊 */
+    const onKeyPress = useCallback(
+        value => {
+            if (focusing_dec_input.current) {
+                if (value === 'back') {
+                    //刪除最後一個文字
+                    inputs.current[focusing_dec_input.current].setText(
+                        inputs.current[focusing_dec_input.current].getText().slice(0, -1),
+                    );
+                } else if (value === 'done') {
+                    //完成輸入
+                    inputs.current[focusing_dec_input.current].blur();
+                    focusing_dec_input.current = null;
+                    num_keyboard_refs.current.closeKeyBoard();
+                    onChangeRate(new Decimal(input_rate));
+                    onDismiss();
+                } else {
+                    //輸入文字
+                    inputs.current[focusing_dec_input.current].setText(
+                        inputs.current[focusing_dec_input.current].getText() + value,
+                    );
+                }
+            }
+        },
+        [input_rate, onChangeRate, onDismiss],
+    );
+
+    // 港幣值更改
+    const onHkdValueChange = useCallback(
+        value => {
+            if (is_visible && focusing_dec_input.current === 'hkd') {
+                console.log(value);
+                const dec_value = new Decimal(value || 0);
+                if (!dec_value.isZero()) {
+                    setInputRate(input_amount.div(dec_value).toFixed(4));
+                } else {
+                    setInputRate('0');
+                }
+            }
+        },
+        [input_amount, is_visible],
+    );
+
+    // 匯率值更改
+    const onRateValueChange = useCallback(
+        value => {
+            if (is_visible && focusing_dec_input.current === 'rate') {
+                console.log(value);
+                const dec_value = new Decimal(value || 0);
+                if (!dec_value.isZero()) {
+                    setHkdValue(input_amount.div(dec_value).toFixed(2));
+                } else {
+                    setHkdValue('0');
+                }
+            }
+        },
+        [input_amount, is_visible],
+    );
+
+    /* 更新參數 */
+    useEffect(() => {
+        console.log(rate);
+        setInputRate(rate);
+    }, [rate]);
+    useEffect(() => {
+        setInputAmount(amount);
+        setHkdValue(rate.isZero() ? '0' : amount.div(rate).toFixed(2));
+    }, [amount, rate]);
+    useEffect(() => {
+        setIsVisible(visible);
+        if (visible) {
+            setTimeout(() => inputs.current.hkd.focus(), 1000);
+        }
+    }, [visible]);
+
+    if (!is_visible) return null;
+    return (
+        <Portal>
+            <TouchableWithoutFeedback onPress={onDismiss}>
+                <Animated.View style={style.rate_input.backdrop} entering={FadeIn} exiting={FadeOut}>
+                    <Animated.View
+                        style={[
+                            style.rate_input.container,
+                            {
+                                backgroundColor: theme.colors.background,
+                            },
+                        ]}
+                        entering={SlideInDown}
+                        exiting={SlideOutDown}>
+                        <View style={{padding: 20}}>
+                            <View style={style.form_group}>
+                                <Text style={{flex: 1 / 5}}>港幣</Text>
+                                <DecimalInput
+                                    ref={ref => (inputs.current.hkd = ref)}
+                                    containerStyle={{flex: 1}}
+                                    value={hkd_value}
+                                    placeholder={'$ --'}
+                                    inputProps={{showSoftInputOnFocus: false}}
+                                    onValueChange={onHkdValueChange}
+                                    symbol={'$ '}
+                                    onFocus={() => decimalInputFocus('hkd')}
+                                    onPressIn={() => Keyboard.dismiss()}
+                                />
+                            </View>
+                            <View style={style.form_group}>
+                                <Text style={{flex: 1 / 5}}>匯率</Text>
+                                <View style={{flex: 1}}>
+                                    <DecimalInput
+                                        ref={ref => (inputs.current.rate = ref)}
+                                        containerStyle={{flex: 1}}
+                                        value={input_rate.toString()}
+                                        inputProps={{showSoftInputOnFocus: false, maxLength: 10}}
+                                        onValueChange={onRateValueChange}
+                                        onFocus={() => decimalInputFocus('rate')}
+                                        onPressIn={() => Keyboard.dismiss()}
+                                    />
+                                </View>
+                            </View>
+                        </View>
+                        <NumKeyboard ref={num_keyboard_refs} onKeyPress={onKeyPress} disableCalculator={true} />
+                    </Animated.View>
+                </Animated.View>
+            </TouchableWithoutFeedback>
+        </Portal>
     );
 };
 
@@ -791,42 +986,38 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
         );
     };
 
-    /* 開啟動畫 */
-    const fade_anim = useRef(new Animated.Value(0)).current;
-    const scale_anim = useRef(new Animated.Value(0.8)).current;
+    /* 動畫 */
+    const fade_anim = useSharedValue(0);
+    const scale_anim = useSharedValue(0.8);
+
+    const animated_style = useAnimatedStyle(() => {
+        return {
+            opacity: fade_anim.value,
+            transform: [{scale: scale_anim.value}],
+        };
+    });
 
     /* 切換開啟關閉狀態 */
     const switchShowList = useCallback(
         (setShow, callback = () => null) => {
+            const animation_config = {duration: 200};
+
             if (setShow) {
                 //開啟
-                setIsListShown(true);
-                Animated.timing(fade_anim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-                Animated.timing(scale_anim, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
+                runOnJS(setIsListShown)(true);
+                fade_anim.value = withTiming(1, animation_config);
+                scale_anim.value = withTiming(1, animation_config);
             } else {
                 //關閉
-                Animated.timing(fade_anim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-                Animated.timing(scale_anim, {
-                    toValue: 0.8,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start(() => {
-                    setIsListShown(false);
-                    callback();
-                    setListPosition('down');
-                });
+                const onFinish = finished => {
+                    if (finished) {
+                        runOnJS(setIsListShown)(false);
+                        runOnJS(callback)();
+                        runOnJS(setListPosition)('down');
+                    }
+                };
+                fade_anim.value = withTiming(0, animation_config);
+                scale_anim.value = withTiming(0.8, animation_config, onFinish);
             }
         },
         [fade_anim, scale_anim],
@@ -870,7 +1061,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
         if (!is_focus.current) return; //非聚焦狀態不處理
 
         //提取數據
-        const extracted = async () => {
+        const extractData = async () => {
             try {
                 await DB.readTransaction(async function (tr) {
                     const [, rs] = await tr.executeSql(
@@ -895,7 +1086,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
             }
         };
 
-        extracted().then();
+        extractData().then();
     }, [input_text, switchShowList]);
 
     return (
@@ -918,12 +1109,11 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
                     style.auto_complete_view,
                     {
                         backgroundColor: is_dark_mode ? Color.darkColor : Color.white,
-                        opacity: fade_anim,
                         display: is_list_shown ? undefined : 'none',
-                        transform: [{scale: scale_anim}],
                         top: list_position === 'up' ? null : '100%',
                         bottom: list_position === 'down' ? null : '100%',
                     },
+                    animated_style,
                 ]}>
                 <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
                     {auto_complete_list.map((data, index) => (
@@ -1028,13 +1218,13 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
             </Menu>
             <View style={[style.form_group]}>
                 {images.map((assets2, index) => (
-                    <REAnimated.View
+                    <Animated.View
                         style={[style.img_view, {marginLeft: index !== 0 && 5}]}
                         entering={StretchInX}
                         layout={LinearTransition.duration(300).delay(300)}
                         key={index}>
                         <TouchableWithoutFeedback onPress={() => setBigImageIndex(index)}>
-                            <REAnimated.Image
+                            <Animated.Image
                                 source={{uri: 'data:image/jpeg;base64,' + assets2.base64}}
                                 style={{flex: 1}}
                                 layout={LinearTransition.duration(300).delay(300)}
@@ -1052,7 +1242,7 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                             }}
                             layout={LinearTransition.duration(300).delay(300)}
                         />
-                    </REAnimated.View>
+                    </Animated.View>
                 ))}
             </View>
             <Modal
@@ -1129,7 +1319,21 @@ const style = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    form_input: {},
+    rate_input: {
+        backdrop: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+        },
+        container: {
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            elevation: 5,
+            borderTopStartRadius: 20,
+            borderTopEndRadius: 20,
+        },
+    },
 });
 
-export {AddRecord, LocalInput, ImagePicker, RECORD_INITIAL_STATE as recordInitialState};
+export {AddRecord, LocalInput, ImagePicker, RECORD_INITIAL_STATE};
