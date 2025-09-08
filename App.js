@@ -130,7 +130,9 @@ function CustomNavigationBar({navigation, back, options}) {
     const insets = useSafeAreaInsets(); // 取得安全區域的邊距
 
     return (
-        <Appbar style={{backgroundColor: Color.primaryColor, height: 'auto'}} safeAreaInsets={{top: insets.top}}>
+        <Appbar
+            style={{backgroundColor: Color.primaryColor, height: 55 + insets.top}}
+            safeAreaInsets={{top: insets.top}}>
             {options.headerBackVisible === false ? null : <Appbar.BackAction onPress={navigation.goBack} />}
             <Appbar.Content title={options.title} />
         </Appbar>

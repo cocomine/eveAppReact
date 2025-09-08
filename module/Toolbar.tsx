@@ -7,7 +7,7 @@ const Toolbar: React.FC<{
     containerStyle?: ViewStyle;
     children?: React.ReactNode | React.ReactNode[];
 }> = ({containerStyle, children}) => {
-    return <View style={[style.toolBar, containerStyle]}>{children}</View>;
+    return <View style={[STYLE.toolBar, containerStyle]}>{children}</View>;
 };
 /* toolbar 內部 View */
 const ToolBarView: React.FC<{style?: ViewStyle; children?: React.ReactNode | React.ReactNode[]}> = ({
@@ -18,12 +18,12 @@ const ToolBarView: React.FC<{style?: ViewStyle; children?: React.ReactNode | Rea
 };
 
 /* toolbar style */
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     toolBar: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: 44,
+        minHeight: 55,
         backgroundColor: Color.primaryColor,
         color: Color.white,
         paddingRight: 10,

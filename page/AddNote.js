@@ -24,7 +24,7 @@ import {Toolbar} from '../module/Toolbar';
 /** @typedef {import('@react-navigation/native').EventListenerCallback} EventListenerCallback */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 
-const initialState = {
+const INITIAL_STATE = {
     date: new Date(),
     id: null,
     top: false,
@@ -34,7 +34,20 @@ const initialState = {
 };
 
 /* 顏色列表 */
-const colorList = [null, 'red', 'orange', 'yellow', 'green', 'teal', 'cyan', 'blue', 'purple', 'pink', 'brown', 'gray'];
+const COLOR_LIST = [
+    null,
+    'red',
+    'orange',
+    'yellow',
+    'green',
+    'teal',
+    'cyan',
+    'blue',
+    'purple',
+    'pink',
+    'brown',
+    'gray',
+];
 
 /* 更新處理器 */
 const reducer = (state, action) => {
@@ -48,33 +61,34 @@ const reducer = (state, action) => {
  */
 const AddNote = ({navigation, route}) => {
     const {colors} = useTheme();
-    const [isRemove, setIsRemove] = useState(false);
-    const [state, dispatch] = useReducer(reducer, initialState);
-    const [showColorSelector, setShowColorSelector] = useState(false);
-    const contentInput = useRef(null);
+    const [is_removing, setIsRemoving] = useState(false);
+    const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+    const [is_color_selector_visible, setIsColorSelectorVisible] = useState(false);
+    const content_input_ref = useRef(null);
     const insets = useSafeAreaInsets(); // 取得安全區域的邊距
-    const [keyboardVisible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const [is_keyboard_visible, setIsKeyboardVisible] = useState(false); //鍵盤是否顯示
 
     /* 開啟顏色選擇 */
     const openColorSelector = useCallback(() => {
         Keyboard.dismiss();
-        setTimeout(() => setShowColorSelector(true), 100);
+        setTimeout(() => setIsColorSelectorVisible(true), 100);
     }, []);
 
     /* 關閉顏色選擇 */
     const closeColorSelector = useCallback(() => {
-        setShowColorSelector(false);
+        setIsColorSelectorVisible(false);
     }, []);
 
     /* 切換顏色選擇 */
     const toggleColorSelector = useCallback(() => {
-        showColorSelector ? closeColorSelector() : openColorSelector();
-    }, [showColorSelector, openColorSelector, closeColorSelector]);
+        is_color_selector_visible ? closeColorSelector() : openColorSelector();
+    }, [is_color_selector_visible, openColorSelector, closeColorSelector]);
 
     /* 處理退出頁面 儲存 */
     useEffect(() => {
         const save = async ev => {
-            if ((state.title === '' && state.content === '') || isRemove || ev.data.action.type !== 'GO_BACK') return;
+            if ((state.title === '' && state.content === '') || is_removing || ev.data.action.type !== 'GO_BACK')
+                return;
             ev.preventDefault();
 
             try {
@@ -121,7 +135,7 @@ const AddNote = ({navigation, route}) => {
 
         navigation.addListener('beforeRemove', save);
         return () => navigation.removeListener('beforeRemove', save);
-    }, [isRemove, navigation, state]);
+    }, [is_removing, navigation, state]);
 
     /* 讀取備忘錄 */
     useEffect(() => {
@@ -158,9 +172,9 @@ const AddNote = ({navigation, route}) => {
     // 監聽鍵盤顯示隱藏
     useEffect(() => {
         // 虛擬鍵盤顯示狀態
-        Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        Keyboard.addListener('keyboardDidShow', () => setIsKeyboardVisible(true));
         // 虛擬鍵盤隱藏狀態
-        Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        Keyboard.addListener('keyboardDidHide', () => setIsKeyboardVisible(false));
 
         // 清除事件
         return () => {
@@ -187,13 +201,13 @@ const AddNote = ({navigation, route}) => {
             navigation.popTo('Note', {showDay: state.date.toString()}); //go back notePage
         };
 
-        setIsRemove(true);
+        setIsRemoving(true);
         Alert.alert('刪除', '確認刪除?', [{text: '確認', onPress: sql}, {text: '取消'}], {cancelable: true});
     }, [navigation, state.date, state.id]);
 
     return (
         <View style={{flex: 1}}>
-            <Toolbar containerStyle={{paddingTop: insets.top}}>
+            <Toolbar containerStyle={{paddingTop: insets.top, height: 55 + insets.top}}>
                 <Appbar.BackAction onPress={navigation.goBack} color={Color.white} />
                 <Appbar.Content title={'備忘錄'} />
                 <Appbar.Action icon={'palette-outline'} onPress={toggleColorSelector} color={Color.white} />
@@ -211,10 +225,10 @@ const AddNote = ({navigation, route}) => {
                     style={{flex: 1}}
                     behavior={'padding'}
                     keyboardVerticalOffset={insets.top + 64}
-                    enabled={keyboardVisible}>
+                    enabled={is_keyboard_visible}>
                     <View style={{padding: 20, backgroundColor: convertColor(state.color), flex: 1}}>
                         <Text
-                            style={[style.date, {borderColor: colors.text}]}
+                            style={[STYLE.date, {borderColor: colors.text}]}
                             onPress={() => null}
                             onPressOut={() => {
                                 DateTimePickerAndroid.open({
@@ -230,7 +244,7 @@ const AddNote = ({navigation, route}) => {
                             placeholder={'Title'}
                             style={{fontWeight: 'bold'}}
                             value={state.title}
-                            onSubmitEditing={() => contentInput.current.focus()}
+                            onSubmitEditing={() => content_input_ref.current.focus()}
                             onChangeText={text => dispatch({title: text})}
                             selectionColor={Color.primaryColor}
                             onFocus={closeColorSelector}
@@ -240,7 +254,7 @@ const AddNote = ({navigation, route}) => {
                         />
                         <TextInput
                             placeholder={'內容'}
-                            style={[style.contentInput, {height: undefined}]}
+                            style={[STYLE.contentInput, {height: undefined}]}
                             value={state.content}
                             onFocus={closeColorSelector}
                             onChangeText={text => dispatch({content: text})}
@@ -249,28 +263,28 @@ const AddNote = ({navigation, route}) => {
                             underlineColor={Color.transparent}
                             activeUnderlineColor={Color.transparent}
                             maxLength={200}
-                            ref={contentInput}
+                            ref={content_input_ref}
                         />
                     </View>
                 </KeyboardAvoidingView>
             </View>
-            {showColorSelector && (
+            {is_color_selector_visible && (
                 <View style={{position: 'absolute', bottom: 0, width: '100%', height: '50%'}}>
                     <Animated.View
-                        style={[style.colorSelect, {backgroundColor: colors.background}]}
+                        style={[STYLE.colorSelect, {backgroundColor: colors.background}]}
                         entering={SlideInDown}
                         exiting={SlideOutDown}>
-                        {colorList.map((color, index) => (
+                        {COLOR_LIST.map((color, index) => (
                             <TouchableWithoutFeedback onPress={() => dispatch({color: color})} key={color}>
-                                <View style={style.colorBox}>
+                                <View style={STYLE.colorBox}>
                                     <View
                                         style={[
-                                            style.colorOut,
+                                            STYLE.colorOut,
                                             state.color === color ? {borderColor: Color.primaryColor} : null,
                                         ]}>
                                         <View
                                             style={[
-                                                style.color,
+                                                STYLE.color,
                                                 color === null
                                                     ? {
                                                           borderWidth: 0.7,
@@ -290,7 +304,7 @@ const AddNote = ({navigation, route}) => {
     );
 };
 
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     contentInput: {
         textAlignVertical: 'top',
         width: '100%',

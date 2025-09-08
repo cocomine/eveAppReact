@@ -7,7 +7,7 @@ import {useNavigation} from '@react-navigation/native';
 import prompt from 'react-native-prompt-android';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-const initialState = {
+const INITIAL_STATE = {
     Rate: '0.836',
     'company-name-ZH': '公司名稱',
     'company-name-EN': 'Company Name',
@@ -19,16 +19,14 @@ const initialState = {
 };
 
 //更新類型
-const [
-    UPDATE_RATE,
-    UPDATE_NAME_ZH,
-    UPDATE_NAME_EN,
-    UPDATE_DRIVER,
-    UPDATE_LICENSE,
-    UPDATE_EMAIL,
-    UPDATE_VALUE,
-    UPDATE_ERROR,
-] = [0, 1, 2, 3, 4, 5, 6, 7];
+const UPDATE_RATE = 0;
+const UPDATE_NAME_ZH = 1;
+const UPDATE_NAME_EN = 2;
+const UPDATE_DRIVER = 3;
+const UPDATE_LICENSE = 4;
+const UPDATE_EMAIL = 5;
+const UPDATE_VALUE = 6;
+const UPDATE_ERROR = 7;
 
 /* 更新處理器 */
 const reducer = (state, action) => {
@@ -63,13 +61,13 @@ const Setting = ({route}) => {
             primary: route.color,
         },
     };
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const BG_color = isDarkMode ? Color.darkBlock : Color.white;
+    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
+    const bg_color = is_dark_mode ? Color.darkBlock : Color.white;
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
 
-    const [state, dispatch] = useReducer(reducer, initialState); //setting value
-    const [onlineRate_load, set_onlineRate_load] = useState(false);
+    const [state, dispatch] = useReducer(reducer, INITIAL_STATE); //setting value
+    const [is_online_rate_loading, setIsOnlineRateLoading] = useState(false);
     const [, forceRefresh] = useSetting();
 
     /* get setting value */
@@ -79,11 +77,11 @@ const Setting = ({route}) => {
                 await DB.readTransaction(async tr => {
                     const [, rs] = await tr.executeSql('SELECT * FROM Setting', []);
 
-                    let setting_tmp = {};
+                    let setting_temp = {};
                     for (let i = 0; i < rs.rows.length; i++) {
-                        setting_tmp[rs.rows.item(i).Target] = rs.rows.item(i).value;
+                        setting_temp[rs.rows.item(i).Target] = rs.rows.item(i).value;
                     }
-                    dispatch({payload: setting_tmp});
+                    dispatch({payload: setting_temp});
                 });
             } catch (e) {
                 console.error('獲取失敗: ' + e.message); //debug
@@ -202,7 +200,7 @@ const Setting = ({route}) => {
 
     /* 線上更新匯率 */
     const onlineRate = useCallback(() => {
-        set_onlineRate_load(true);
+        setIsOnlineRateLoading(true);
         fetch(
             'https://exchange-rates.abstractapi.com/v1/live/?api_key=513ff6825b484fa2a9d38df074986a5d&base=HKD&target=CNY',
         )
@@ -216,7 +214,7 @@ const Setting = ({route}) => {
             .catch(error => {
                 ToastAndroid.show('獲取匯率失敗 ' + error, ToastAndroid.SHORT);
             })
-            .finally(() => set_onlineRate_load(false));
+            .finally(() => setIsOnlineRateLoading(false));
     }, []);
 
     /* update database */
@@ -224,14 +222,14 @@ const Setting = ({route}) => {
         const extracted = async () => {
             try {
                 await DB.transaction(async tr => {
-                    const sql_promise = [];
+                    const sql_promises = [];
                     for (const obj in state) {
-                        sql_promise.push(
+                        sql_promises.push(
                             tr.executeSql('UPDATE Setting SET value = ? WHERE Target = ?', [state[obj], obj]),
                         );
                     }
 
-                    await Promise.all(sql_promise);
+                    await Promise.all(sql_promises);
                 });
             } catch (e) {
                 console.error('更新失敗', e.message);
@@ -256,7 +254,7 @@ const Setting = ({route}) => {
         <PaperProvider theme={theme}>
             <View style={{flex: 1}}>
                 <Appbar
-                    style={{backgroundColor: route.color, height: 'auto', paddingBottom: 10}}
+                    style={{backgroundColor: route.color, height: 55 + insets.top, paddingBottom: 10}}
                     safeAreaInsets={{top: insets.top}}>
                     <Appbar.Content title={route.title} color={Color.white} />
                 </Appbar>
@@ -265,15 +263,15 @@ const Setting = ({route}) => {
                 </Appbar.Header>*/}
                 <ScrollView>
                     <List.Section>
-                        <List.Subheader style={style.header}>匯率</List.Subheader>
-                        <View style={[style.Section, {backgroundColor: BG_color}]}>
+                        <List.Subheader style={STYLE.header}>匯率</List.Subheader>
+                        <View style={[STYLE.Section, {backgroundColor: bg_color}]}>
                             <List.Item
                                 onPress={() => showDialog(UPDATE_RATE)}
-                                style={style.item}
+                                style={STYLE.item}
                                 title={'100 港幣 = ' + (100 * state.Rate).toFixed(2) + ' 人民幣'}
                                 description={'點擊更改'}
                                 right={props =>
-                                    onlineRate_load ? (
+                                    is_online_rate_loading ? (
                                         <ActivityIndicator animating={true} size={'large'} {...props} />
                                     ) : (
                                         <IconButton icon={'reload'} {...props} onPress={onlineRate} />
@@ -283,17 +281,17 @@ const Setting = ({route}) => {
                         </View>
                     </List.Section>
                     <List.Section>
-                        <List.Subheader style={style.header}>公司名稱</List.Subheader>
-                        <View style={[style.Section, {backgroundColor: BG_color}]}>
+                        <List.Subheader style={STYLE.header}>公司名稱</List.Subheader>
+                        <View style={[STYLE.Section, {backgroundColor: bg_color}]}>
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 onPress={() => showDialog(UPDATE_NAME_ZH)}
                                 title={state['company-name-ZH']}
                                 description={'中文名稱'}
                             />
                             <Divider />
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 onPress={() => showDialog(UPDATE_NAME_EN)}
                                 title={state['company-name-EN']}
                                 description={'英文名稱'}
@@ -301,17 +299,17 @@ const Setting = ({route}) => {
                         </View>
                     </List.Section>
                     <List.Section>
-                        <List.Subheader style={style.header}>司機資料</List.Subheader>
-                        <View style={[style.Section, {backgroundColor: BG_color}]}>
+                        <List.Subheader style={STYLE.header}>司機資料</List.Subheader>
+                        <View style={[STYLE.Section, {backgroundColor: bg_color}]}>
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 onPress={() => showDialog(UPDATE_DRIVER)}
                                 title={state['Driver-name']}
                                 description={'司機名稱'}
                             />
                             <Divider />
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 onPress={() => showDialog(UPDATE_LICENSE)}
                                 title={state['Driver-license']}
                                 description={'車牌號碼'}
@@ -319,10 +317,10 @@ const Setting = ({route}) => {
                         </View>
                     </List.Section>
                     <List.Section>
-                        <List.Subheader style={style.header}>電子郵件</List.Subheader>
-                        <View style={[style.Section, {backgroundColor: BG_color}]}>
+                        <List.Subheader style={STYLE.header}>電子郵件</List.Subheader>
+                        <View style={[STYLE.Section, {backgroundColor: bg_color}]}>
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 onPress={() => showDialog(UPDATE_EMAIL)}
                                 title={state['Email-to']}
                                 description={'預設收件人電郵地址'}
@@ -330,17 +328,17 @@ const Setting = ({route}) => {
                         </View>
                     </List.Section>
                     <List.Section>
-                        <List.Subheader style={style.header}>存檔</List.Subheader>
-                        <View style={[style.Section, {backgroundColor: BG_color}]}>
+                        <List.Subheader style={STYLE.header}>存檔</List.Subheader>
+                        <View style={[STYLE.Section, {backgroundColor: bg_color}]}>
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 title={'備份'}
                                 description={'點擊進入備份設定介面'}
                                 onPress={() => navigation.navigate('Backup')}
                             />
                             <Divider />
                             <List.Item
-                                style={style.item}
+                                style={STYLE.item}
                                 title={'更換其他存檔'}
                                 description={'點擊更換'}
                                 onPress={() => navigation.navigate('ChangeSave')}
@@ -355,7 +353,7 @@ const Setting = ({route}) => {
     );
 };
 
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     Section: {
         borderTopWidth: 0.5,
         borderBottomWidth: 0.5,

@@ -37,22 +37,22 @@ const IconButton = REAnimated.createAnimatedComponent(PaperIconButton);
 
 const RECORD_INITIAL_STATE = {
     date: new Date(),
-    orderID: '',
+    order_id: '',
     type: '40',
-    cargoLetter: '',
-    cargoNum: '',
-    cargoCheckNum: '',
+    cargo_letter: '',
+    cargo_num: '',
+    cargo_check_num: '',
     location: '',
-    RMB: 0,
-    HKD: 0,
-    ADD: 0,
+    rmb: 0,
+    hkd: 0,
+    add: 0,
     shipping: 0,
     remark: '',
     image: [],
     error: {
         cargo: null,
         location: null,
-        orderID: null,
+        order_id: null,
     },
 };
 //更新類型
@@ -84,7 +84,7 @@ const reducer = (state, action) => {
         case UPDATE_ORDER_ID:
             return {
                 ...state,
-                orderID: action.payload.orderID,
+                order_id: action.payload.order_id,
             };
         case UPDATE_TYPE:
             return {
@@ -94,17 +94,17 @@ const reducer = (state, action) => {
         case UPDATE_CARGO_LETTER:
             return {
                 ...state,
-                cargoLetter: action.payload.cargoLetter,
+                cargo_letter: action.payload.cargo_letter,
             };
         case UPDATE_CARGO_NUM:
             return {
                 ...state,
-                cargoNum: action.payload.cargoNum,
+                cargo_num: action.payload.cargo_num,
             };
         case UPDATE_CARGO_CHECK_NUM:
             return {
                 ...state,
-                cargoCheckNum: action.payload.cargoCheckNum,
+                cargo_check_num: action.payload.cargo_check_num,
             };
         case UPDATE_LOCATION:
             return {
@@ -114,17 +114,17 @@ const reducer = (state, action) => {
         case UPDATE_RMB:
             return {
                 ...state,
-                RMB: action.payload.RMB,
+                rmb: action.payload.rmb,
             };
         case UPDATE_HKD:
             return {
                 ...state,
-                HKD: action.payload.HKD,
+                hkd: action.payload.hkd,
             };
         case UPDATE_ADD:
             return {
                 ...state,
-                ADD: action.payload.ADD,
+                add: action.payload.add,
             };
         case UPDATE_SHIPPING:
             return {
@@ -169,19 +169,19 @@ const AddRecord = ({navigation, route}) => {
     const [setting] = useSetting(); //設定
     const rate = parseFloat(setting ? setting.Rate : 0);
     const [scroll_offset, setScrollOffset] = useState(0); //滾動位移
-    const height = useHeaderHeight(); //取得標題欄高度
-    const [keyboard_visible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const header_height = useHeaderHeight(); //取得標題欄高度
+    const [is_keyboard_visible, setIsKeyboardVisible] = useState(false); //鍵盤是否顯示
 
     //textInput refs
     let inputs = useRef({
-        orderID: null,
-        CargoLetter: null,
-        CargoNum: null,
-        CargoCheckNum: null,
+        order_id: null,
+        cargo_letter: null,
+        cargo_num: null,
+        cargo_check_num: null,
         local: null,
-        RMB: null,
-        HKD: null,
-        ADD: null,
+        rmb: null,
+        hkd: null,
+        add: null,
         shipping: null,
         remark: null,
     });
@@ -216,13 +216,15 @@ const AddRecord = ({navigation, route}) => {
                 } else if (value === 'done') {
                     //完成輸入
                     focusNextField(
-                        Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusing_dec_input.current) + 1],
+                        Object.keys(inputs.current)[
+                            Object.keys(inputs.current).indexOf(focusing_dec_input.current) + 1
+                        ],
                     );
                 } else if (value === 'calculator') {
                     //跳轉到計算機
                     navigation.navigate('Calculator', {
-                        inputID: focusing_dec_input.current,
-                        pageName: 'AddRecord',
+                        input_id: focusing_dec_input.current,
+                        page_name: 'AddRecord',
                     });
                 } else {
                     //輸入文字
@@ -237,8 +239,8 @@ const AddRecord = ({navigation, route}) => {
 
     /* 計算機返回輸入欄位id */
     useEffect(() => {
-        if (route.params && route.params.value && route.params.inputID) {
-            inputs.current[route.params.inputID].setText(route.params.value.toString());
+        if (route.params && route.params.value && route.params.input_id) {
+            inputs.current[route.params.input_id].setText(route.params.value.toString());
         }
     }, [route.params]);
 
@@ -247,18 +249,18 @@ const AddRecord = ({navigation, route}) => {
         let error = {
             cargo: null,
             location: null,
-            orderID: null,
+            order_id: null,
         };
 
         //檢查條件
-        if (state.orderID.length > 0 && state.orderID.length < 9) {
-            error.orderID = '未完成填寫';
+        if (state.order_id.length > 0 && state.order_id.length < 9) {
+            error.order_id = '未完成填寫';
         }
-        if (state.cargoLetter.length <= 0 || state.cargoNum.length <= 0 || state.cargoCheckNum.length <= 0) {
+        if (state.cargo_letter.length <= 0 || state.cargo_num.length <= 0 || state.cargo_check_num.length <= 0) {
             error.cargo = '必須填寫';
-        } else if (state.cargoLetter.length < 4 || state.cargoNum.length < 6 || state.cargoCheckNum.length < 1) {
+        } else if (state.cargo_letter.length < 4 || state.cargo_num.length < 6 || state.cargo_check_num.length < 1) {
             error.cargo = '未完成填寫';
-        } /*else if(!CargoNumCheck(state.cargoLetter, state.cargoNum, parseInt(state.cargoCheckNum))){
+        } /*else if(!CargoNumCheck(state.cargo_letter, state.cargo_num, parseInt(state.cargo_check_num))){
             error.cargo = '填寫錯誤';
         }*/
         if (state.location.length <= 0) {
@@ -269,20 +271,20 @@ const AddRecord = ({navigation, route}) => {
         if (Object.values(error).findIndex(value => value !== null) >= 0) return; //是否全部已通過
 
         //通過放入資料庫
-        const cargo_num = state.cargoLetter + state.cargoNum + state.cargoCheckNum; //組合櫃號
+        const cargo_num_full = state.cargo_letter + state.cargo_num + state.cargo_check_num; //組合櫃號
         try {
             await DB.transaction(async function (tr) {
                 await tr.executeSql(
                     'INSERT INTO Record (`DateTime`, OrderNum, Type, CargoNum, Local, RMB, HKD, `Add`, Shipping, Remark, Images, Rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         moment(state.date).format('yyyy-MM-DD'),
-                        state.orderID,
+                        state.order_id,
                         state.type,
-                        cargo_num,
+                        cargo_num_full,
                         state.location,
-                        state.RMB,
-                        state.HKD,
-                        state.ADD,
+                        state.rmb,
+                        state.hkd,
+                        state.add,
                         state.shipping,
                         state.remark,
                         JSON.stringify(state.image),
@@ -303,16 +305,16 @@ const AddRecord = ({navigation, route}) => {
     }, [
         rate,
         navigation,
-        state.ADD,
-        state.HKD,
-        state.RMB,
-        state.cargoCheckNum,
-        state.cargoLetter,
-        state.cargoNum,
+        state.add,
+        state.hkd,
+        state.rmb,
+        state.cargo_check_num,
+        state.cargo_letter,
+        state.cargo_num,
         state.date,
         state.image,
         state.location,
-        state.orderID,
+        state.order_id,
         state.remark,
         state.shipping,
         state.type,
@@ -343,12 +345,15 @@ const AddRecord = ({navigation, route}) => {
     // 監聽鍵盤顯示隱藏
     useEffect(() => {
         // 虛擬鍵盤顯示狀態
-        Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        const keyboard_did_show_listener = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardVisible(true));
         // 虛擬鍵盤隱藏狀態
-        Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        const keyboard_did_hide_listener = Keyboard.addListener('keyboardDidHide', () => setIsKeyboardVisible(false));
 
         // 清除事件
-        return () => Keyboard.removeAllListeners('keyboardDidShow keyboardDidHide');
+        return () => {
+            keyboard_did_show_listener.remove();
+            keyboard_did_hide_listener.remove();
+        };
     }, []);
 
     /* 處理返回按鈕 */
@@ -379,14 +384,15 @@ const AddRecord = ({navigation, route}) => {
         };
 
         //處理
-        return navigation.addListener('beforeRemove', () => {
+        const before_remove_listener = navigation.addListener('beforeRemove', () => {
             //清除活動監聽器
             if (need_save_draft.current) storeDraft().then(); //儲存草稿
         });
+        return before_remove_listener;
     }, [navigation, state]);
 
     /* 滾動事件 */
-    const scroll = useCallback(({nativeEvent}) => {
+    const onScroll = useCallback(({nativeEvent}) => {
         setScrollOffset(nativeEvent.contentOffset.y);
     }, []);
 
@@ -395,24 +401,24 @@ const AddRecord = ({navigation, route}) => {
             <KeyboardAvoidingView
                 style={{flex: 1}}
                 behavior={'padding'}
-                keyboardVerticalOffset={height}
-                enabled={keyboard_visible}>
+                keyboardVerticalOffset={header_height}
+                enabled={is_keyboard_visible}>
                 <ScrollView
                     nestedScrollEnabled={true}
-                    onScroll={scroll}
+                    onScroll={onScroll}
                     keyboardShouldPersistTaps={'handled'}
                     style={{
                         flex: 1,
                     }}>
                     <View
                         style={[
-                            style.Data,
+                            style.data_view,
                             {
                                 backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
                             },
                         ]}>
                         {/* 日期 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>日期</Text>
                             <TextInput
                                 caretHidden={true}
@@ -423,7 +429,7 @@ const AddRecord = ({navigation, route}) => {
                                     DateTimePickerAndroid.open({
                                         value: state.date,
                                         onChange: (event, newDate) => {
-                                            focusNextField('orderID');
+                                            focusNextField('order_id');
                                             dispatch({type: UPDATE_DATE, payload: {date: newDate}});
                                         },
                                     });
@@ -433,7 +439,7 @@ const AddRecord = ({navigation, route}) => {
                             />
                         </View>
                         {/* 單號 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>單號</Text>
                             <View style={{flex: 1}}>
                                 <TextInput
@@ -441,25 +447,25 @@ const AddRecord = ({navigation, route}) => {
                                     keyboardType="numeric"
                                     returnKeyType={'next'}
                                     maxLength={9}
-                                    onSubmitEditing={() => focusNextField('CargoLetter')}
-                                    ref={ref => (inputs.current.orderID = ref)}
+                                    onSubmitEditing={() => focusNextField('cargo_letter')}
+                                    ref={ref => (inputs.current.order_id = ref)}
                                     onBlur={text =>
                                         dispatch({
                                             type: UPDATE_ORDER_ID,
-                                            payload: {orderID: text},
+                                            payload: {order_id: text},
                                         })
                                     }
                                     render={props => <TextInputMask {...props} mask={'[00]/[00]/[000]'} />}
-                                    error={state.error.orderID !== null}
-                                    value={state.orderID}
+                                    error={state.error.order_id !== null}
+                                    value={state.order_id}
                                 />
-                                <ErrorHelperText visible={state.error.orderID !== null}>
-                                    {state.error.orderID}
+                                <ErrorHelperText visible={state.error.order_id !== null}>
+                                    {state.error.order_id}
                                 </ErrorHelperText>
                             </View>
                         </View>
                         {/* 類型 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>類型</Text>
                             <RadioGroup
                                 containerStyle={{justifyContent: 'space-between', flex: 1}}
@@ -485,22 +491,22 @@ const AddRecord = ({navigation, route}) => {
                             </RadioGroup>
                         </View>
                         {/* 櫃號 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>櫃號</Text>
-                            <View style={[{flex: 1}, style.Flex_row]}>
+                            <View style={[{flex: 1}, style.flex_row]}>
                                 <View style={{flex: 1 / 2, marginRight: 4}}>
                                     <TextInput
                                         error={state.error.cargo !== null}
-                                        value={state.cargoLetter}
+                                        value={state.cargo_letter}
                                         placeholder={'AAAA'}
                                         returnKeyType={'next'}
                                         maxLength={4}
-                                        onSubmitEditing={() => focusNextField('CargoNum')}
-                                        ref={ref => (inputs.current.CargoLetter = ref)}
+                                        onSubmitEditing={() => focusNextField('cargo_num')}
+                                        ref={ref => (inputs.current.cargo_letter = ref)}
                                         onChangeText={text => {
                                             dispatch({
                                                 type: UPDATE_CARGO_LETTER,
-                                                payload: {cargoLetter: text.toUpperCase()},
+                                                payload: {cargo_letter: text.toUpperCase()},
                                             });
                                         }}
                                         render={props => (
@@ -518,12 +524,12 @@ const AddRecord = ({navigation, route}) => {
                                         returnKeyType={'next'}
                                         maxLength={6}
                                         error={state.error.cargo !== null}
-                                        value={state.cargoNum}
-                                        onSubmitEditing={() => focusNextField('CargoCheckNum')}
+                                        value={state.cargo_num}
+                                        onSubmitEditing={() => focusNextField('cargo_check_num')}
                                         onChangeText={text => {
-                                            dispatch({type: UPDATE_CARGO_NUM, payload: {cargoNum: text}});
+                                            dispatch({type: UPDATE_CARGO_NUM, payload: {cargo_num: text}});
                                         }}
-                                        ref={ref => (inputs.current.CargoNum = ref)}
+                                        ref={ref => (inputs.current.cargo_num = ref)}
                                         render={props => <TextInputMask {...props} mask={'[000000]'} />}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
@@ -534,7 +540,7 @@ const AddRecord = ({navigation, route}) => {
                                         placeholder={'0'}
                                         keyboardType="numeric"
                                         returnKeyType={'next'}
-                                        value={state.cargoCheckNum}
+                                        value={state.cargo_check_num}
                                         maxLength={1}
                                         error={state.error.cargo !== null}
                                         style={{textAlign: 'center', marginHorizontal: 2}}
@@ -542,10 +548,10 @@ const AddRecord = ({navigation, route}) => {
                                         onChangeText={text =>
                                             dispatch({
                                                 type: UPDATE_CARGO_CHECK_NUM,
-                                                payload: {cargoCheckNum: text},
+                                                payload: {cargo_check_num: text},
                                             })
                                         }
-                                        ref={ref => (inputs.current.CargoCheckNum = ref)}
+                                        ref={ref => (inputs.current.cargo_check_num = ref)}
                                         render={props => <TextInputMask {...props} mask={'[0]'} />}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
@@ -554,7 +560,7 @@ const AddRecord = ({navigation, route}) => {
                             </View>
                         </View>
                         {/* 地點 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>地點</Text>
                             <LocalInput
                                 ref={ref => {
@@ -567,89 +573,89 @@ const AddRecord = ({navigation, route}) => {
                                         payload: {location: text},
                                     })
                                 }
-                                onSubmitEditing={() => focusNextField('RMB')}
+                                onSubmitEditing={() => focusNextField('rmb')}
                                 error={state.error.location}
                                 scrollOffset={scroll_offset}
                             />
                         </View>
                         {/* 人民幣 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>人民幣</Text>
-                            <View style={[{flex: 1}, style.Flex_row]}>
+                            <View style={[{flex: 1}, style.flex_row]}>
                                 <View style={{flex: 1, marginRight: 4}}>
                                     <DecimalInput
                                         ref={ref => {
-                                            inputs.current.RMB = ref;
+                                            inputs.current.rmb = ref;
                                         }}
                                         containerStyle={{flex: 1}}
-                                        inputStyle={style.formInput}
+                                        inputStyle={style.form_input}
                                         placeholder={'¥ --'}
                                         inputProps={{showSoftInputOnFocus: false}}
                                         onValueChange={value =>
                                             dispatch({
                                                 type: UPDATE_RMB,
-                                                payload: {RMB: value},
+                                                payload: {rmb: value},
                                             })
                                         }
                                         symbol={'¥ '}
                                         keyboardRef={num_keyboard_refs}
-                                        onFocus={() => decimalInputFocus('RMB')}
+                                        onFocus={() => decimalInputFocus('rmb')}
                                         onBlur={decimalInputBlur}
-                                        value={state.RMB}
+                                        value={state.rmb}
                                         onPressIn={() => Keyboard.dismiss()}
                                     />
                                     <HelperText type={'info'}>
                                         匯率: 100 港幣 = {(100 * rate).toFixed(2)} 人民幣
                                     </HelperText>
                                 </View>
-                                <Text>折算 HK$ {(state.RMB / rate).toFixed(2)}</Text>
+                                <Text>折算 HK$ {(state.rmb / rate).toFixed(2)}</Text>
                             </View>
                         </View>
                         {/* 港幣 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>港幣</Text>
                             <DecimalInput
                                 ref={ref => {
-                                    inputs.current.HKD = ref;
+                                    inputs.current.hkd = ref;
                                 }}
                                 containerStyle={{flex: 1}}
-                                value={state.HKD}
-                                inputStyle={style.formInput}
+                                value={state.hkd}
+                                inputStyle={style.form_input}
                                 placeholder={'$ --'}
                                 inputProps={{showSoftInputOnFocus: false}}
-                                onValueChange={value => dispatch({type: UPDATE_HKD, payload: {HKD: value}})}
+                                onValueChange={value => dispatch({type: UPDATE_HKD, payload: {hkd: value}})}
                                 symbol={'$ '}
-                                onFocus={() => decimalInputFocus('HKD')}
+                                onFocus={() => decimalInputFocus('hkd')}
                                 onBlur={decimalInputBlur}
                                 onPressIn={() => Keyboard.dismiss()}
                             />
                         </View>
                         {/* 加收&運費 */}
-                        <View style={style.formGroup}>
-                            <View style={[{flex: 1 / 2}, style.Flex_row]}>
+                        <View style={style.form_group}>
+                            <View style={[{flex: 1 / 2}, style.flex_row]}>
                                 <Text style={{flex: 1 / 2}}>加收</Text>
                                 <DecimalInput
                                     ref={ref => {
-                                        inputs.current.ADD = ref;
+                                        inputs.current.add = ref;
                                     }}
                                     containerStyle={{flex: 1}}
-                                    value={state.ADD}
-                                    inputStyle={style.formInput}
+                                    value={state.add}
+                                    inputStyle={style.form_input}
                                     placeholder={'$ --'}
                                     inputProps={{showSoftInputOnFocus: false}}
                                     onValueChange={value =>
                                         dispatch({
                                             type: UPDATE_ADD,
-                                            payload: {ADD: value},
+                                            payload: {add: value},
                                         })
                                     }
                                     symbol={'$ '}
-                                    onFocus={() => decimalInputFocus('ADD')}
+                                    onFocus={() => decimalInputFocus('add')}
                                     onBlur={decimalInputBlur}
                                     onPressIn={() => Keyboard.dismiss()}
                                 />
                             </View>
-                            <View style={[{flex: 1 / 2}, style.Flex_row]}>
+                            <View style={[{flex: 1 / 2}, style.flex_row]}>
                                 <Text style={{flex: 1 / 2}}>運費</Text>
                                 <DecimalInput
                                     ref={ref => {
@@ -657,7 +663,7 @@ const AddRecord = ({navigation, route}) => {
                                     }}
                                     containerStyle={{flex: 1}}
                                     value={state.shipping}
-                                    inputStyle={style.formInput}
+                                    inputStyle={style.form_input}
                                     placeholder={'$ --'}
                                     inputProps={{showSoftInputOnFocus: false}}
                                     onValueChange={value =>
@@ -677,12 +683,12 @@ const AddRecord = ({navigation, route}) => {
                     {/* 備註 */}
                     <View
                         style={[
-                            style.Remark,
+                            style.remark_view,
                             {
                                 backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
                             },
                         ]}>
-                        <View style={[style.formGroup, {marginTop: -10}]}>
+                        <View style={[style.form_group, {marginTop: -10}]}>
                             <TextInput
                                 ref={ref => {
                                     inputs.current.remark = ref;
@@ -695,12 +701,12 @@ const AddRecord = ({navigation, route}) => {
                                 style={{flex: 1}}
                             />
                         </View>
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <ImagePicker
                                 assets={state.image}
                                 onSelectedImage={img =>
                                     dispatch({
-                                        action: UPDATE_IMAGE,
+                                        type: UPDATE_IMAGE,
                                         payload: {image: img},
                                     })
                                 }
@@ -710,15 +716,15 @@ const AddRecord = ({navigation, route}) => {
                     {/* 儲存 */}
                     <View
                         style={[
-                            style.Remark,
+                            style.remark_view,
                             {
                                 backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
                             },
                         ]}>
-                        <View style={[style.Flex_row, {justifyContent: 'space-between'}]}>
+                        <View style={[style.flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
                             <Text style={{color: Color.primaryColor, fontSize: 20}}>
-                                HK$ {(state.shipping + state.ADD + state.HKD + state.RMB / rate).toFixed(2)}
+                                HK$ {(state.shipping + state.add + state.hkd + state.rmb / rate).toFixed(2)}
                             </Text>
                         </View>
                         <Button icon={'content-save-outline'} mode={'contained'} onPress={submit}>
@@ -736,14 +742,14 @@ const AddRecord = ({navigation, route}) => {
 /* 地點input */
 const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffset, onChangeText}, ref) => {
     const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [auto_complete, setAutoComplete] = useState([]); //自動完成
+    const [auto_complete_list, setAutoCompleteList] = useState([]); //自動完成
     const [input_text, setInputText] = useState('');
-    const [show_list, setShowList] = useState(false);
-    const [up_down, setUpDown] = useState('down'); //列表在上方顯示還在下方顯示
+    const [is_list_shown, setIsListShown] = useState(false);
+    const [list_position, setListPosition] = useState('down'); //列表在上方顯示還在下方顯示
     const device_height = useWindowDimensions().height; //
-    const [keyboard_height, set_keybordHeight] = useState(0); //
+    const [keyboard_height, setKeyboardHeight] = useState(0); //
     const is_focus = useRef(false); //是否聚焦
-    const a_ref = useRef(null); //列表ref
+    const list_ref = useRef(null); //列表ref
 
     /* 文字被更改 */
     const onChange = text => {
@@ -786,71 +792,71 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
     };
 
     /* 開啟動畫 */
-    const fade = useRef(new Animated.Value(0)).current;
-    const scale = useRef(new Animated.Value(0.8)).current;
+    const fade_anim = useRef(new Animated.Value(0)).current;
+    const scale_anim = useRef(new Animated.Value(0.8)).current;
 
     /* 切換開啟關閉狀態 */
     const switchShowList = useCallback(
         (setShow, callback = () => null) => {
             if (setShow) {
                 //開啟
-                setShowList(true);
-                Animated.timing(fade, {
+                setIsListShown(true);
+                Animated.timing(fade_anim, {
                     toValue: 1,
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
-                Animated.timing(scale, {
+                Animated.timing(scale_anim, {
                     toValue: 1,
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
             } else {
                 //關閉
-                Animated.timing(fade, {
+                Animated.timing(fade_anim, {
                     toValue: 0,
                     duration: 200,
                     useNativeDriver: true,
                 }).start();
-                Animated.timing(scale, {
+                Animated.timing(scale_anim, {
                     toValue: 0.8,
                     duration: 200,
                     useNativeDriver: true,
                 }).start(() => {
-                    setShowList(false);
+                    setIsListShown(false);
                     callback();
-                    setUpDown('down');
+                    setListPosition('down');
                 });
             }
         },
-        [fade, scale],
+        [fade_anim, scale_anim],
     );
 
     /* 判斷空間是否充足 */
     useEffect(() => {
-        if (!show_list) return;
+        if (!is_list_shown) return;
 
-        const x = setTimeout(() => {
-            a_ref.current.measure((fx, fy, w, h, px, py) => {
-                const tmp = device_height - keyboard_height - py - h - (up_down === 'up' ? h : 0); //如果已處於上方, 則再減高度
+        const timeout_id = setTimeout(() => {
+            list_ref.current.measure((fx, fy, w, h, px, py) => {
+                const tmp = device_height - keyboard_height - py - h - (list_position === 'up' ? h : 0); //如果已處於上方, 則再減高度
                 // console.log(deviceHeight, keybordHeight, py, h, scrollOffset);
                 // console.log(tmp, tmp <= 10);
                 // 如果下方空間不夠側跳往上方
                 if (tmp <= 10) {
-                    setUpDown('up');
+                    setListPosition('up');
                 } else {
-                    setUpDown('down');
+                    setListPosition('down');
                 }
             });
         }, 5);
 
-        return () => clearTimeout(x);
-    }, [show_list, input_text, scrollOffset, device_height, keyboard_height, up_down]);
+        return () => clearTimeout(timeout_id);
+    }, [is_list_shown, input_text, scrollOffset, device_height, keyboard_height, list_position]);
 
     /* 取得鍵盤高度 */
     useEffect(() => {
-        const show_event = Keyboard.addListener('keyboardDidShow', e => set_keybordHeight(e.endCoordinates.height));
-        const hide_event = Keyboard.addListener('keyboardDidHide', e => set_keybordHeight(0));
+        const show_event = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
+        const hide_event = Keyboard.addListener('keyboardDidHide', e => setKeyboardHeight(0));
 
         // 清除事件
         return () => {
@@ -880,7 +886,7 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
                         for (let i = 0; i < rs.rows.length; i++) {
                             val.push(rs.rows.item(i).Local);
                         }
-                        setAutoComplete(val);
+                        setAutoCompleteList(val);
                     }
                 });
             } catch (e) {
@@ -907,20 +913,20 @@ const LocalInput = forwardRef(({value, onSubmitEditing, error = null, scrollOffs
             />
             <ErrorHelperText visible={error !== null}>{error}</ErrorHelperText>
             <Animated.View
-                ref={a_ref}
+                ref={list_ref}
                 style={[
-                    style.autoComplete,
+                    style.auto_complete_view,
                     {
                         backgroundColor: is_dark_mode ? Color.darkColor : Color.white,
-                        opacity: fade,
-                        display: show_list ? undefined : 'none',
-                        transform: [{scale}],
-                        top: up_down === 'up' ? null : '100%',
-                        bottom: up_down === 'down' ? null : '100%',
+                        opacity: fade_anim,
+                        display: is_list_shown ? undefined : 'none',
+                        transform: [{scale: scale_anim}],
+                        top: list_position === 'up' ? null : '100%',
+                        bottom: list_position === 'down' ? null : '100%',
                     },
                 ]}>
                 <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
-                    {auto_complete.map((data, index) => (
+                    {auto_complete_list.map((data, index) => (
                         <TouchableWithoutFeedback onPress={() => onChange(data)} key={index}>
                             <View style={{flex: 1, paddingVertical: 8}}>
                                 <ListText item={data} />
@@ -946,9 +952,9 @@ const IMAGE_PICKER_OPTIONS = {
 
 /* 圖片選擇器 */
 const ImagePicker = ({onSelectedImage, assets = []}) => {
-    const [show_mode_dropdown, setShowModeDropdown] = useState(false);
+    const [is_mode_dropdown_shown, setIsModeDropdownShown] = useState(false);
     const [images, setImages] = useState(assets); //圖片
-    const [big_image, setBigImage] = useState(null); //大圖
+    const [big_image_index, setBigImageIndex] = useState(null); //大圖
 
     /* 處理結果 */
     const fetchResult = useCallback(
@@ -978,7 +984,7 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
     /* 打開選擇器 */
     const openPicker = useCallback(
         type => {
-            setShowModeDropdown(false);
+            setIsModeDropdownShown(false);
             if (type === 0) {
                 //相機
                 launchCamera(IMAGE_PICKER_OPTIONS).then(fetchResult);
@@ -1010,24 +1016,24 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
     return (
         <View style={{flex: 1}}>
             <Menu
-                visible={show_mode_dropdown}
-                onDismiss={() => setShowModeDropdown(false)}
+                visible={is_mode_dropdown_shown}
+                onDismiss={() => setIsModeDropdownShown(false)}
                 anchor={
-                    <Button icon={'camera'} mode={'outlined'} onPress={() => setShowModeDropdown(true)}>
+                    <Button icon={'camera'} mode={'outlined'} onPress={() => setIsModeDropdownShown(true)}>
                         選擇圖片
                     </Button>
                 }>
                 <Menu.Item onPress={() => openPicker(0)} title={'相機'} leadingIcon={'camera'} key={1} />
                 <Menu.Item onPress={() => openPicker(1)} title={'相簿'} leadingIcon={'image-album'} key={2} />
             </Menu>
-            <View style={[style.formGroup]}>
+            <View style={[style.form_group]}>
                 {images.map((assets2, index) => (
                     <REAnimated.View
-                        style={[style.img, {marginLeft: index !== 0 && 5}]}
+                        style={[style.img_view, {marginLeft: index !== 0 && 5}]}
                         entering={StretchInX}
                         layout={LinearTransition.duration(300).delay(300)}
                         key={index}>
-                        <TouchableWithoutFeedback onPress={() => setBigImage(index)}>
+                        <TouchableWithoutFeedback onPress={() => setBigImageIndex(index)}>
                             <REAnimated.Image
                                 source={{uri: 'data:image/jpeg;base64,' + assets2.base64}}
                                 style={{flex: 1}}
@@ -1050,26 +1056,26 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
                 ))}
             </View>
             <Modal
-                visible={big_image !== null}
+                visible={big_image_index !== null}
                 transparent={true}
                 animationType={'fade'}
-                onRequestClose={() => setBigImage(null)}>
+                onRequestClose={() => setBigImageIndex(null)}>
                 <ImageViewer
                     backgroundColor={'rgba(0,0,0,0.6)'}
                     imageUrls={images_viewer_list}
-                    index={big_image}
-                    onCancel={() => setBigImage(null)}
+                    index={big_image_index}
+                    onCancel={() => setBigImageIndex(null)}
                     loadingRender={() => <ActivityIndicator animating={true} />}
                     enableSwipeDown={true}
                     footerContainerStyle={{width: '100%', position: 'absolute', bottom: 20, zIndex: 9999}}
                     renderFooter={() => (
-                        <View style={[style.Flex_row, {justifyContent: 'center'}]}>
+                        <View style={[style.flex_row, {justifyContent: 'center'}]}>
                             <IconButton
                                 icon={'close'}
                                 size={30}
                                 iconColor={Color.white}
-                                style={style.imageViewerCloseBtn}
-                                onPress={() => setBigImage(null)}
+                                style={style.image_viewer_close_btn}
+                                onPress={() => setBigImageIndex(null)}
                             />
                         </View>
                     )}
@@ -1080,23 +1086,23 @@ const ImagePicker = ({onSelectedImage, assets = []}) => {
 };
 
 const style = StyleSheet.create({
-    imageViewerCloseBtn: {
+    image_viewer_close_btn: {
         borderColor: Color.white,
         borderStyle: 'solid',
         borderWidth: 1,
     },
-    img: {
+    img_view: {
         flex: 1,
         height: 150,
         borderRadius: 5,
         overflow: 'hidden',
     },
-    formGroup: {
+    form_group: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 5,
     },
-    autoComplete: {
+    auto_complete_view: {
         flex: 1,
         maxHeight: 200,
         width: '90%',
@@ -1106,7 +1112,7 @@ const style = StyleSheet.create({
         borderRadius: 10,
         padding: 5,
     },
-    Remark: {
+    remark_view: {
         borderColor: Color.darkColorLight,
         borderBottomWidth: 0.7,
         borderTopWidth: 0.7,
@@ -1114,15 +1120,16 @@ const style = StyleSheet.create({
         padding: 10,
         elevation: -1,
     },
-    Data: {
+    data_view: {
         borderColor: Color.darkColorLight,
         borderBottomWidth: 0.7,
         padding: 10,
     },
-    Flex_row: {
+    flex_row: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    form_input: {},
 });
 
 export {AddRecord, LocalInput, ImagePicker, RECORD_INITIAL_STATE as recordInitialState};

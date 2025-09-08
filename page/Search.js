@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {DB, useSetting} from '../module/SQLite';
 import moment from 'moment/moment';
 import {FlatList, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
-import {IconButton, Menu, Text, TextInput} from 'react-native-paper';
+import {IconButton, Menu, Text, TextInput, useTheme} from 'react-native-paper';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import formatPrice from '../module/formatPrice';
@@ -15,7 +15,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useRoute} from '@react-navigation/native';
 
 /* 顯示模式List */
-const showModeList = [
+const SHOW_MODE_LIST = [
     {label: '全部', value: 0},
     {label: '週', value: 1},
     {label: '月', value: 2},
@@ -24,62 +24,65 @@ const showModeList = [
 ];
 
 const Search = () => {
-    const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
-    const [Data, setData] = useState(null); //紀錄資料
-    const [ShowDay, setShowDay] = useState(moment()); //顯示日期
-    const [ShowDayEnd, setShowDayEnd] = useState(moment()); //顯示日期
+    const [total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
+    const [data, setData] = useState(null); //紀錄資料
+    const [show_day, setShowDay] = useState(moment()); //顯示日期
+    const [show_day_end, setShowDayEnd] = useState(moment()); //顯示日期
     const [keyword, setKeyword] = useState(''); //搜尋keyword
-    const [showMode, setShowMode] = useState(2); //顯示模式, 0 全部, 1 週, 2 月, 3 年, 4 自訂
-    const [showModeDropdown, setShowModeDropdown] = useState(false); //顯示模式, 下拉式選單是否開啟
+    const [show_mode, setShowMode] = useState(2); //顯示模式, 0 全部, 1 週, 2 月, 3 年, 4 自訂
+    const [show_mode_dropdown, setShowModeDropdown] = useState(false); //顯示模式, 下拉式選單是否開啟
     const [setting, settingForceRefresh] = useSetting(); //設定
     const insets = useSafeAreaInsets(); //安全區域
     /** @type {RouteProp<RootStackParamList, 'Main'>} **/
     const route = useRoute(); //路由
+    const theme = useTheme();
 
     /* 更新資料 */
     useEffect(() => {
-        let sqlQuery = '';
-        let sqlValue = [];
+        let sql_query = '';
+        let sql_value = [];
 
         /* 根據模式安排sql query */
-        switch (showMode) {
+        switch (show_mode) {
             case 1:
-                sqlQuery = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
-                sqlValue = [
-                    moment(ShowDay).startOf('week').format('YYYY-MM-DD'),
-                    moment(ShowDay).endOf('week').format('YYYY-MM-DD'),
+                sql_query = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
+                sql_value = [
+                    moment(show_day).startOf('week').format('YYYY-MM-DD'),
+                    moment(show_day).endOf('week').format('YYYY-MM-DD'),
                 ];
                 break;
             case 2:
-                sqlQuery = "WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ?";
-                sqlValue = [ShowDay.format('MM'), ShowDay.format('YYYY')];
+                sql_query = "WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ?";
+                sql_value = [show_day.format('MM'), show_day.format('YYYY')];
                 break;
             case 3:
-                sqlQuery = "WHERE STRFTIME('%Y', DateTime) = ?";
-                sqlValue = [ShowDay.format('YYYY')];
+                sql_query = "WHERE STRFTIME('%Y', DateTime) = ?";
+                sql_value = [show_day.format('YYYY')];
                 break;
             case 4:
-                sqlQuery = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
-                sqlValue = [moment(ShowDay).format('YYYY-MM-DD'), moment(ShowDayEnd).format('YYYY-MM-DD')];
+                sql_query = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
+                sql_value = [moment(show_day).format('YYYY-MM-DD'), moment(show_day_end).format('YYYY-MM-DD')];
                 break;
             default:
-                sqlQuery = 'WHERE true';
+                sql_query = 'WHERE true';
                 break;
         }
         if (keyword !== '') {
-            sqlQuery += ' AND (OrderNum LIKE ? OR Type LIKE ? OR CargoNum LIKE ? OR Local LIKE ?)';
+            sql_query += ' AND (OrderNum LIKE ? OR Type LIKE ? OR CargoNum LIKE ? OR Local LIKE ?)';
             const tmp = '%' + keyword + '%';
-            sqlValue.push(tmp, tmp, tmp, tmp);
+            sql_value.push(tmp, tmp, tmp, tmp);
         }
 
         /* 讀取紀錄 */
         const extracted = async () => {
             try {
                 await DB.readTransaction(async tr => {
-                    console.log('顯示: ', moment(ShowDay).format('DD/MM/YYYY'));
+                    console.log('顯示: ', moment(show_day).format('DD/MM/YYYY'));
                     const [, rs] = await tr.executeSql(
-                        `SELECT * FROM Record ${sqlQuery} ORDER BY DateTime ASC`,
-                        sqlValue,
+                        `SELECT *
+                         FROM Record ${sql_query}
+                         ORDER BY DateTime ASC`,
+                        sql_value,
                     );
 
                     const [package_list, total] = group_data(rs, setting.Rate);
@@ -96,7 +99,7 @@ const Search = () => {
         };
 
         extracted().then();
-    }, [ShowDay, setting, keyword, showMode, ShowDayEnd]);
+    }, [show_day, setting, keyword, show_mode, show_day_end]);
 
     /* 重新整理資料 */
     useEffect(() => {
@@ -107,111 +110,132 @@ const Search = () => {
     }, [route.params, settingForceRefresh]);
 
     /* 選擇顯示月份 */
-    const NextMonth = useCallback(() => {
-        ShowDay.add(1, 'M').endOf('month');
-        setShowDay(moment(ShowDay));
-    }, [ShowDay]);
-    const LastMonth = useCallback(() => {
-        ShowDay.subtract(1, 'M').endOf('month');
-        setShowDay(moment(ShowDay));
-    }, [ShowDay]);
+    const nextMonth = useCallback(() => {
+        show_day.add(1, 'M').endOf('month');
+        setShowDay(moment(show_day));
+    }, [show_day]);
+    const lastMonth = useCallback(() => {
+        show_day.subtract(1, 'M').endOf('month');
+        setShowDay(moment(show_day));
+    }, [show_day]);
 
     /* 選擇顯示週 */
-    const NextWeek = useCallback(() => {
-        ShowDay.add(1, 'w');
-        setShowDay(moment(ShowDay));
-    }, [ShowDay]);
-    const LastWeek = useCallback(() => {
-        ShowDay.subtract(1, 'w');
-        setShowDay(moment(ShowDay));
-    }, [ShowDay]);
+    const nextWeek = useCallback(() => {
+        show_day.add(1, 'w');
+        setShowDay(moment(show_day));
+    }, [show_day]);
+    const lastWeek = useCallback(() => {
+        show_day.subtract(1, 'w');
+        setShowDay(moment(show_day));
+    }, [show_day]);
 
     /* 選擇顯示年 */
-    const NextYear = useCallback(() => {
-        ShowDay.add(1, 'y');
-        setShowDay(moment(ShowDay));
-    }, [ShowDay]);
-    const LastYear = useCallback(() => {
-        ShowDay.subtract(1, 'y');
-        setShowDay(moment(ShowDay));
-    }, [ShowDay]);
+    const nextYear = useCallback(() => {
+        show_day.add(1, 'y');
+        setShowDay(moment(show_day));
+    }, [show_day]);
+    const lastYear = useCallback(() => {
+        show_day.subtract(1, 'y');
+        setShowDay(moment(show_day));
+    }, [show_day]);
 
     return (
         /* 頂部toolbar */
         <View style={{flex: 1}}>
             <View style={{zIndex: 1, elevation: 1}}>
-                <Toolbar containerStyle={{backgroundColor: 'darkslateblue', paddingTop: insets.top}}>
+                <Toolbar
+                    containerStyle={{
+                        backgroundColor: 'darkslateblue',
+                        paddingTop: insets.top,
+                        height: 50 + insets.top,
+                    }}>
                     {/*<Appbar.BackAction onPress={navigation.goBack} color={Color.white} />*/}
 
                     {/* 全部 */}
-                    {showMode === 0 ? (
-                        <ToolBarView>
+                    {show_mode === 0 ? (
+                        <ToolBarView style={{paddingLeft: 20}}>
                             <Text style={{color: Color.white}}>全部</Text>
                         </ToolBarView>
                     ) : null}
 
                     {/* 週 */}
-                    {showMode === 1 ? (
+                    {show_mode === 1 ? (
                         <ToolBarView>
-                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastWeek} />
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={lastWeek} />
                             <Text style={{color: Color.white}}>
-                                {moment(ShowDay).startOf('week').format('D.M.YYYY') +
+                                {moment(show_day).startOf('week').format('D.M.YYYY') +
                                     ' ~ ' +
-                                    moment(ShowDay).endOf('week').format('D.M')}
+                                    moment(show_day).endOf('week').format('D.M')}
                             </Text>
-                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextWeek} />
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={nextWeek} />
                         </ToolBarView>
                     ) : null}
 
                     {/* 月份 */}
-                    {showMode === 2 ? (
+                    {show_mode === 2 ? (
                         <ToolBarView>
-                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
-                            <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
-                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={lastMonth} />
+                            <Text style={{color: Color.white}}>{moment(show_day).format('M月 yyyy')}</Text>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={nextMonth} />
                         </ToolBarView>
                     ) : null}
 
                     {/* 年 */}
-                    {showMode === 3 ? (
+                    {show_mode === 3 ? (
                         <ToolBarView>
-                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastYear} />
-                            <Text style={{color: Color.white}}>{ShowDay.format('YYYY')}</Text>
-                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextYear} />
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={lastYear} />
+                            <Text style={{color: Color.white}}>{show_day.format('YYYY')}</Text>
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={nextYear} />
                         </ToolBarView>
                     ) : null}
 
                     {/* 自訂 */}
-                    {showMode === 4 ? (
-                        <ToolBarView>
+                    {show_mode === 4 ? (
+                        <ToolBarView style={{paddingLeft: 20}}>
                             <TouchableWithoutFeedback
                                 onPress={() => {
                                     DateTimePickerAndroid.open({
-                                        value: ShowDay.toDate(),
+                                        value: show_day.toDate(),
                                         onChange: (event, newDate) => {
                                             setShowDay(moment(newDate));
                                         },
                                     });
                                 }}>
-                                <View style={style.row}>
-                                    <Text style={{color: Color.white}}>{ShowDay.format('YYYY-MM-DD')}</Text>
-                                    <MaterialCommunityIcons name={'calendar-month-outline'} size={20} />
+                                <View style={STYLE.row}>
+                                    <Text style={{color: Color.white, marginEnd: 5}}>
+                                        {show_day.format('YYYY-MM-DD')}
+                                    </Text>
+                                    <MaterialCommunityIcons
+                                        name={'calendar-month-outline'}
+                                        size={20}
+                                        color={Color.white}
+                                    />
                                 </View>
                             </TouchableWithoutFeedback>
                             <Text style={{color: Color.white, paddingHorizontal: 10}}>~</Text>
                             <TouchableWithoutFeedback
                                 onPress={() => {
                                     DateTimePickerAndroid.open({
-                                        value: ShowDayEnd.toDate(),
+                                        value: show_day_end.toDate(),
                                         onChange: (event, newDate) => {
                                             setShowDayEnd(moment(newDate));
                                         },
-                                        minimumDate: ShowDay.toDate(),
+                                        minimumDate: show_day.toDate(),
                                     });
                                 }}>
-                                <View style={style.row}>
-                                    <Text style={{color: Color.white}}>{ShowDayEnd.format('YYYY-MM-DD')}</Text>
-                                    <MaterialCommunityIcons name={'calendar-month-outline'} size={20} />
+                                <View style={STYLE.row}>
+                                    <Text
+                                        style={{
+                                            color: Color.white,
+                                            marginEnd: 5,
+                                        }}>
+                                        {show_day_end.format('YYYY-MM-DD')}
+                                    </Text>
+                                    <MaterialCommunityIcons
+                                        name={'calendar-month-outline'}
+                                        size={20}
+                                        color={Color.white}
+                                    />
                                 </View>
                             </TouchableWithoutFeedback>
                         </ToolBarView>
@@ -219,15 +243,15 @@ const Search = () => {
 
                     <ToolBarView style={{position: 'relative'}}>
                         <Menu
-                            visible={showModeDropdown}
+                            visible={show_mode_dropdown}
                             onDismiss={() => setShowModeDropdown(false)}
                             anchor={
-                                <Text onPress={() => setShowModeDropdown(true)} style={style.dropdown}>
-                                    {showModeList.find(item => item.value === showMode).label}
+                                <Text onPress={() => setShowModeDropdown(true)} style={STYLE.dropdown}>
+                                    {SHOW_MODE_LIST.find(item => item.value === show_mode).label}
                                     <MaterialCommunityIcons name={'chevron-down'} size={10} />
                                 </Text>
                             }>
-                            {showModeList.map((item, index) => (
+                            {SHOW_MODE_LIST.map((item, index) => (
                                 <Menu.Item onPress={() => setShowMode(item.value)} title={item.label} key={index} />
                             ))}
                         </Menu>
@@ -238,7 +262,7 @@ const Search = () => {
                         <TextInput
                             value={keyword}
                             onChangeText={setKeyword}
-                            left={<TextInput.Icon name="magnify" />}
+                            left={<TextInput.Icon icon={'magnify'} />}
                             dense={true}
                             style={{borderRadius: 4}}
                             underlineColor={Color.transparent}
@@ -253,7 +277,7 @@ const Search = () => {
                                 fontSize: 12,
                                 textAlign: 'center',
                             }}>
-                            {'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}
+                            {'人民幣\n¥ ' + formatPrice(total.RMB.toFixed(2))}
                         </Text>
                     </View>
                     <View style={{flex: 1}}>
@@ -263,7 +287,7 @@ const Search = () => {
                                 fontSize: 12,
                                 textAlign: 'center',
                             }}>
-                            {'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}
+                            {'港幣\n$ ' + formatPrice(total.HKD.toFixed(2))}
                         </Text>
                     </View>
                     <View style={{flex: 1}}>
@@ -273,7 +297,7 @@ const Search = () => {
                                 fontSize: 12,
                                 textAlign: 'center',
                             }}>
-                            {'加收\n¥ ' + formatPrice(Total.Add.toFixed(2))}
+                            {'加收\n¥ ' + formatPrice(total.Add.toFixed(2))}
                         </Text>
                     </View>
                     <View style={{flex: 1}}>
@@ -283,7 +307,7 @@ const Search = () => {
                                 fontSize: 12,
                                 textAlign: 'center',
                             }}>
-                            {'運費\n¥ ' + formatPrice(Total.Shipping.toFixed(2))}
+                            {'運費\n¥ ' + formatPrice(total.Shipping.toFixed(2))}
                         </Text>
                     </View>
                 </Toolbar>
@@ -291,7 +315,7 @@ const Search = () => {
 
             {/* 內容 */}
             <FlatList
-                data={Data}
+                data={data}
                 renderItem={({item}) => <DataPart data={item} rate={setting['Rate']} />}
                 ListFooterComponent={
                     <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
@@ -310,7 +334,7 @@ const Search = () => {
     );
 };
 
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     dropdown: {
         color: Color.white,
         borderWidth: 0.7,
