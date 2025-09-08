@@ -26,6 +26,7 @@ import {useHeaderHeight} from '@react-navigation/elements';
 import {Decimal} from 'decimal.js';
 import {LocalInput} from '../module/LocalInput';
 import {ImagePicker} from '../module/ImagePicker';
+import {RateEditor} from '../module/RateEditor';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
@@ -141,10 +142,11 @@ const EditRecord = ({navigation, route}) => {
     const [record_id] = useState(route.params.recordID); //recordID
     const focusing_dec_input = useRef(null); //目前聚焦銀碼輸入框
     const [setting] = useSetting(); //設定
-    const [rate, setRate] = useState(new Decimal(0));
+    const [rate, setRate] = useState(new Decimal(0)); //匯率
     const [scroll_offset, setScrollOffset] = useState(0); //滾動位移
-    const height = useHeaderHeight(); //取得標題欄高度
-    const [keyboard_visible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const header_height = useHeaderHeight(); //取得標題欄高度
+    const [is_keyboard_visible, setIsKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const [is_rate_edit_visible, setIsRateEditVisible] = useState(false); //匯率編輯器是否顯示
 
     //textInput refs
     let inputs = useRef({
@@ -372,9 +374,9 @@ const EditRecord = ({navigation, route}) => {
     // 監聽鍵盤顯示隱藏
     useEffect(() => {
         // 虛擬鍵盤顯示狀態
-        const keyboard_did_show_listener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        const keyboard_did_show_listener = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardVisible(true));
         // 虛擬鍵盤隱藏狀態
-        const keyboard_did_hide_listener = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        const keyboard_did_hide_listener = Keyboard.addListener('keyboardDidHide', () => setIsKeyboardVisible(false));
 
         // 清除事件
         return () => {
@@ -391,24 +393,45 @@ const EditRecord = ({navigation, route}) => {
                 inputs.current[focusing_dec_input.current].blur();
                 return true;
             }
+            if (is_rate_edit_visible) {
+                //打開了匯率編輯器
+                setIsRateEditVisible(false);
+                return true;
+            }
         });
 
         //清除活動監聽器
         return () => back_handler.remove();
-    }, [focusing_dec_input]);
+    }, [focusing_dec_input, is_rate_edit_visible]);
 
     // 滾動事件
-    const scroll = useCallback(({nativeEvent}) => {
+    const onScroll = useCallback(({nativeEvent}) => {
         setScrollOffset(nativeEvent.contentOffset.y);
     }, []);
 
     return (
         <View style={{flex: 1}}>
-            <KeyboardAvoidingView style={{flex: 1}} keyboardVerticalOffset={height} enabled={keyboard_visible}>
-                <ScrollView nestedScrollEnabled={true} onScroll={scroll} keyboardShouldPersistTaps={'handled'}>
-                    <View style={[style.Data, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
+            <KeyboardAvoidingView
+                style={{flex: 1}}
+                behavior={'padding'}
+                keyboardVerticalOffset={header_height}
+                enabled={is_keyboard_visible}>
+                <ScrollView
+                    nestedScrollEnabled={true}
+                    onScroll={onScroll}
+                    keyboardShouldPersistTaps={'handled'}
+                    style={{
+                        flex: 1,
+                    }}>
+                    <View
+                        style={[
+                            style.data_view,
+                            {
+                                backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
+                            },
+                        ]}>
                         {/* 日期 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>日期</Text>
                             <TextInput
                                 caretHidden={true}
@@ -429,7 +452,7 @@ const EditRecord = ({navigation, route}) => {
                             />
                         </View>
                         {/* 單號 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>單號</Text>
                             <View style={{flex: 1}}>
                                 <TextInput
@@ -455,7 +478,7 @@ const EditRecord = ({navigation, route}) => {
                             </View>
                         </View>
                         {/* 類型 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>類型</Text>
                             <RadioGroup
                                 containerStyle={{justifyContent: 'space-between', flex: 1}}
@@ -481,9 +504,9 @@ const EditRecord = ({navigation, route}) => {
                             </RadioGroup>
                         </View>
                         {/* 櫃號 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>櫃號</Text>
-                            <View style={[{flex: 1}, style.Flex_row]}>
+                            <View style={[{flex: 1}, style.flex_row]}>
                                 <View style={{flex: 1 / 2, marginRight: 4}}>
                                     <TextInput
                                         error={state.error.cargo !== null}
@@ -535,12 +558,12 @@ const EditRecord = ({navigation, route}) => {
                                         error={state.error.cargo !== null}
                                         style={{textAlign: 'center', marginHorizontal: 2}}
                                         onSubmitEditing={() => focusNextField('location')}
-                                        onChangeText={text => {
+                                        onChangeText={text =>
                                             dispatch({
                                                 type: UPDATE_CARGO_CHECK_NUM,
                                                 payload: {cargo_check_num: text},
-                                            });
-                                        }}
+                                            })
+                                        }
                                         ref={ref => (inputs.current.cargo_check_num = ref)}
                                         render={props => <TextInputMask {...props} mask={'[0]'} />}
                                     />
@@ -550,7 +573,7 @@ const EditRecord = ({navigation, route}) => {
                             </View>
                         </View>
                         {/* 地點 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>地點</Text>
                             <LocalInput
                                 ref={ref => {
@@ -569,9 +592,9 @@ const EditRecord = ({navigation, route}) => {
                             />
                         </View>
                         {/* 人民幣 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>人民幣</Text>
-                            <View style={[{flex: 1}, style.Flex_row]}>
+                            <View style={[{flex: 1}, style.flex_row]}>
                                 <View style={{flex: 1, marginRight: 4}}>
                                     <DecimalInput
                                         ref={ref => {
@@ -592,15 +615,17 @@ const EditRecord = ({navigation, route}) => {
                                         value={state.rmb.toNumber()}
                                         onPressIn={() => Keyboard.dismiss()}
                                     />
-                                    <HelperText type={'info'}>
-                                        匯率: 100 港幣 = {rate.mul(100).toFixed(2)} 人民幣
-                                    </HelperText>
+                                    <HelperText type={'info'}>100 港幣 = {rate.mul(100).toFixed(2)} 人民幣</HelperText>
                                 </View>
-                                {state.rmb.isZero() ? null : <Text>折算 HK$ {state.rmb.div(rate).toFixed(2)}</Text>}
+                                {state.rmb.isZero() ? null : (
+                                    <Text onPress={() => setIsRateEditVisible(true)}>
+                                        HK$ {state.rmb.div(rate).toFixed(2)}
+                                    </Text>
+                                )}
                             </View>
                         </View>
                         {/* 港幣 */}
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <Text style={{flex: 1 / 5}}>港幣</Text>
                             <DecimalInput
                                 ref={ref => {
@@ -618,8 +643,8 @@ const EditRecord = ({navigation, route}) => {
                             />
                         </View>
                         {/* 加收&運費 */}
-                        <View style={style.formGroup}>
-                            <View style={[{flex: 1 / 2}, style.Flex_row]}>
+                        <View style={style.form_group}>
+                            <View style={[{flex: 1 / 2}, style.flex_row]}>
                                 <Text style={{flex: 1 / 2}}>加收</Text>
                                 <DecimalInput
                                     ref={ref => {
@@ -641,7 +666,7 @@ const EditRecord = ({navigation, route}) => {
                                     onPressIn={() => Keyboard.dismiss()}
                                 />
                             </View>
-                            <View style={[{flex: 1 / 2}, style.Flex_row]}>
+                            <View style={[{flex: 1 / 2}, style.flex_row]}>
                                 <Text style={{flex: 1 / 2}}>運費</Text>
                                 <DecimalInput
                                     ref={ref => {
@@ -666,8 +691,14 @@ const EditRecord = ({navigation, route}) => {
                         </View>
                     </View>
                     {/* 備註 */}
-                    <View style={[style.Remark, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
-                        <View style={[style.formGroup, {marginTop: -10}]}>
+                    <View
+                        style={[
+                            style.remark_view,
+                            {
+                                backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
+                            },
+                        ]}>
+                        <View style={[style.form_group, {marginTop: -10}]}>
                             <TextInput
                                 ref={ref => {
                                     inputs.current.remark = ref;
@@ -680,7 +711,7 @@ const EditRecord = ({navigation, route}) => {
                                 style={{flex: 1}}
                             />
                         </View>
-                        <View style={style.formGroup}>
+                        <View style={style.form_group}>
                             <ImagePicker
                                 assets={state.image}
                                 onSelectedImage={img =>
@@ -693,8 +724,14 @@ const EditRecord = ({navigation, route}) => {
                         </View>
                     </View>
                     {/* 儲存 */}
-                    <View style={[style.Remark, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
-                        <View style={[style.Flex_row, {justifyContent: 'space-between'}]}>
+                    <View
+                        style={[
+                            style.remark_view,
+                            {
+                                backgroundColor: is_dark_mode ? Color.darkBlock : Color.white,
+                            },
+                        ]}>
+                        <View style={[style.flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
                             <Text style={{color: Color.primaryColor, fontSize: 20}}>
                                 HK${' '}
@@ -722,17 +759,24 @@ const EditRecord = ({navigation, route}) => {
                 </ScrollView>
             </KeyboardAvoidingView>
             <NumKeyboard ref={num_keyboard_refs} onKeyPress={onKeyPress} />
+            <RateEditor
+                rate={rate}
+                visible={is_rate_edit_visible}
+                amount={state.rmb}
+                onDismiss={() => setIsRateEditVisible(false)}
+                onChangeRate={value => setRate(value)}
+            />
         </View>
     );
 };
 
 const style = StyleSheet.create({
-    formGroup: {
+    form_group: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 5,
     },
-    Remark: {
+    remark_view: {
         borderColor: Color.darkColorLight,
         borderBottomWidth: 0.7,
         borderTopWidth: 0.7,
@@ -740,12 +784,12 @@ const style = StyleSheet.create({
         padding: 10,
         elevation: -1,
     },
-    Data: {
+    data_view: {
         borderColor: Color.darkColorLight,
         borderBottomWidth: 0.7,
         padding: 10,
     },
-    Flex_row: {
+    flex_row: {
         flexDirection: 'row',
         alignItems: 'center',
     },

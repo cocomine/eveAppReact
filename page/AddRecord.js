@@ -550,7 +550,7 @@ const AddRecord = ({navigation, route}) => {
                                         maxLength={1}
                                         error={state.error.cargo !== null}
                                         style={{textAlign: 'center', marginHorizontal: 2}}
-                                        onSubmitEditing={() => focusNextField('local')}
+                                        onSubmitEditing={() => focusNextField('location')}
                                         onChangeText={text =>
                                             dispatch({
                                                 type: UPDATE_CARGO_CHECK_NUM,

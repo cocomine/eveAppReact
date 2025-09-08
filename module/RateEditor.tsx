@@ -72,6 +72,7 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                     //完成輸入
                     dismiss();
                     onChangeRate?.(new Decimal(inputs.current.rate?.getText() ?? input_rate));
+                    console.log('匯率變更:', inputs.current.rate?.getText() ?? input_rate);
                 } else {
                     //輸入文字
                     inputRef.setText(inputRef.getText() + value);
@@ -85,7 +86,6 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
     const onHkdValueChange = useCallback(
         (value: string) => {
             if (is_visible && focusing_dec_input.current === 'hkd') {
-                console.log(value);
                 const dec_value = new Decimal(value || 0);
                 if (!dec_value.isZero()) {
                     setInputRate(input_amount.div(dec_value).toFixed(4));
@@ -101,7 +101,6 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
     const onRateValueChange = useCallback(
         (value: string) => {
             if (is_visible && focusing_dec_input.current === 'rate') {
-                console.log(value);
                 const dec_value = new Decimal(value || 0);
                 if (!dec_value.isZero()) {
                     setHkdValue(input_amount.div(dec_value).toFixed(2));
@@ -117,15 +116,12 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
     useEffect(() => {
         setIsVisible(visible);
         if (visible) {
-            console.log(amount, rate, visible);
             setInputAmount(amount);
             setHkdValue(rate.isZero() ? '0' : amount.div(rate).toFixed(2));
             setInputRate(rate.toString());
             setTimeout(() => inputs.current.hkd?.focus(), 100);
         }
     }, [amount, rate, visible]);
-
-    console.log(focusing_dec_input.current);
 
     if (!is_visible) return null;
     return (
