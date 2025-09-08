@@ -20,9 +20,10 @@ import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
-import {ImagePicker, LocalInput, recordInitialState} from './AddRecord';
+import {ImagePicker, LocalInput, RECORD_INITIAL_STATE} from './AddRecord';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useHeaderHeight} from '@react-navigation/elements';
+import {Decimal} from 'decimal.js';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
@@ -56,7 +57,7 @@ const reducer = (state, action) => {
         case UPDATE_ORDER_ID:
             return {
                 ...state,
-                orderID: action.payload.orderID,
+                order_id: action.payload.order_id,
             };
         case UPDATE_TYPE:
             return {
@@ -66,17 +67,17 @@ const reducer = (state, action) => {
         case UPDATE_CARGO_LETTER:
             return {
                 ...state,
-                cargoLetter: action.payload.cargoLetter,
+                cargo_letter: action.payload.cargo_letter,
             };
         case UPDATE_CARGO_NUM:
             return {
                 ...state,
-                cargoNum: action.payload.cargoNum,
+                cargo_num: action.payload.cargo_num,
             };
         case UPDATE_CARGO_CHECK_NUM:
             return {
                 ...state,
-                cargoCheckNum: action.payload.cargoCheckNum,
+                cargo_check_num: action.payload.cargo_check_num,
             };
         case UPDATE_LOCATION:
             return {
@@ -86,22 +87,22 @@ const reducer = (state, action) => {
         case UPDATE_RMB:
             return {
                 ...state,
-                RMB: action.payload.RMB,
+                rmb: new Decimal(action.payload.rmb || 0),
             };
         case UPDATE_HKD:
             return {
                 ...state,
-                HKD: action.payload.HKD,
+                hkd: new Decimal(action.payload.hkd || 0),
             };
         case UPDATE_ADD:
             return {
                 ...state,
-                ADD: action.payload.ADD,
+                add: new Decimal(action.payload.add || 0),
             };
         case UPDATE_SHIPPING:
             return {
                 ...state,
-                shipping: action.payload.shipping,
+                shipping: new Decimal(action.payload.shipping || 0),
             };
         case UPDATE_REMARK:
             return {
@@ -133,94 +134,100 @@ const reducer = (state, action) => {
  * @type {React.FC<{navigation: NativeStackNavigationProp<RootStackParamList, 'EditRecord'>, route: RouteProp<RootStackParamList, 'EditRecord'>}>}
  */
 const EditRecord = ({navigation, route}) => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
-    const [state, dispatch] = useReducer(reducer, recordInitialState); //輸入資料
-    const [recordID] = useState(route.params.recordID); //recordID
-    const focusingDecInput = useRef(null); //目前聚焦銀碼輸入框
+    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
+    const [state, dispatch] = useReducer(reducer, RECORD_INITIAL_STATE); //輸入資料
+    const [record_id] = useState(route.params.recordID); //recordID
+    const focusing_dec_input = useRef(null); //目前聚焦銀碼輸入框
     const [setting] = useSetting(); //設定
-    const Rate = parseFloat(setting ? setting.Rate : 0);
-    const [scrollOffset, setScrollOffset] = useState(0); //滾動位移
+    const [rate, setRate] = useState(new Decimal(0));
+    const [scroll_offset, setScrollOffset] = useState(0); //滾動位移
     const height = useHeaderHeight(); //取得標題欄高度
-    const [keyboardVisible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
+    const [keyboard_visible, setKeyboardVisible] = useState(false); //鍵盤是否顯示
 
     //textInput refs
     let inputs = useRef({
-        orderID: null,
-        CargoLetter: null,
-        CargoNum: null,
-        CargoCheckNum: null,
-        local: null,
-        RMB: null,
-        HKD: null,
-        ADD: null,
+        order_id: null,
+        cargo_letter: null,
+        cargo_num: null,
+        cargo_check_num: null,
+        location: null,
+        rmb: null,
+        hkd: null,
+        add: null,
         shipping: null,
         remark: null,
     });
-    let NumKeyboard_refs = useRef(null);
+    let num_keyboard_refs = useRef(null);
 
-    /* 對焦到下一個輸入欄 */
+    // 對焦到下一個輸入欄
     const focusNextField = useCallback(id => {
         inputs.current[id].focus();
     }, []);
 
-    /* 對焦金錢輸入欄 => 打開虛擬鍵盤 */
-    const DecimalInput_Focus = useCallback(id => {
-        focusingDecInput.current = id;
-        NumKeyboard_refs.current.openKeyBoard();
+    // 對焦金錢輸入欄 => 打開虛擬鍵盤
+    const decimalInputFocus = useCallback(id => {
+        focusing_dec_input.current = id;
+        num_keyboard_refs.current.openKeyBoard();
     }, []);
 
-    /* 失焦金錢輸入欄 => 關閉虛擬鍵盤 */
-    const DecimalInput_Blur = useCallback(() => {
-        focusingDecInput.current = null;
-        NumKeyboard_refs.current.closeKeyBoard();
+    // 失焦金錢輸入欄 => 關閉虛擬鍵盤
+    const decimalInputBlur = useCallback(() => {
+        focusing_dec_input.current = null;
+        num_keyboard_refs.current.closeKeyBoard();
     }, []);
 
-    /* 虛擬鍵盤點擊 */
+    // 虛擬鍵盤點擊
     const onKeyPress = useCallback(
         value => {
-            if (focusingDecInput.current) {
-                if (value === 'back')
-                    inputs.current[focusingDecInput.current].setText(
-                        inputs.current[focusingDecInput.current].getText().slice(0, -1),
+            if (focusing_dec_input.current) {
+                if (value === 'back') {
+                    //刪除最後一個文字
+                    inputs.current[focusing_dec_input.current].setText(
+                        inputs.current[focusing_dec_input.current].getText().slice(0, -1),
                     );
-                //刪除最後一個文字
-                else if (value === 'done')
+                } else if (value === 'done') {
+                    //完成輸入
                     focusNextField(
-                        Object.keys(inputs.current)[Object.keys(inputs.current).indexOf(focusingDecInput.current) + 1],
+                        Object.keys(inputs.current)[
+                            Object.keys(inputs.current).indexOf(focusing_dec_input.current) + 1
+                        ],
                     );
-                //完成輸入
-                else if (value === 'calculator')
+                } else if (value === 'calculator') {
+                    //跳轉到計算機
                     navigation.navigate('Calculator', {
-                        inputID: focusingDecInput.current,
+                        inputID: focusing_dec_input.current,
                         pageName: 'EditRecord',
                     });
-                //跳轉到計算機
-                else
-                    inputs.current[focusingDecInput.current].setText(
-                        inputs.current[focusingDecInput.current].getText() + value,
-                    ); //輸入文字
+                } else {
+                    //輸入文字
+                    inputs.current[focusing_dec_input.current].setText(
+                        inputs.current[focusing_dec_input.current].getText() + value,
+                    );
+                }
             }
         },
         [focusNextField, navigation],
     );
 
-    /* 遞交 */
+    // 遞交
     const submit = useCallback(async () => {
         let error = {
             cargo: null,
             location: null,
-            orderID: null,
+            order_id: null,
         };
 
         //檢查條件
-        if (state.orderID.length > 0 && state.orderID.length < 9) {
-            error.orderID = '未完成填寫';
+        if (state.order_id.length > 0 && state.order_id.length < 9) {
+            error.order_id = '未完成填寫';
         }
-        if (state.cargoLetter.length <= 0 || state.cargoNum.length <= 0 || state.cargoCheckNum.length <= 0) {
+        if (state.cargo_letter.length <= 0 || state.cargo_num.length <= 0 || state.cargo_check_num.length <= 0) {
             error.cargo = '必須填寫';
-        } else if (state.cargoLetter.length < 4 || state.cargoNum.length < 6 || state.cargoCheckNum.length < 1) {
+        } else if (state.cargo_letter.length < 4 || state.cargo_num.length < 6 || state.cargo_check_num.length < 1) {
             error.cargo = '未完成填寫';
-        }
+        } /*else if(!CargoNumCheck(state.cargo_letter, state.cargo_num, parseInt(state.cargo_check_num))){
+            error.cargo = '填寫錯誤';
+        }*/
         if (state.location.length <= 0) {
             error.location = '必須填寫';
         }
@@ -228,26 +235,26 @@ const EditRecord = ({navigation, route}) => {
         dispatch({type: SET_ERROR, payload: {error: {...error}}});
         if (Object.values(error).findIndex(value => value !== null) >= 0) return; //是否全部已通過
 
-        //通過更新資料庫
-        const CargoNum = state.cargoLetter + state.cargoNum + state.cargoCheckNum;
+        //通過放入資料庫
+        const cargo_num_full = state.cargo_letter + state.cargo_num + state.cargo_check_num; //組合櫃號
         try {
             await DB.transaction(async function (tr) {
                 await tr.executeSql(
                     'UPDATE Record SET `DateTime` = ?, OrderNum = ?, Type = ?, CargoNum = ?, Local = ?, RMB = ?, HKD = ?, `Add` = ?, Shipping = ?, Remark = ?, Images = ?, Rate = ? WHERE RecordID = ?',
                     [
                         moment(state.date).format('yyyy-MM-DD'),
-                        state.orderID,
+                        state.order_id,
                         state.type,
-                        CargoNum,
+                        cargo_num_full,
                         state.location,
-                        state.RMB,
-                        state.HKD,
-                        state.ADD,
-                        state.shipping,
+                        state.rmb.toString(),
+                        state.hkd.toString(),
+                        state.add.toString(),
+                        state.shipping.toString(),
                         state.remark,
                         JSON.stringify(state.image),
-                        setting.Rate,
-                        recordID,
+                        rate.toString(),
+                        record_id,
                     ],
                 );
             });
@@ -260,25 +267,25 @@ const EditRecord = ({navigation, route}) => {
         //成功
         navigation.popTo('Main', {showDay: state.date.toString()}); //go back home
     }, [
-        navigation,
-        recordID,
-        setting.Rate,
-        state.ADD,
-        state.HKD,
-        state.RMB,
-        state.cargoCheckNum,
-        state.cargoLetter,
-        state.cargoNum,
-        state.date,
-        state.image,
+        state.order_id,
+        state.cargo_letter,
+        state.cargo_num,
+        state.cargo_check_num,
         state.location,
-        state.orderID,
-        state.remark,
-        state.shipping,
+        state.date,
         state.type,
+        state.rmb,
+        state.hkd,
+        state.add,
+        state.shipping,
+        state.remark,
+        state.image,
+        navigation,
+        rate,
+        record_id,
     ]);
 
-    /* 複製 */
+    // 複製
     const copy = useCallback(() => {
         const storeDraft = async () => {
             try {
@@ -293,7 +300,12 @@ const EditRecord = ({navigation, route}) => {
         storeDraft().then(() => navigation.replace('AddRecord'));
     }, [navigation, state]);
 
-    /* route 處理 */
+    // 設定變更時更新匯率
+    useEffect(() => {
+        setRate(new Decimal(setting.Rate ?? 0));
+    }, [setting.Rate]);
+
+    // route 處理
     useEffect(() => {
         if (route.params) {
             //計算機返回輸入欄位id
@@ -303,7 +315,7 @@ const EditRecord = ({navigation, route}) => {
 
             //取得紀錄
             if (route.params.recordID) {
-                const extracted = async () => {
+                const extractData = async () => {
                     try {
                         await DB.transaction(async function (tr) {
                             console.log('顯示: ', route.params.recordID);
@@ -324,23 +336,24 @@ const EditRecord = ({navigation, route}) => {
                             dispatch({
                                 payload: {
                                     date: new Date(row.DateTime),
-                                    orderID: row.OrderNum,
+                                    order_id: row.OrderNum,
                                     type: row.Type,
-                                    cargoLetter: row.CargoNum.slice(0, 4),
-                                    cargoNum: row.CargoNum.slice(4, 10),
-                                    cargoCheckNum: row.CargoNum.slice(10),
+                                    cargo_letter: row.CargoNum.slice(0, 4),
+                                    cargo_num: row.CargoNum.slice(4, 10),
+                                    cargo_check_num: row.CargoNum.slice(10),
                                     location: row.Local,
-                                    RMB: row.RMB,
-                                    HKD: row.HKD,
-                                    ADD: row.Add,
-                                    shipping: row.Shipping,
+                                    rmb: new Decimal(row.RMB || 0),
+                                    hkd: new Decimal(row.HKD || 0),
+                                    add: new Decimal(row.Add || 0),
+                                    shipping: new Decimal(row.Shipping || 0),
                                     remark: row.Remark,
                                     image: JSON.parse(row.Images),
                                 },
                             });
+                            setRate(new Decimal(row.Rate || 0));
                         });
                     } catch (e) {
-                        console.log('取得資料錯誤: ' + e.message);
+                        console.error('取得資料錯誤: ' + e.message);
                         ToastAndroid.show('取得資料失敗', ToastAndroid.SHORT);
                         return;
                     }
@@ -349,7 +362,7 @@ const EditRecord = ({navigation, route}) => {
                     console.log('已取得資料');
                 };
 
-                extracted().then();
+                extractData().then();
             }
         }
     }, [navigation, route.params]);
@@ -357,42 +370,41 @@ const EditRecord = ({navigation, route}) => {
     // 監聽鍵盤顯示隱藏
     useEffect(() => {
         // 虛擬鍵盤顯示狀態
-        Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        const keyboard_did_show_listener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
         // 虛擬鍵盤隱藏狀態
-        Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        const keyboard_did_hide_listener = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
 
         // 清除事件
-        return () => Keyboard.removeAllListeners('keyboardDidShow keyboardDidHide');
+        return () => {
+            keyboard_did_show_listener.remove();
+            keyboard_did_hide_listener.remove();
+        };
     }, []);
 
-    /* 處理返回按鈕 */
+    // 處理返回按鈕
     useEffect(() => {
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-            if (focusingDecInput.current !== null) {
+        const back_handler = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (focusing_dec_input.current !== null) {
                 //打開了自定義數字鍵盤行為
-                inputs.current[focusingDecInput.current].blur();
+                inputs.current[focusing_dec_input.current].blur();
                 return true;
             }
         });
 
         //清除活動監聽器
-        return () => backHandler.remove();
-    }, [focusingDecInput]);
+        return () => back_handler.remove();
+    }, [focusing_dec_input]);
 
-    /* 滾動事件 */
+    // 滾動事件
     const scroll = useCallback(({nativeEvent}) => {
         setScrollOffset(nativeEvent.contentOffset.y);
     }, []);
 
     return (
         <View style={{flex: 1}}>
-            <KeyboardAvoidingView
-                behavior={'height'}
-                style={{flex: 1}}
-                keyboardVerticalOffset={height}
-                enabled={keyboardVisible}>
+            <KeyboardAvoidingView style={{flex: 1}} keyboardVerticalOffset={height} enabled={keyboard_visible}>
                 <ScrollView nestedScrollEnabled={true} onScroll={scroll} keyboardShouldPersistTaps={'handled'}>
-                    <View style={[style.Data, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    <View style={[style.Data, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
                         {/* 日期 */}
                         <View style={style.formGroup}>
                             <Text style={{flex: 1 / 5}}>日期</Text>
@@ -405,7 +417,7 @@ const EditRecord = ({navigation, route}) => {
                                     DateTimePickerAndroid.open({
                                         value: state.date,
                                         onChange: (event, newDate) => {
-                                            focusNextField('orderID');
+                                            focusNextField('order_id');
                                             dispatch({type: UPDATE_DATE, payload: {date: newDate}});
                                         },
                                     });
@@ -423,20 +435,20 @@ const EditRecord = ({navigation, route}) => {
                                     keyboardType="numeric"
                                     returnKeyType={'next'}
                                     maxLength={9}
-                                    onSubmitEditing={() => focusNextField('CargoLetter')}
-                                    ref={ref => (inputs.current.orderID = ref)}
+                                    onSubmitEditing={() => focusNextField('cargo_letter')}
+                                    ref={ref => (inputs.current.order_id = ref)}
                                     onChangeText={text =>
                                         dispatch({
                                             type: UPDATE_ORDER_ID,
-                                            payload: {orderID: text},
+                                            payload: {order_id: text},
                                         })
                                     }
                                     render={props => <TextInputMask {...props} mask={'[00]/[00]/[000]'} />}
-                                    error={state.error.orderID !== null}
-                                    value={state.orderID}
+                                    error={state.error.order_id !== null}
+                                    value={state.order_id}
                                 />
-                                <ErrorHelperText visible={state.error.orderID !== null}>
-                                    {state.error.orderID}
+                                <ErrorHelperText visible={state.error.order_id !== null}>
+                                    {state.error.order_id}
                                 </ErrorHelperText>
                             </View>
                         </View>
@@ -473,16 +485,16 @@ const EditRecord = ({navigation, route}) => {
                                 <View style={{flex: 1 / 2, marginRight: 4}}>
                                     <TextInput
                                         error={state.error.cargo !== null}
-                                        value={state.cargoLetter}
+                                        value={state.cargo_letter}
                                         placeholder={'AAAA'}
                                         returnKeyType={'next'}
                                         maxLength={4}
-                                        onSubmitEditing={() => focusNextField('CargoNum')}
-                                        ref={ref => (inputs.current.CargoLetter = ref)}
+                                        onSubmitEditing={() => focusNextField('cargo_num')}
+                                        ref={ref => (inputs.current.cargo_letter = ref)}
                                         onChangeText={text => {
                                             dispatch({
                                                 type: UPDATE_CARGO_LETTER,
-                                                payload: {cargoLetter: text.toUpperCase()},
+                                                payload: {cargo_letter: text.toUpperCase()},
                                             });
                                         }}
                                         render={props => (
@@ -500,12 +512,12 @@ const EditRecord = ({navigation, route}) => {
                                         returnKeyType={'next'}
                                         maxLength={6}
                                         error={state.error.cargo !== null}
-                                        value={state.cargoNum}
-                                        onSubmitEditing={() => focusNextField('CargoCheckNum')}
+                                        value={state.cargo_num}
+                                        onSubmitEditing={() => focusNextField('cargo_check_num')}
                                         onChangeText={text => {
-                                            dispatch({type: UPDATE_CARGO_NUM, payload: {cargoNum: text}});
+                                            dispatch({type: UPDATE_CARGO_NUM, payload: {cargo_num: text}});
                                         }}
-                                        ref={ref => (inputs.current.CargoNum = ref)}
+                                        ref={ref => (inputs.current.cargo_num = ref)}
                                         render={props => <TextInputMask {...props} mask={'[000000]'} />}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
@@ -516,18 +528,18 @@ const EditRecord = ({navigation, route}) => {
                                         placeholder={'0'}
                                         keyboardType="numeric"
                                         returnKeyType={'next'}
-                                        value={state.cargoCheckNum}
+                                        value={state.cargo_check_num}
                                         maxLength={1}
                                         error={state.error.cargo !== null}
                                         style={{textAlign: 'center', marginHorizontal: 2}}
-                                        onSubmitEditing={() => focusNextField('local')}
+                                        onSubmitEditing={() => focusNextField('location')}
                                         onChangeText={text => {
                                             dispatch({
                                                 type: UPDATE_CARGO_CHECK_NUM,
-                                                payload: {cargoCheckNum: text},
+                                                payload: {cargo_check_num: text},
                                             });
                                         }}
-                                        ref={ref => (inputs.current.CargoCheckNum = ref)}
+                                        ref={ref => (inputs.current.cargo_check_num = ref)}
                                         render={props => <TextInputMask {...props} mask={'[0]'} />}
                                     />
                                     <ErrorHelperText visible={state.error.cargo !== null}>{}</ErrorHelperText>
@@ -540,7 +552,7 @@ const EditRecord = ({navigation, route}) => {
                             <Text style={{flex: 1 / 5}}>地點</Text>
                             <LocalInput
                                 ref={ref => {
-                                    inputs.current.local = ref;
+                                    inputs.current.location = ref;
                                 }}
                                 value={state.location}
                                 onChangeText={text =>
@@ -549,9 +561,9 @@ const EditRecord = ({navigation, route}) => {
                                         payload: {location: text},
                                     })
                                 }
-                                onSubmitEditing={() => focusNextField('RMB')}
+                                onSubmitEditing={() => focusNextField('rmb')}
                                 error={state.error.location}
-                                scrollOffset={scrollOffset}
+                                scrollOffset={scroll_offset}
                             />
                         </View>
                         {/* 人民幣 */}
@@ -561,30 +573,28 @@ const EditRecord = ({navigation, route}) => {
                                 <View style={{flex: 1, marginRight: 4}}>
                                     <DecimalInput
                                         ref={ref => {
-                                            inputs.current.RMB = ref;
+                                            inputs.current.rmb = ref;
                                         }}
                                         containerStyle={{flex: 1}}
-                                        inputStyle={style.formInput}
                                         placeholder={'¥ --'}
                                         inputProps={{showSoftInputOnFocus: false}}
                                         onValueChange={value =>
                                             dispatch({
                                                 type: UPDATE_RMB,
-                                                payload: {RMB: value},
+                                                payload: {rmb: value},
                                             })
                                         }
                                         symbol={'¥ '}
-                                        keyboardRef={NumKeyboard_refs}
-                                        onFocus={() => DecimalInput_Focus('RMB')}
-                                        onBlur={DecimalInput_Blur}
-                                        value={state.RMB}
+                                        onFocus={() => decimalInputFocus('rmb')}
+                                        onBlur={decimalInputBlur}
+                                        value={state.rmb.toNumber()}
                                         onPressIn={() => Keyboard.dismiss()}
                                     />
                                     <HelperText type={'info'}>
-                                        匯率: 100 港幣 = {(100 * Rate).toFixed(2)} 人民幣
+                                        匯率: 100 港幣 = {rate.mul(100).toFixed(2)} 人民幣
                                     </HelperText>
                                 </View>
-                                <Text>折算 HK$ {(state.RMB / Rate).toFixed(2)}</Text>
+                                {state.rmb.isZero() ? null : <Text>折算 HK$ {state.rmb.div(rate).toFixed(2)}</Text>}
                             </View>
                         </View>
                         {/* 港幣 */}
@@ -592,17 +602,16 @@ const EditRecord = ({navigation, route}) => {
                             <Text style={{flex: 1 / 5}}>港幣</Text>
                             <DecimalInput
                                 ref={ref => {
-                                    inputs.current.HKD = ref;
+                                    inputs.current.hkd = ref;
                                 }}
                                 containerStyle={{flex: 1}}
-                                value={state.HKD}
-                                inputStyle={style.formInput}
+                                value={state.hkd.toNumber()}
                                 placeholder={'$ --'}
                                 inputProps={{showSoftInputOnFocus: false}}
-                                onValueChange={value => dispatch({type: UPDATE_HKD, payload: {HKD: value}})}
+                                onValueChange={value => dispatch({type: UPDATE_HKD, payload: {hkd: value}})}
                                 symbol={'$ '}
-                                onFocus={() => DecimalInput_Focus('HKD')}
-                                onBlur={DecimalInput_Blur}
+                                onFocus={() => decimalInputFocus('hkd')}
+                                onBlur={decimalInputBlur}
                                 onPressIn={() => Keyboard.dismiss()}
                             />
                         </View>
@@ -612,22 +621,21 @@ const EditRecord = ({navigation, route}) => {
                                 <Text style={{flex: 1 / 2}}>加收</Text>
                                 <DecimalInput
                                     ref={ref => {
-                                        inputs.current.ADD = ref;
+                                        inputs.current.add = ref;
                                     }}
                                     containerStyle={{flex: 1}}
-                                    value={state.ADD}
-                                    inputStyle={style.formInput}
+                                    value={state.add.toNumber()}
                                     placeholder={'$ --'}
                                     inputProps={{showSoftInputOnFocus: false}}
                                     onValueChange={value =>
                                         dispatch({
                                             type: UPDATE_ADD,
-                                            payload: {ADD: value},
+                                            payload: {add: value},
                                         })
                                     }
                                     symbol={'$ '}
-                                    onFocus={() => DecimalInput_Focus('ADD')}
-                                    onBlur={DecimalInput_Blur}
+                                    onFocus={() => decimalInputFocus('add')}
+                                    onBlur={decimalInputBlur}
                                     onPressIn={() => Keyboard.dismiss()}
                                 />
                             </View>
@@ -638,8 +646,7 @@ const EditRecord = ({navigation, route}) => {
                                         inputs.current.shipping = ref;
                                     }}
                                     containerStyle={{flex: 1}}
-                                    value={state.shipping}
-                                    inputStyle={style.formInput}
+                                    value={state.shipping.toNumber()}
                                     placeholder={'$ --'}
                                     inputProps={{showSoftInputOnFocus: false}}
                                     onValueChange={value =>
@@ -649,15 +656,15 @@ const EditRecord = ({navigation, route}) => {
                                         })
                                     }
                                     symbol={'$ '}
-                                    onFocus={() => DecimalInput_Focus('shipping')}
-                                    onBlur={DecimalInput_Blur}
+                                    onFocus={() => decimalInputFocus('shipping')}
+                                    onBlur={decimalInputBlur}
                                     onPressIn={() => Keyboard.dismiss()}
                                 />
                             </View>
                         </View>
                     </View>
                     {/* 備註 */}
-                    <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    <View style={[style.Remark, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.formGroup, {marginTop: -10}]}>
                             <TextInput
                                 ref={ref => {
@@ -676,7 +683,7 @@ const EditRecord = ({navigation, route}) => {
                                 assets={state.image}
                                 onSelectedImage={img =>
                                     dispatch({
-                                        action: UPDATE_IMAGE,
+                                        type: UPDATE_IMAGE,
                                         payload: {image: img},
                                     })
                                 }
@@ -684,11 +691,16 @@ const EditRecord = ({navigation, route}) => {
                         </View>
                     </View>
                     {/* 儲存 */}
-                    <View style={[style.Remark, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    <View style={[style.Remark, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.Flex_row, {justifyContent: 'space-between'}]}>
                             <Text>合計</Text>
                             <Text style={{color: Color.primaryColor, fontSize: 20}}>
-                                HK$ {(state.shipping + state.ADD + state.HKD + state.RMB / Rate).toFixed(2)}
+                                HK${' '}
+                                {state.shipping
+                                    .plus(state.add)
+                                    .plus(state.hkd)
+                                    .plus(rate.isZero() ? 0 : state.rmb.div(rate))
+                                    .toFixed(2)}
                             </Text>
                         </View>
                         <View style={{flexDirection: 'row'}}>
@@ -707,7 +719,7 @@ const EditRecord = ({navigation, route}) => {
                     <View style={{height: 100}} />
                 </ScrollView>
             </KeyboardAvoidingView>
-            <NumKeyboard ref={NumKeyboard_refs} onKeyPress={onKeyPress} />
+            <NumKeyboard ref={num_keyboard_refs} onKeyPress={onKeyPress} />
         </View>
     );
 };
