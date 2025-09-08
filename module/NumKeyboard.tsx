@@ -9,7 +9,7 @@ import {Ripple} from './Ripple';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 interface NumKeyboardProps {
-    onKeyPress: (value: string) => void;
+    onKeyPress?: (value: string) => void;
     disableCalculator?: boolean;
 }
 
@@ -26,7 +26,6 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(
         const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
         const {colors} = useTheme<MD2Theme>();
         const [display, setDisplay] = useState<boolean>(false);
-        const [isDisableCalculator, setIsDisableCalculator] = useState<boolean>(disableCalculator);
         const BG_color = isDarkMode ? Color.darkBlock : Color.white;
         const insets = useSafeAreaInsets(); //安全區域
 
@@ -120,7 +119,7 @@ const NumKeyboard = forwardRef<NumKeyboardRef, NumKeyboardProps>(
                                 <Text style={style.text}>9</Text>
                             </View>
                         </Ripple.Color>
-                        {isDisableCalculator ? (
+                        {disableCalculator ? (
                             <View style={style.button} />
                         ) : (
                             <Ripple.Color onPress={() => onPress('calculator')}>
@@ -182,3 +181,4 @@ const style = StyleSheet.create({
 });
 
 export {NumKeyboard};
+export type {NumKeyboardRef, NumKeyboardProps};

@@ -4,37 +4,30 @@ import {Color} from './Color';
 import {TextInput, TextInputProps} from 'react-native-paper';
 
 /* 輸入參數 */
-interface InputProps {
+interface NumInputProps {
     symbol?: string;
     value?: string | number;
     inputStyle?: StyleProp<TextStyle>;
     containerStyle?: StyleProp<ViewStyle>;
     inputProps?: TextInputProps;
     placeholder?: string;
-    onValueChange?: (value: number) => void;
+    onValueChange?: (value: string) => void;
     onFocus?: () => void;
     onBlur?: () => void;
     onPressIn?: () => void;
 }
 
 /* 參考方法 */
-type InputRef = {
+type NumInputRef = {
     setText: (text: string) => void;
     getText: () => string;
     focus: () => void;
     blur: () => void;
+    isFocused?: () => boolean | undefined;
 };
 
-/* 介面 */
-interface InputComponent extends React.ForwardRefExoticComponent<InputProps & React.RefAttributes<InputRef>> {
-    setText: (text: string) => void;
-    getText: () => string;
-    focus: () => void;
-    blur: () => void;
-}
-
 /* 小數輸入 */
-const DecimalInput = forwardRef<InputRef, InputProps>(
+const DecimalInput = forwardRef<NumInputRef, NumInputProps>(
     (
         {
             symbol = '',
@@ -92,7 +85,7 @@ const DecimalInput = forwardRef<InputRef, InputProps>(
 
                 setDisplayValue(value_1);
                 setRealValue(local_real_value);
-                onValueChange(parseFloat(local_real_value) || 0);
+                onValueChange(local_real_value);
             },
             [onValueChange, symbol],
         );
@@ -162,10 +155,10 @@ const DecimalInput = forwardRef<InputRef, InputProps>(
             </View>
         );
     },
-) as InputComponent;
+);
 
 /* 整數輸入 */
-const NumberInput = forwardRef<InputRef, InputProps>(
+const NumberInput = forwardRef<NumInputRef, NumInputProps>(
     (
         {
             symbol = '',
@@ -213,7 +206,7 @@ const NumberInput = forwardRef<InputRef, InputProps>(
 
                 setDisplayValue(value_1);
                 setRealValue(real_value_1);
-                onValueChange(parseInt(real_value_1, 10) || 0);
+                onValueChange(real_value_1);
             },
             [onValueChange, symbol],
         );
@@ -285,6 +278,7 @@ const NumberInput = forwardRef<InputRef, InputProps>(
 );
 
 export {DecimalInput, NumberInput};
+export type {NumInputRef, NumInputProps};
 
 const STYLE = StyleSheet.create({
     inputStyle: {
