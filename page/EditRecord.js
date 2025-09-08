@@ -354,7 +354,7 @@ const EditRecord = ({navigation, route}) => {
                                     image: JSON.parse(row.Images),
                                 },
                             });
-                            setRate(new Decimal(row.Rate || 0));
+                            setRate(new Decimal(row.Rate || setting.Rate));
                         });
                     } catch (e) {
                         console.error('取得資料錯誤: ' + e.message);
