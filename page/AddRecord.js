@@ -6,7 +6,6 @@ import {
     ScrollView,
     StyleSheet,
     ToastAndroid,
-    TouchableWithoutFeedback,
     useColorScheme,
     View,
 } from 'react-native';
@@ -16,17 +15,17 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {DecimalInput} from '../module/NumInput';
 import {NumKeyboard} from '../module/NumKeyboard';
 import TextInput from '../module/TextInput';
-import {Button, HelperText, Portal, Text, useTheme} from 'react-native-paper';
+import {Button, HelperText, Text} from 'react-native-paper';
 import TextInputMask from 'react-native-text-input-mask';
 import {RadioButton, RadioGroup} from '../module/RadioButton';
 import {DB, useSetting} from '../module/SQLite';
 import ErrorHelperText from '../module/ErrorHelperText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, {FadeIn, FadeOut, SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {useHeaderHeight} from '@react-navigation/elements';
 import {Decimal} from 'decimal.js';
 import {LocalInput} from '../module/LocalInput';
 import {ImagePicker} from '../module/ImagePicker';
+import {RateEditor} from '../module/RateEditor';
 
 const RECORD_INITIAL_STATE = {
     date: new Date(),
@@ -755,158 +754,6 @@ const AddRecord = ({navigation, route}) => {
     );
 };
 
-/**
- * 匯率編輯器
- * @type {React.FC<{visible: boolean, onDismiss?: ()=>void, rate: Decimal, amount: Decimal, onChangeRate?: (rate: Decimal)=>void}>}
- */
-const RateEditor = ({visible, onDismiss, rate, amount, onChangeRate}) => {
-    const [is_visible, setIsVisible] = useState(visible);
-    const [input_rate, setInputRate] = useState(rate);
-    const [input_amount, setInputAmount] = useState(new Decimal(amount || 0));
-    const [hkd_value, setHkdValue] = useState(new Decimal(amount || 0).div(rate).toFixed(2));
-    const focusing_dec_input = useRef(null); //目前聚焦銀碼輸入框
-    const theme = useTheme();
-
-    //textInput refs
-    let inputs = useRef({
-        hkd: null,
-        rate: null,
-    });
-    let num_keyboard_refs = useRef(null);
-
-    // 對焦金錢輸入欄 => 打開虛擬鍵盤
-    const decimalInputFocus = useCallback(id => {
-        focusing_dec_input.current = id;
-        num_keyboard_refs.current.openKeyBoard();
-    }, []);
-
-    // 虛擬鍵盤點擊
-    const onKeyPress = useCallback(
-        value => {
-            if (focusing_dec_input.current) {
-                if (value === 'back') {
-                    //刪除最後一個文字
-                    inputs.current[focusing_dec_input.current].setText(
-                        inputs.current[focusing_dec_input.current].getText().slice(0, -1),
-                    );
-                } else if (value === 'done') {
-                    //完成輸入
-                    inputs.current[focusing_dec_input.current].blur();
-                    focusing_dec_input.current = null;
-                    num_keyboard_refs.current.closeKeyBoard();
-                    onChangeRate(new Decimal(input_rate));
-                    onDismiss();
-                } else {
-                    //輸入文字
-                    inputs.current[focusing_dec_input.current].setText(
-                        inputs.current[focusing_dec_input.current].getText() + value,
-                    );
-                }
-            }
-        },
-        [input_rate, onChangeRate, onDismiss],
-    );
-
-    // 港幣值更改
-    const onHkdValueChange = useCallback(
-        value => {
-            if (is_visible && focusing_dec_input.current === 'hkd') {
-                console.log(value);
-                const dec_value = new Decimal(value || 0);
-                if (!dec_value.isZero()) {
-                    setInputRate(input_amount.div(dec_value).toFixed(4));
-                } else {
-                    setInputRate('0');
-                }
-            }
-        },
-        [input_amount, is_visible],
-    );
-
-    // 匯率值更改
-    const onRateValueChange = useCallback(
-        value => {
-            if (is_visible && focusing_dec_input.current === 'rate') {
-                console.log(value);
-                const dec_value = new Decimal(value || 0);
-                if (!dec_value.isZero()) {
-                    setHkdValue(input_amount.div(dec_value).toFixed(2));
-                } else {
-                    setHkdValue('0');
-                }
-            }
-        },
-        [input_amount, is_visible],
-    );
-
-    // 更新參數
-    useEffect(() => {
-        console.log(rate);
-        setInputRate(rate);
-    }, [rate]);
-    useEffect(() => {
-        setInputAmount(amount);
-        setHkdValue(rate.isZero() ? '0' : amount.div(rate).toFixed(2));
-    }, [amount, rate]);
-    useEffect(() => {
-        setIsVisible(visible);
-        if (visible) {
-            setTimeout(() => inputs.current.hkd.focus(), 1000);
-        }
-    }, [visible]);
-
-    if (!is_visible) return null;
-    return (
-        <Portal>
-            <TouchableWithoutFeedback onPress={onDismiss}>
-                <Animated.View style={style.rate_input.backdrop} entering={FadeIn} exiting={FadeOut}>
-                    <Animated.View
-                        style={[
-                            style.rate_input.container,
-                            {
-                                backgroundColor: theme.colors.background,
-                            },
-                        ]}
-                        entering={SlideInDown}
-                        exiting={SlideOutDown}>
-                        <View style={{padding: 20}}>
-                            <View style={style.form_group}>
-                                <Text style={{flex: 1 / 5}}>港幣</Text>
-                                <DecimalInput
-                                    ref={ref => (inputs.current.hkd = ref)}
-                                    containerStyle={{flex: 1}}
-                                    value={hkd_value}
-                                    placeholder={'$ --'}
-                                    inputProps={{showSoftInputOnFocus: false}}
-                                    onValueChange={onHkdValueChange}
-                                    symbol={'$ '}
-                                    onFocus={() => decimalInputFocus('hkd')}
-                                    onPressIn={() => Keyboard.dismiss()}
-                                />
-                            </View>
-                            <View style={style.form_group}>
-                                <Text style={{flex: 1 / 5}}>匯率</Text>
-                                <View style={{flex: 1}}>
-                                    <DecimalInput
-                                        ref={ref => (inputs.current.rate = ref)}
-                                        containerStyle={{flex: 1}}
-                                        value={input_rate.toString()}
-                                        inputProps={{showSoftInputOnFocus: false, maxLength: 10}}
-                                        onValueChange={onRateValueChange}
-                                        onFocus={() => decimalInputFocus('rate')}
-                                        onPressIn={() => Keyboard.dismiss()}
-                                    />
-                                </View>
-                            </View>
-                        </View>
-                        <NumKeyboard ref={num_keyboard_refs} onKeyPress={onKeyPress} disableCalculator={true} />
-                    </Animated.View>
-                </Animated.View>
-            </TouchableWithoutFeedback>
-        </Portal>
-    );
-};
-
 const style = StyleSheet.create({
     form_group: {
         flexDirection: 'row',
@@ -929,21 +776,6 @@ const style = StyleSheet.create({
     flex_row: {
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    rate_input: {
-        backdrop: {
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-        },
-        container: {
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            elevation: 5,
-            borderTopStartRadius: 20,
-            borderTopEndRadius: 20,
-        },
     },
 });
 
