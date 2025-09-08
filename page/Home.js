@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-    Animated,
     FlatList,
     Modal,
     PixelRatio,
@@ -31,7 +30,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DateSelect} from '../module/DateSelect';
 import {convertColor} from './Note';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import REAnimated, {interpolate, runOnJS, useAnimatedReaction, useAnimatedStyle} from 'react-native-reanimated';
+import Animated, {
+    interpolate,
+    runOnJS,
+    useAnimatedReaction,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+} from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
@@ -54,7 +60,7 @@ function group_data(ResultSet, Rate) {
         total.HKD += row.HKD;
         total.Add += row.Add;
         total.Shipping += row.Shipping;
-        total.Total += row.RMB / Rate + row.HKD + row.Add + row.Shipping;
+        total.Total += row.RMB / (row.Rate ?? Rate) + row.HKD + row.Add + row.Shipping;
 
         //圖片
         let images = [];
@@ -68,7 +74,7 @@ function group_data(ResultSet, Rate) {
         //資料
         if (last_item && last_item.DateTime.getDate() === item_date.getDate()) {
             //存在 & 相同日期
-            last_item.Total += row.RMB / Rate + row.HKD + row.Add + row.Shipping;
+            last_item.Total += row.RMB / (row.Rate ?? Rate) + row.HKD + row.Add + row.Shipping;
             last_item.Record.push({
                 RecordID: row.RecordID,
                 OrderNum: row.OrderNum,
@@ -82,13 +88,14 @@ function group_data(ResultSet, Rate) {
                 Shipping: row.Shipping,
                 haveImage: images.length > 0,
                 Images: images,
+                Rate: row.Rate ?? Rate,
             });
         } else {
             //不存在 & 不相同的日期
             package_list.push({
                 DateTime: item_date,
                 Mark: [],
-                Total: row.RMB / Rate + row.HKD + row.Add + row.Shipping,
+                Total: row.RMB / (row.Rate ?? Rate) + row.HKD + row.Add + row.Shipping,
                 Record: [
                     {
                         RecordID: row.RecordID,
@@ -103,6 +110,7 @@ function group_data(ResultSet, Rate) {
                         Shipping: row.Shipping,
                         haveImage: images.length > 0,
                         Images: images,
+                        Rate: row.Rate ?? Rate,
                     },
                 ],
             });
@@ -369,7 +377,7 @@ const Home = () => {
                         ref={listRef}
                         onRefresh={updateData}
                         refreshing={isRefresh}
-                        renderItem={({item}) => <DataPart data={item} rate={setting.Rate} />}
+                        renderItem={({item}) => <DataPart data={item} />}
                         onScrollToIndexFailed={info => {
                             setTimeout(() => {
                                 listRef.current.scrollToIndex({index: info.index});
@@ -395,7 +403,7 @@ const Home = () => {
 };
 
 /* 內容render */
-const DataPart = ({data, rate}) => {
+const DataPart = ({data}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     const date = moment(data.DateTime).locale('zh-hk');
     const navigation = useNavigation();
@@ -453,7 +461,7 @@ const DataPart = ({data, rate}) => {
             {
                 /* 數據內容 */
                 data.Record.map((item, index) => (
-                    <DataPartBody key={index} item={item} rate={rate} id={item.RecordID} dateTime={data.DateTime} />
+                    <DataPartBody key={index} item={item} id={item.RecordID} dateTime={data.DateTime} />
                 ))
             }
         </View>
@@ -499,11 +507,11 @@ const SwipeLeft = (progress, translation) => {
 
     //背景圖片
     return (
-        <REAnimated.View style={{backgroundColor: 'cornflowerblue', width: '100%', justifyContent: 'center'}}>
-            <REAnimated.View style={styleAnimation}>
+        <Animated.View style={{backgroundColor: 'cornflowerblue', width: '100%', justifyContent: 'center'}}>
+            <Animated.View style={styleAnimation}>
                 <FW5Icon name={'edit'} size={40} color={Color.white} />
-            </REAnimated.View>
-        </REAnimated.View>
+            </Animated.View>
+        </Animated.View>
     );
 };
 
@@ -528,72 +536,72 @@ const SwipeRight = (progress, translation) => {
     //背景圖片
     return (
         <View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
-            <REAnimated.View style={styleAnimation}>
+            <Animated.View style={styleAnimation}>
                 <FW5Icon name={'trash-alt'} size={40} color={Color.white} />
-            </REAnimated.View>
+            </Animated.View>
         </View>
     );
 };
 
 /* 數據內容 */
-const DataPartBody = ({item, rate, id, dateTime}) => {
+const DataPartBody = ({item, id, dateTime}) => {
     const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
     /** @type {NativeStackNavigationProp<RootStackParamList, 'Main'>} **/
     const navigation = useNavigation(); //導航
     const isRMBShow = useRef(false); //人民幣顯示
     const [confirmMSG, setConfirmMSG] = useState(false); //確認刪除訊息
     const [showBigImage, setShowBigImage] = useState(false); //大圖
+    const [isVisible, setIsVisible] = useState(true); //是否顯示
     const ref = useRef(null);
 
     /* 切換人民幣顯示 */
-    const translateY = useRef(new Animated.Value(0)).current;
+    const translateY = useSharedValue(0);
     const switchRMBShow = useCallback(() => {
         if (isRMBShow.current) {
             //關閉
-            Animated.timing(translateY, {
-                toValue: 0,
-                duration: 500,
-                useNativeDriver: true,
-            }).start();
+            translateY.value = withTiming(0, {duration: 500});
             isRMBShow.current = false;
         } else {
             //打開
-            Animated.timing(translateY, {
-                toValue: -21 * PixelRatio.getFontScale(),
-                duration: 500,
-                useNativeDriver: true,
-            }).start();
+            translateY.value = withTiming(-21 * PixelRatio.getFontScale(), {duration: 500});
             isRMBShow.current = true;
         }
-
-        //eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [translateY]);
 
     /* 移除動畫 */
-    const height = useRef(null);
+    const height = useSharedValue(0);
+    const initialHeight = useRef(0);
 
     /* 動畫執行 */
     const hide = useCallback(() => {
-        Animated.timing(height.current, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: false,
-        }).start(() => ref.current.close());
-    }, []);
+        height.value = withTiming(0.1, {duration: 300}, () => {
+            ref.current.close();
+            runOnJS(setIsVisible)(false);
+        });
+    }, [height]);
     const show = useCallback(() => {
-        Animated.timing(height.current, {
-            toValue: height.current._startingValue,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, []);
+        setIsVisible(true);
+        height.value = withTiming(initialHeight.current, {duration: 300});
+    }, [height]);
 
     /* 初始化 */
-    const onLayout = useCallback(({nativeEvent}) => {
-        if (height.current === null) {
-            height.current = new Animated.Value(nativeEvent.layout.height);
-        }
-    }, []);
+    const onLayout = useCallback(
+        ({nativeEvent}) => {
+            if (height.value === 0) {
+                height.value = nativeEvent.layout.height;
+                initialHeight.current = nativeEvent.layout.height;
+            }
+        },
+        [height],
+    );
+
+    const animatedHeightStyle = useAnimatedStyle(() => ({
+        height: height.value === 0 ? 'auto' : height.value,
+    }));
+
+    const animatedTranslateYStyle = useAnimatedStyle(() => ({
+        transform: [{translateY: translateY.value}],
+    }));
 
     /* 確認動作 */
     const swipeOpen = useCallback(
@@ -697,7 +705,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
     ]);
 
     return (
-        <Animated.View style={{height: height.current}} onLayout={onLayout}>
+        <Animated.View style={[animatedHeightStyle, {display: isVisible ? 'flex' : 'none'}]} onLayout={onLayout}>
             <Swipeable
                 ref={ref}
                 renderRightActions={SwipeRight}
@@ -707,8 +715,7 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                 renderLeftActions={SwipeLeft}
                 overshootFriction={20}>
                 <Ripple.Default onPress={switchRMBShow} onLongPress={showImages}>
-                    <Animated.View
-                        style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+                    <View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
                         <View style={[style.row, {justifyContent: 'flex-start'}]}>
                             <View style={{marginRight: 10}}>
                                 <Text style={{color: Color.textGary}}>{item.OrderNum}</Text>
@@ -747,10 +754,10 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                             </View>
                             <View style={{flex: 1}}>
                                 <View style={{overflow: 'hidden', height: 22 * PixelRatio.getFontScale()}}>
-                                    <Animated.View style={{flex: 1, transform: [{translateY}]}}>
+                                    <Animated.View style={[{flex: 1}, animatedTranslateYStyle]}>
                                         <Text>
                                             <SmailText color={Color.textGary}>折算</SmailText>${' '}
-                                            {formatPrice((item.RMB / rate).toFixed(2))}
+                                            {formatPrice((item.RMB / item.Rate).toFixed(2))}
                                         </Text>
                                         <Text>
                                             <SmailText color={Color.textGary}>人民幣</SmailText>¥{' '}
@@ -777,10 +784,11 @@ const DataPartBody = ({item, rate, id, dateTime}) => {
                         <View>
                             <Text style={{color: Color.primaryColor, alignSelf: 'flex-end'}}>
                                 <SmailText color={Color.textGary}>合計</SmailText>
-                                HK$ {formatPrice((item.RMB / rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
+                                HK${' '}
+                                {formatPrice((item.RMB / item.Rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
                             </Text>
                         </View>
-                    </Animated.View>
+                    </View>
                 </Ripple.Default>
             </Swipeable>
             <Portal>
