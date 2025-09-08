@@ -103,6 +103,9 @@ const Setting = ({route}) => {
                         if (!/^[0-9]+(\.[0-9]+)?$/g.test(value)) {
                             ToastAndroid.show('輸入格式不正確 必須是數字', ToastAndroid.SHORT);
                             return;
+                        } else if (parseFloat(value) === 0) {
+                            ToastAndroid.show('匯率不能為0', ToastAndroid.SHORT);
+                            return;
                         } else {
                             //100港元兌人民幣匯率 = 人民幣匯率 / 100
                             value = (value / 100).toFixed(4);
@@ -244,11 +247,6 @@ const Setting = ({route}) => {
 
         extracted().then();
     }, [forceRefresh, navigation, state]);
-
-    //debug
-    // useEffect(() => {
-    //     console.log(DialogState, state)
-    // })
 
     return (
         <PaperProvider theme={theme}>
