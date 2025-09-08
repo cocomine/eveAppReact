@@ -15,7 +15,7 @@ import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import moment from 'moment';
 import {DB} from '../module/SQLite';
-import Animated, {useAnimatedStyle, useSharedValue, withSequence, withTiming} from 'react-native-reanimated';
+import Animated, {useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming} from 'react-native-reanimated';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {DateSelect} from '../module/DateSelect';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -321,14 +321,15 @@ const NoteBody = ({item}) => {
     useEffect(() => {
         let id;
         if (route.params && route.params.id && route.params.id === item.id) {
-            id = setTimeout(() => {
-                bg.value = withSequence(
+            bg.value = withDelay(
+                300,
+                withSequence(
                     withTiming('rgba(18,125,255,0.6)'),
-                    withTiming('rgba(18,125,255,0.3)'),
+                    withTiming('rgba(18,125,255,0.2)'),
                     withTiming('rgba(18,125,255,0.6)'),
                     withTiming('rgba(18,125,255,0)'),
-                );
-            }, 300);
+                ),
+            );
         }
 
         return () => clearTimeout(id); //清除計時器
