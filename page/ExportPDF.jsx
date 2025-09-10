@@ -18,6 +18,8 @@ import {sound} from './Export';
 import moment from 'moment/moment';
 import {RouteParamsContext} from '../module/RouteParamsContext';
 
+/** @type {import('../module/SQLite').SettingType} SettingType */
+
 const ExportPDF = () => {
     const theme = useTheme();
 
@@ -33,7 +35,7 @@ const ExportPDF = () => {
     /** @type {{setting_force_refresh_alert?: number}} */
     const route_params_context = useContext(RouteParamsContext);
 
-    /* 重新整理資料 */
+    // 重新整理資料
     useEffect(() => {
         if (route_params_context && route_params_context.setting_force_refresh_alert) {
             console.log('重新整理資料');
@@ -41,7 +43,7 @@ const ExportPDF = () => {
         }
     }, [route_params_context, setting_force_refresh]);
 
-    /* 取得 致... 公司名稱 */
+    // 取得 致... 公司名稱
     useEffect(() => {
         const getToCompanyName = async () => {
             try {
@@ -58,7 +60,7 @@ const ExportPDF = () => {
         });
     }, []);
 
-    /* 取得有資料的月份 */
+    // 取得有資料的月份
     const getMonth = useCallback(
         async year1 => {
             try {
@@ -96,7 +98,7 @@ const ExportPDF = () => {
         [theme.colors.text],
     );
 
-    /* 取得有資料的年份 */
+    // 取得有資料的年份
     useFocusEffect(
         useCallback(() => {
             const extracted = async () => {
@@ -123,7 +125,7 @@ const ExportPDF = () => {
                         //填充選項
                         setYearOpt(tmp);
                         setYear(rs.rows.item(0).Year);
-                        getMonth(rs.rows.item(0).Year);
+                        await getMonth(rs.rows.item(0).Year);
                     });
                 } catch (e) {
                     console.error('傳輸錯誤: ' + e.message);
@@ -139,108 +141,123 @@ const ExportPDF = () => {
         }, [getMonth, theme.colors.text]),
     );
 
-    /* 更新月份選項 */
+    // 更新月份選項
     useEffect(() => {
         getMonth(year).then();
     }, [getMonth, year]);
 
-    /* 彈出窗口 */
+    // 彈出窗口
     const doExport = useCallback(
-        type => {
-            /* 確認匯出 */
-            const output = () => {
-                if (month === '' || year === '') {
-                    ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
-                    return;
-                }
-
-                getRecordHTML(remark, month, year, setting.Rate, (html, total) => {
-                    const file_name =
-                        setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + to_company.current + ')';
-
-                    /* 生成pdf */
-                    const printPDF = async () => {
-                        return await HTMLtoPDF.convert({
-                            html: htmlData(month + '月 ' + year, total, html, to_company.current, setting),
-                            fileName: file_name,
-                            directory: 'Documents',
-                            width: 842,
-                            height: 595,
-                        });
-                    };
-
-                    setOkDialogVisible(true); //成功動畫 start
-                    sound.play(); // Play the sound with an onEnd callback
-
-                    printPDF().then(results => {
-                        setTimeout(async () => {
-                            setOkDialogVisible(false); //成功動畫 end
-
-                            let save_path = CachesDirectoryPath + '/' + file_name + '.pdf';
-                            await RNFS.copyFile(results.filePath, save_path); //先複製度暫存目錄
-                            await RNFS.unlink(results.filePath); //delete tmp file
-
-                            if (chose_type.current === 1) {
-                                //以電郵傳送
-                                Mailer.mail(
-                                    {
-                                        subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
-                                        recipients: [setting['Email-to']],
-                                        body: `致 ${to_company.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                                        attachments: [
-                                            {
-                                                path: save_path, // The absolute path of the file from which to read data.
-                                                type: 'pdf', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
-                                            },
-                                        ],
-                                    },
-                                    (error, event) => {
-                                        console.log(error, event);
-                                        ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
-                                    },
-                                );
-                            } else if (chose_type.current === 2) {
-                                //分享
-                                const res = await Share.open({
-                                    url: 'file://' + save_path,
-                                    message: `致 ${to_company.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                                    title: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
-                                    subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
-                                    email: setting['Email-to'],
-                                    type: 'application/pdf',
-                                    failOnCancel: false,
-                                }).catch(error => console.log('Share Error: ', error));
-                                console.log(res);
-                            } else if (chose_type.current === 3) {
-                                //打印
-                                await RNPrint.print({filePath: save_path, isLandscape: true});
-                            } else if (chose_type.current === 4) {
-                                //預覽
-                                await FileViewer.open(save_path, {
-                                    showOpenWithDialog: true,
-                                    showAppsSuggestions: true,
-                                });
-                            }
-                        }, 1000);
-                    });
-                }).catch(e => {
-                    ToastAndroid.show('出現錯誤: ' + e.message, ToastAndroid.SHORT);
-                });
-            };
+        async type => {
+            if (month === '' || year === '') {
+                ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
+                return;
+            }
 
             /* save toCompanyName */
-            const storeToCompanyName = async text => {
+            const startExport = async text => {
                 try {
                     to_company.current = text;
                     await AsyncStorage.setItem('toCompanyName', text);
-                    output();
                 } catch (e) {
-                    console.log('Save Daft error: ', e);
+                    console.error('Save Daft error: ', e);
+                }
+
+                let mouth_rate = setting.Rate; //使用設定檔的匯率, 若該月有匯率則覆蓋
+
+                //取得該月的匯率 (出現頻率最高的)
+                try {
+                    await DB.readTransaction(async tr => {
+                        const [, rs] = await tr.executeSql(
+                            "SELECT Rate, COUNT(Rate) as 'count' FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? GROUP BY Rate ORDER BY count DESC LIMIT 1",
+                            [month, year],
+                        );
+
+                        if (rs.rows.length > 0 && rs.rows.item(0).Rate !== null) mouth_rate = rs.rows.item(0).Rate; //使用該月的匯率
+                    });
+                } catch (e) {
+                    console.error('取得匯率錯誤: ', e);
+                }
+
+                //開始匯出
+                try {
+                    const [html, total] = await getRecordHTML(remark, month, year, mouth_rate);
+
+                    const file_name =
+                        setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + to_company.current + ')';
+
+                    setOkDialogVisible(true); //成功動畫 start
+                    sound.play(); // Play the sound
+
+                    // 生成pdf
+                    const results = await HTMLtoPDF.convert({
+                        html: htmlData(month + '月 ' + year, total, html, to_company.current, setting, mouth_rate),
+                        fileName: file_name,
+                        directory: '../cache',
+                        width: 842,
+                        height: 595,
+                    });
+
+                    // wait animation end
+                    setTimeout(async () => {
+                        //移動檔案到暫存目錄
+                        let save_path = CachesDirectoryPath + '/' + file_name + '.pdf';
+                        await RNFS.copyFile(results.filePath, save_path); //先複製度暫存目錄
+                        await RNFS.unlink(results.filePath); //delete tmp file
+
+                        if (chose_type.current === 1) {
+                            //以電郵傳送
+                            Mailer.mail(
+                                {
+                                    subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                                    recipients: [setting['Email-to']],
+                                    body: `致 ${to_company.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                    attachments: [
+                                        {
+                                            path: save_path, // The absolute path of the file from which to read data.
+                                            type: 'pdf', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
+                                        },
+                                    ],
+                                },
+                                (error, event) => {
+                                    console.log(error, event);
+                                    ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
+                                },
+                            );
+                        } else if (chose_type.current === 2) {
+                            //分享
+                            const res = await Share.open({
+                                url: 'file://' + save_path,
+                                message: `致 ${to_company.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                title: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                                subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
+                                email: setting['Email-to'],
+                                type: 'application/pdf',
+                                failOnCancel: false,
+                            }).catch(error => console.log('Share Error: ', error));
+                            console.log(res);
+                        } else if (chose_type.current === 3) {
+                            //打印
+                            await RNPrint.print({filePath: save_path, isLandscape: true});
+                        } else if (chose_type.current === 4) {
+                            //預覽
+                            await FileViewer.open(save_path, {
+                                showOpenWithDialog: true,
+                                showAppsSuggestions: true,
+                            });
+                        }
+
+                        setOkDialogVisible(false); //成功動畫 end
+                    }, 1000);
+                } catch (e) {
+                    ToastAndroid.show('出現錯誤: ' + e.message, ToastAndroid.SHORT);
+                    console.error('出現錯誤: ', e);
+                    setOkDialogVisible(false); //成功動畫 end
                 }
             };
 
             chose_type.current = type;
-            prompt('致...', '請輸入收件人名稱', [{text: '取消'}, {text: '確認', onPress: storeToCompanyName}], {
+            prompt('致...', '請輸入收件人名稱', [{text: '取消'}, {text: '確認', onPress: startExport}], {
                 cancelable: true,
                 defaultValue: to_company.current,
             });
@@ -312,8 +329,17 @@ const ExportPDF = () => {
     );
 };
 
-/* 套入html模板 */
-function htmlData(date, total, html_body, to_company_name, setting) {
+/**
+ * 套入html模板
+ * @param date {string} 日期
+ * @param total {number} 總計
+ * @param html_body {string} html內容
+ * @param to_company_name {string} 致... 公司名稱
+ * @param setting {SettingType} 設定檔
+ * @param mouth_rate {number|null} 該月匯率, null則使用設定檔的匯率
+ * @returns {string} 完整html
+ */
+function htmlData(date, total, html_body, to_company_name, setting, mouth_rate = null) {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -400,7 +426,7 @@ function htmlData(date, total, html_body, to_company_name, setting) {
     </tbody>
     <tfoot>
     <tr>
-        <td colspan="5">匯率: 100 港幣 = ${(100 * setting.Rate).toFixed(2)} 人民幣</td>
+        <td colspan="5">匯率: 100 港幣 = ${(100 * (mouth_rate ?? setting.Rate)).toFixed(2)} 人民幣</td>
         <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${total}</td>
     </tr>
     </tfoot>
@@ -413,7 +439,12 @@ function htmlData(date, total, html_body, to_company_name, setting) {
 </html>`;
 }
 
-/* 數字0替換為空白 */
+/**
+ * 格式化數字, 若為0則回傳空字串
+ * @param num {number} 數字
+ * @param sign {string} 貨幣符號
+ * @returns {string} 格式化後的字串
+ */
 function blankNum(num, sign) {
     if (num === 0) {
         return '';
@@ -422,9 +453,16 @@ function blankNum(num, sign) {
     }
 }
 
-/* 取得當月紀錄*/
-async function getRecordHTML(is_output_remark, output_date_month, output_date_year, rate, output) {
-    try {
+/**
+ * 取得紀錄的html
+ * @param is_output_remark {boolean} 是否輸出備註
+ * @param output_date_month {string} 月份
+ * @param output_date_year {string} 年份
+ * @param rate {string} 匯率
+ * @returns {Promise<[string, number]>} Promise，resolve 參數為 [html內容, 總計金額]
+ */
+function getRecordHTML(is_output_remark, output_date_month, output_date_year, rate) {
+    return new Promise(async resolve => {
         await DB.readTransaction(async function (tr) {
             console.log('顯示: ', output_date_month, output_date_year);
             const [, rs] = await tr.executeSql(
@@ -446,7 +484,7 @@ async function getRecordHTML(is_output_remark, output_date_month, output_date_ye
             };
             let html = '';
 
-            /* 打印紀錄 */
+            // 打印紀錄
             for (let i = 0; i < rs.rows.length; i++) {
                 const row = rs.rows.item(i);
                 //console.log(row); //debug
@@ -461,7 +499,7 @@ async function getRecordHTML(is_output_remark, output_date_month, output_date_ye
                     ')';
 
                 //進行計算
-                let change = parseFloat((row.RMB / rate).toFixed(2));
+                let change = parseFloat((row.RMB / (row.Rate ?? rate)).toFixed(2));
                 let row_total = change + row.HKD + row.Add + row.Shipping;
                 total.month += row_total;
                 row_total = blankNum(row_total, '$');
@@ -475,8 +513,6 @@ async function getRecordHTML(is_output_remark, output_date_month, output_date_ye
                 row.Add = blankNum(row.Add, '$');
                 total.shipping += row.Shipping;
                 row.Shipping = blankNum(row.Shipping, '$');
-                //console.log(total); //debug
-
                 //放入html
                 html += `
                     <tr>
@@ -484,11 +520,19 @@ async function getRecordHTML(is_output_remark, output_date_month, output_date_ye
                         <td>${row.OrderNum}</td>
                         <td>${row.CargoNum}</td>
                         <td>${row.Type}</td>
-                        <td>${row.Local}<br><span style="color: grey">${
-                            is_output_remark ? (row.Remark === null ? '' : row.Remark) : ''
-                        }</span></td>
+                        <td>${row.Local}<br>
+                            <span style="color: grey">${
+                                is_output_remark ? (row.Remark === null ? '' : row.Remark) : ''
+                            }</span>
+                        </td>
                         <td>${row.RMB}</td>
-                        <td>${change}</td>
+                        <td>${change}<br>
+                            <small style="color: grey">${
+                                row.RMB !== '' && row.Rate !== null && row.Rate !== rate
+                                    ? 'HK$100 = CN¥' + (100 * row.Rate).toFixed(2)
+                                    : ''
+                            }</small>
+                        </td>
                         <td>${row.HKD}</td>
                         <td>${row.Add}</td>
                         <td>${row.Shipping}</td>
@@ -505,12 +549,9 @@ async function getRecordHTML(is_output_remark, output_date_month, output_date_ye
                     <td style="border-width: 0">$ ${formatPrice(total.shipping.toFixed(2))}</td>
                     <td> </td>
                 </tr>`;
-            output(html, total.month.toFixed(2));
+            resolve([html, total.month.toFixed(2)]);
         });
-    } catch (e) {
-        console.error('傳輸錯誤: ' + e.message);
-        throw e;
-    }
+    });
 }
 
 const STYLE = StyleSheet.create({
