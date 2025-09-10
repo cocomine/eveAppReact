@@ -511,10 +511,10 @@ const SwipeLeft = (progress, translation) => {
         () => translation.value,
         current => {
             if (current > 150 && can_haptic.current === true) {
-                runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
+                runOnJS(ReactNativeHapticFeedback.trigger)('effectHeavyClick', {ignoreAndroidSystemSettings: true});
                 can_haptic.current = false;
             } else if (current < -150 && can_haptic.current === true) {
-                runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
+                runOnJS(ReactNativeHapticFeedback.trigger)('effectHeavyClick', {ignoreAndroidSystemSettings: true});
                 can_haptic.current = false;
             } else if (current <= 150 && current >= -150) {
                 can_haptic.current = true;
