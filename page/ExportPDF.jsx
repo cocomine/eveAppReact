@@ -17,6 +17,7 @@ import Share from 'react-native-share';
 import {sound} from './Export';
 import moment from 'moment/moment';
 import {RouteParamsContext} from '../module/RouteParamsContext';
+import {Decimal} from 'decimal.js';
 
 /** @type {import('../module/SQLite').SettingType} SettingType */
 
@@ -426,8 +427,8 @@ function htmlData(date, total, html_body, to_company_name, setting, mouth_rate =
     </tbody>
     <tfoot>
     <tr>
-        <td colspan="5">匯率: 100 港幣 = ${(100 * (mouth_rate ?? setting.Rate)).toFixed(2)} 人民幣</td>
-        <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${total}</td>
+        <td colspan="5">匯率: 100 港幣 = ${new Decimal(100).mul(mouth_rate ?? setting.Rate).toFixed(2)} 人民幣</td>
+        <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${formatPrice(total)}</td>
     </tr>
     </tfoot>
 </table>
@@ -475,12 +476,12 @@ function getRecordHTML(is_output_remark, output_date_month, output_date_year, ra
             }
 
             let total = {
-                month: 0.0,
-                rmb: 0.0,
-                hkd: 0.0,
-                add: 0.0,
-                shipping: 0.0,
-                change: 0.0,
+                month: new Decimal(0),
+                rmb: new Decimal(0),
+                hkd: new Decimal(0),
+                add: new Decimal(0),
+                shipping: new Decimal(0),
+                change: new Decimal(0),
             };
             let html = '';
 
@@ -499,20 +500,29 @@ function getRecordHTML(is_output_remark, output_date_month, output_date_year, ra
                     ')';
 
                 //進行計算
-                let change = parseFloat((row.RMB / (row.Rate ?? rate)).toFixed(2));
-                let row_total = change + row.HKD + row.Add + row.Shipping;
-                total.month += row_total;
-                row_total = blankNum(row_total, '$');
-                total.rmb += row.RMB;
-                row.RMB = blankNum(row.RMB, 'CN¥');
-                total.change += change;
-                change = blankNum(change, '$');
-                total.hkd += row.HKD;
-                row.HKD = blankNum(row.HKD, '$');
-                total.add += row.Add;
-                row.Add = blankNum(row.Add, '$');
-                total.shipping += row.Shipping;
-                row.Shipping = blankNum(row.Shipping, '$');
+                const rowRMB = new Decimal(row.RMB);
+                const rowHKD = new Decimal(row.HKD);
+                const rowAdd = new Decimal(row.Add);
+                const rowShipping = new Decimal(row.Shipping);
+
+                let change = new Decimal(0);
+                if (rowRMB.gt(0)) {
+                    change = rowRMB.div(row.Rate ?? rate).toDecimalPlaces(2);
+                }
+
+                let row_total = change.plus(rowHKD).plus(rowAdd).plus(rowShipping);
+                total.month = total.month.plus(row_total);
+                let row_total_str = blankNum(row_total.toNumber(), '$');
+                total.rmb = total.rmb.plus(rowRMB);
+                let rmb_str = blankNum(rowRMB.toNumber(), 'CN¥');
+                total.change = total.change.plus(change);
+                let change_str = blankNum(change.toNumber(), '$');
+                total.hkd = total.hkd.plus(rowHKD);
+                let hkd_str = blankNum(rowHKD.toNumber(), '$');
+                total.add = total.add.plus(rowAdd);
+                let add_str = blankNum(rowAdd.toNumber(), '$');
+                total.shipping = total.shipping.plus(rowShipping);
+                let shipping_str = blankNum(rowShipping.toNumber(), '$');
                 //放入html
                 html += `
                     <tr>
@@ -525,18 +535,18 @@ function getRecordHTML(is_output_remark, output_date_month, output_date_year, ra
                                 is_output_remark ? (row.Remark === null ? '' : row.Remark) : ''
                             }</span>
                         </td>
-                        <td>${row.RMB}</td>
-                        <td>${change}<br>
+                        <td>${rmb_str}</td>
+                        <td>${change_str}<br>
                             <small style="color: grey">${
-                                row.RMB !== '' && row.Rate !== null && row.Rate !== rate
-                                    ? 'HK$100 = CN¥' + (100 * row.Rate).toFixed(2)
+                                rmb_str !== '' && row.Rate !== null && row.Rate !== rate
+                                    ? 'HK$100 = CN¥' + new Decimal(100).mul(row.Rate).toFixed(2)
                                     : ''
                             }</small>
                         </td>
-                        <td>${row.HKD}</td>
-                        <td>${row.Add}</td>
-                        <td>${row.Shipping}</td>
-                        <td>${row_total}</td>
+                        <td>${hkd_str}</td>
+                        <td>${add_str}</td>
+                        <td>${shipping_str}</td>
+                        <td>${row_total_str}</td>
                     </tr>`;
             }
             html += `
