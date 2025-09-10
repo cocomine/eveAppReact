@@ -5,6 +5,7 @@ import {Keyboard, StyleSheet, TouchableWithoutFeedback, View} from 'react-native
 import Animated, {FadeIn, FadeOut, SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {DecimalInput, NumInputRef} from './NumInput';
 import {NumKeyboard, NumKeyboardRef} from './NumKeyboard';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 interface RateEditorProps {
     visible: boolean;
@@ -18,12 +19,13 @@ interface RateEditorProps {
  * 匯率編輯器
  */
 export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate, amount, onChangeRate}) => {
-    const [is_visible, setIsVisible] = useState(visible);
-    const [input_rate, setInputRate] = useState(rate.toString());
-    const [input_amount, setInputAmount] = useState(new Decimal(amount || 0));
-    const [hkd_value, setHkdValue] = useState(new Decimal(amount || 0).div(rate).toFixed(2));
+    const [is_visible, setIsVisible] = useState<boolean>(visible);
+    const [input_rate, setInputRate] = useState<number>(rate.toNumber());
+    const [hkd_value, setHkdValue] = useState<number>(new Decimal(amount || 0).div(rate).toDecimalPlaces(2).toNumber());
+    const [input_amount, setInputAmount] = useState<Decimal>(amount);
     const focusing_dec_input = useRef<'hkd' | 'rate' | null>(null); //目前聚焦銀碼輸入框
     const theme = useTheme();
+    const insets = useSafeAreaInsets(); // 取得安全區域插入值
 
     //textInput refs
     let inputs = useRef<{
@@ -71,8 +73,17 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                 } else if (value === 'done') {
                     //完成輸入
                     dismiss();
-                    onChangeRate?.(new Decimal(inputs.current.rate?.getText() ?? input_rate));
-                    console.log('匯率變更:', inputs.current.rate?.getText() ?? input_rate);
+                    onChangeRate?.(
+                        inputs.current.rate
+                            ? new Decimal(inputs.current.rate.getText()).div(100)
+                            : new Decimal(input_rate),
+                    );
+                    console.log(
+                        '匯率變更:',
+                        inputs.current.rate
+                            ? new Decimal(inputs.current.rate.getText()).div(100).toNumber()
+                            : input_rate,
+                    );
                 } else {
                     //輸入文字
                     inputRef.setText(inputRef.getText() + value);
@@ -88,9 +99,9 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
             if (is_visible && focusing_dec_input.current === 'hkd') {
                 const dec_value = new Decimal(value || 0);
                 if (!dec_value.isZero()) {
-                    setInputRate(input_amount.div(dec_value).toFixed(4));
+                    setInputRate(input_amount.div(dec_value).toDecimalPlaces(4).toNumber());
                 } else {
-                    setInputRate('0');
+                    setInputRate(0);
                 }
             }
         },
@@ -101,11 +112,11 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
     const onRateValueChange = useCallback(
         (value: string) => {
             if (is_visible && focusing_dec_input.current === 'rate') {
-                const dec_value = new Decimal(value || 0);
+                const dec_value = new Decimal(value || 0).div(100);
                 if (!dec_value.isZero()) {
-                    setHkdValue(input_amount.div(dec_value).toFixed(2));
+                    setHkdValue(input_amount.div(dec_value).toDP(2).toNumber());
                 } else {
-                    setHkdValue('0');
+                    setHkdValue(0);
                 }
             }
         },
@@ -117,8 +128,8 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
         setIsVisible(visible);
         if (visible) {
             setInputAmount(amount);
-            setHkdValue(rate.isZero() ? '0' : amount.div(rate).toFixed(2));
-            setInputRate(rate.toString());
+            setHkdValue(rate.isZero() ? 0 : amount.div(rate).toDecimalPlaces(2).toNumber());
+            setInputRate(rate.toNumber());
             setTimeout(() => inputs.current.hkd?.focus(), 100);
         }
     }, [amount, rate, visible]);
@@ -133,6 +144,8 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                             style.container,
                             {
                                 backgroundColor: theme.colors.background,
+                                marginEnd: insets.right,
+                                marginStart: insets.left,
                             },
                         ]}
                         entering={SlideInDown}
@@ -156,14 +169,14 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                                 />
                             </View>
                             <View style={style.form_group}>
-                                <Text style={{flex: 1 / 5}}>匯率</Text>
+                                <Text style={{flex: 2 / 5}}>匯率 (毎百HK$)</Text>
                                 <View style={{flex: 1}}>
                                     <DecimalInput
                                         ref={ref => {
                                             inputs.current.rate = ref;
                                         }}
                                         containerStyle={{flex: 1}}
-                                        value={input_rate}
+                                        value={100 * input_rate}
                                         inputProps={{showSoftInputOnFocus: false, maxLength: 10}}
                                         onValueChange={onRateValueChange}
                                         onFocus={() => decimalInputFocus('rate')}
@@ -201,3 +214,5 @@ const style = StyleSheet.create({
         borderTopEndRadius: 20,
     },
 });
+
+export type {RateEditorProps};
