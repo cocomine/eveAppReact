@@ -40,27 +40,39 @@ import Animated, {
 } from 'react-native-reanimated';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import Decimal from 'decimal.js';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
 /** @typedef {import('react-native-reanimated').SharedValue} SharedValue */
 
 /* 紀錄分組 */
-function group_data(ResultSet, Rate) {
+function groupData(result_set, rate) {
     const package_list = [];
-    const total = {Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0};
+    const total = {
+        Total: new Decimal(0),
+        RMB: new Decimal(0),
+        HKD: new Decimal(0),
+        Add: new Decimal(0),
+        Shipping: new Decimal(0),
+    };
 
-    for (let i = 0; i < ResultSet.rows.length; i++) {
+    for (let i = 0; i < result_set.rows.length; i++) {
         let last_item = package_list[package_list.length - 1];
-        const row = ResultSet.rows.item(i);
+        const row = result_set.rows.item(i);
         const item_date = new Date(row.DateTime);
+        const item_total = new Decimal(row.RMB)
+            .div(row.Rate ?? rate)
+            .add(row.HKD)
+            .add(row.Add)
+            .add(row.Shipping);
 
         //總數
-        total.RMB += row.RMB;
-        total.HKD += row.HKD;
-        total.Add += row.Add;
-        total.Shipping += row.Shipping;
-        total.Total += row.RMB / (row.Rate ?? Rate) + row.HKD + row.Add + row.Shipping;
+        total.RMB = total.RMB.add(row.RMB);
+        total.HKD = total.HKD.add(row.HKD);
+        total.Add = total.Add.add(row.Add);
+        total.Shipping = total.Shipping.add(row.Shipping);
+        total.Total = total.Total.add(item_total);
 
         //圖片
         let images = [];
@@ -74,7 +86,7 @@ function group_data(ResultSet, Rate) {
         //資料
         if (last_item && last_item.DateTime.getDate() === item_date.getDate()) {
             //存在 & 相同日期
-            last_item.Total += row.RMB / (row.Rate ?? Rate) + row.HKD + row.Add + row.Shipping;
+            last_item.Total = last_item.Total.add(item_total);
             last_item.Record.push({
                 RecordID: row.RecordID,
                 OrderNum: row.OrderNum,
@@ -88,14 +100,14 @@ function group_data(ResultSet, Rate) {
                 Shipping: row.Shipping,
                 haveImage: images.length > 0,
                 Images: images,
-                Rate: row.Rate ?? Rate,
+                Rate: row.Rate ?? rate,
             });
         } else {
             //不存在 & 不相同的日期
             package_list.push({
                 DateTime: item_date,
                 Mark: [],
-                Total: row.RMB / (row.Rate ?? Rate) + row.HKD + row.Add + row.Shipping,
+                Total: item_total,
                 Record: [
                     {
                         RecordID: row.RecordID,
@@ -110,7 +122,7 @@ function group_data(ResultSet, Rate) {
                         Shipping: row.Shipping,
                         haveImage: images.length > 0,
                         Images: images,
-                        Rate: row.Rate ?? Rate,
+                        Rate: row.Rate ?? rate,
                     },
                 ],
             });
@@ -120,9 +132,9 @@ function group_data(ResultSet, Rate) {
 }
 
 /* 備忘錄分組 */
-function grouping_note(package_list = [], ResultSet) {
-    for (let i = 0; i < ResultSet.rows.length; i++) {
-        const row = ResultSet.rows.item(i);
+function groupingNote(package_list = [], result_set) {
+    for (let i = 0; i < result_set.rows.length; i++) {
+        const row = result_set.rows.item(i);
         const item_date = new Date(row.DateTime);
         const match_item = package_list.find(item => item.DateTime.getDate() === item_date.getDate()); //尋找相同日期
 
@@ -162,30 +174,36 @@ const Home = () => {
     const navigation = useNavigation(); //導航
     /** @type {RouteProp<RootStackParamList, 'Main'>} **/
     const route = useRoute(); //路由
-    const [Total, setTotal] = useState({Total: 0, RMB: 0, HKD: 0, Add: 0, Shipping: 0}); //總數
-    const [Data, setData] = useState(null); //紀錄資料
-    const [ShowDay, setShowDay] = useState(new Date()); //顯示日期
-    const [isRefresh, setIsRefresh] = useState(true); //是否重新更新
-    const [monthSelect, setMonthSelect] = useState(false); //月份選擇是否顯示
+    const [total, setTotal] = useState({
+        Total: new Decimal(0),
+        RMB: new Decimal(0),
+        HKD: new Decimal(0),
+        Add: new Decimal(0),
+        Shipping: new Decimal(0),
+    }); //總數
+    const [data, setData] = useState(null); //紀錄資料
+    const [show_day, setShowDay] = useState(new Date()); //顯示日期
+    const [is_refresh, setIsRefresh] = useState(true); //是否重新更新
+    const [month_select, setMonthSelect] = useState(false); //月份選擇是否顯示
     const [setting, settingForceRefresh] = useSetting(); //設定
-    const listRef = useRef(null); //FlatList Ref
+    const list_ref = useRef(null); //FlatList Ref
     const insets = useSafeAreaInsets(); //安全區域
 
     /* 選擇顯示月份 */
-    const NextMonth = useCallback(() => {
-        let tmp = moment(ShowDay);
+    const nextMonth = useCallback(() => {
+        let tmp = moment(show_day);
         tmp.add(1, 'M').endOf('month');
 
         setShowDay(tmp.toDate());
         setIsRefresh(true);
-    }, [ShowDay]);
-    const LastMonth = useCallback(() => {
-        let tmp = moment(ShowDay);
+    }, [show_day]);
+    const lastMonth = useCallback(() => {
+        let tmp = moment(show_day);
         tmp.subtract(1, 'M').endOf('month');
 
         setShowDay(tmp.toDate());
         setIsRefresh(true);
-    }, [ShowDay]);
+    }, [show_day]);
 
     /* 更新資料 */
     const updateData = useCallback(async () => {
@@ -193,12 +211,12 @@ const Home = () => {
         settingForceRefresh();
 
         /* 讀取紀錄 */
-        function queryRecords(ShowDay1) {
+        function queryRecords(show_day_1) {
             return new Promise(async resolve => {
                 await DB.readTransaction(async tr => {
                     const [, rs] = await tr.executeSql(
                         "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
-                        [moment(ShowDay1).format('MM'), moment(ShowDay1).format('YYYY')],
+                        [moment(show_day_1).format('MM'), moment(show_day_1).format('YYYY')],
                     );
                     resolve(rs);
                 });
@@ -206,12 +224,12 @@ const Home = () => {
         }
 
         // 讀取備忘錄
-        function queryNotes(ShowDay2) {
+        function queryNotes(show_day_2) {
             return new Promise(async resolve => {
                 await DB.readTransaction(async tr => {
                     const [, rs] = await tr.executeSql(
                         "SELECT * FROM Note WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime DESC",
-                        [moment(ShowDay2).format('MM'), moment(ShowDay2).format('YYYY')],
+                        [moment(show_day_2).format('MM'), moment(show_day_2).format('YYYY')],
                     );
                     resolve(rs);
                 });
@@ -219,16 +237,16 @@ const Home = () => {
         }
 
         try {
-            console.log('顯示:', moment(ShowDay).format('DD/MM/YYYY'));
-            const rs = await queryRecords(ShowDay);
+            console.log('顯示:', moment(show_day).format('DD/MM/YYYY'));
+            const rs = await queryRecords(show_day);
             console.log('已取得資料', rs.rows.length);
-            const [data, total] = group_data(rs, setting.Rate);
+            const [data, total] = groupData(rs, setting.Rate);
             setTotal(total);
 
-            console.log('備忘錄顯示:', moment(ShowDay).format('DD/MM/YYYY'));
-            const rs1 = await queryNotes(ShowDay);
+            console.log('備忘錄顯示:', moment(show_day).format('DD/MM/YYYY'));
+            const rs1 = await queryNotes(show_day);
             console.log('已取得資料', rs1.rows.length);
-            const data_have_note = rs1.rows.length > 0 ? grouping_note(data, rs1) : data;
+            const data_have_note = rs1.rows.length > 0 ? groupingNote(data, rs1) : data;
             setData(data_have_note);
         } catch (e) {
             console.log('傳輸錯誤: ' + e.message);
@@ -236,7 +254,7 @@ const Home = () => {
         } finally {
             setIsRefresh(false);
         }
-    }, [ShowDay, setting.Rate, settingForceRefresh]);
+    }, [show_day, setting.Rate, settingForceRefresh]);
 
     /* 直接選擇月份 */
     const setMonth = useCallback(date => {
@@ -269,13 +287,13 @@ const Home = () => {
 
     /* 自動滑動最新紀錄 */
     useEffect(() => {
-        if (Data != null) {
-            const index = Data.findIndex(item => item.DateTime.getDate() === ShowDay.getDate());
+        if (data != null) {
+            const index = data.findIndex(item => item.DateTime.getDate() === show_day.getDate());
             if (index > 0) {
-                listRef.current.scrollToIndex({index: index});
+                list_ref.current.scrollToIndex({index: index});
             }
         }
-    }, [Data, ShowDay]);
+    }, [data, show_day]);
 
     return (
         <View style={{flex: 1}}>
@@ -284,11 +302,11 @@ const Home = () => {
                 <View style={{zIndex: 2, elevation: 2}}>
                     <Toolbar containerStyle={{paddingTop: insets.top}}>
                         <ToolBarView>
-                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={LastMonth} />
+                            <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={lastMonth} />
                             <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
-                                <Text style={{color: Color.white}}>{moment(ShowDay).format('M月 yyyy')}</Text>
+                                <Text style={{color: Color.white}}>{moment(show_day).format('M月 yyyy')}</Text>
                             </TouchableWithoutFeedback>
-                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={NextMonth} />
+                            <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={nextMonth} />
                         </ToolBarView>
                         <ToolBarView>
                             {/*<IconButton
@@ -297,11 +315,11 @@ const Home = () => {
                                 onPress={() => navigation.navigate('Search')}
                             />*/}
                             <SmailText color={Color.white}>本月總計</SmailText>
-                            <Text style={{color: Color.white}}>$ {formatPrice(Total.Total.toFixed(2))}</Text>
+                            <Text style={{color: Color.white}}>$ {formatPrice(total.Total.toFixed(2))}</Text>
                         </ToolBarView>
                         <DateSelect
-                            visibility={monthSelect}
-                            value={ShowDay}
+                            visibility={month_select}
+                            value={show_day}
                             onSelect={setMonth}
                             onDismiss={hideMonthSelect}
                         />
@@ -314,7 +332,7 @@ const Home = () => {
                                     fontSize: 12,
                                     textAlign: 'center',
                                 }}>
-                                {'人民幣\n¥ ' + formatPrice(Total.RMB.toFixed(2))}
+                                {'人民幣\n¥ ' + formatPrice(total.RMB.toFixed(2))}
                             </Text>
                         </View>
                         <View style={{flex: 1}}>
@@ -324,7 +342,7 @@ const Home = () => {
                                     fontSize: 12,
                                     textAlign: 'center',
                                 }}>
-                                {'港幣\n$ ' + formatPrice(Total.HKD.toFixed(2))}
+                                {'港幣\n$ ' + formatPrice(total.HKD.toFixed(2))}
                             </Text>
                         </View>
                         <View style={{flex: 1}}>
@@ -334,7 +352,7 @@ const Home = () => {
                                     fontSize: 12,
                                     textAlign: 'center',
                                 }}>
-                                {'加收\n$ ' + formatPrice(Total.Add.toFixed(2))}
+                                {'加收\n$ ' + formatPrice(total.Add.toFixed(2))}
                             </Text>
                         </View>
                         <View style={{flex: 1}}>
@@ -344,20 +362,20 @@ const Home = () => {
                                     fontSize: 12,
                                     textAlign: 'center',
                                 }}>
-                                {'運費\n$ ' + formatPrice(Total.Shipping.toFixed(2))}
+                                {'運費\n$ ' + formatPrice(total.Shipping.toFixed(2))}
                             </Text>
                         </View>
                     </Toolbar>
                 </View>
-                {monthSelect && (
+                {month_select && (
                     <TouchableWithoutFeedback onPress={hideMonthSelect}>
-                        <View style={[style.cover]} />
+                        <View style={[STYLE.cover]} />
                     </TouchableWithoutFeedback>
                 )}
 
                 {/* 增加紀錄 */}
                 <TouchableOpacity
-                    style={style.addRecord}
+                    style={STYLE.addRecord}
                     activeOpacity={0.8}
                     onPress={() => navigation.navigate('AddRecord')}>
                     <View>
@@ -365,7 +383,7 @@ const Home = () => {
                     </View>
                 </TouchableOpacity>
                 {/* 備忘錄 */}
-                <TouchableOpacity style={style.addMark} activeOpacity={0.8} onPress={() => navigation.navigate('Note')}>
+                <TouchableOpacity style={STYLE.addMark} activeOpacity={0.8} onPress={() => navigation.navigate('Note')}>
                     <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
                 </TouchableOpacity>
 
@@ -373,14 +391,14 @@ const Home = () => {
                     <NewFunctionBanner />
                     {/* 內容 */}
                     <FlatList
-                        data={Data}
-                        ref={listRef}
+                        data={data}
+                        ref={list_ref}
                         onRefresh={updateData}
-                        refreshing={isRefresh}
+                        refreshing={is_refresh}
                         renderItem={({item}) => <DataPart data={item} />}
                         onScrollToIndexFailed={info => {
                             setTimeout(() => {
-                                listRef.current.scrollToIndex({index: info.index});
+                                list_ref.current.scrollToIndex({index: info.index});
                             }, 500);
                         }}
                         ListFooterComponent={
@@ -404,16 +422,16 @@ const Home = () => {
 
 /* 內容render */
 const DataPart = ({data}) => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
     const date = moment(data.DateTime).locale('zh-hk');
     const navigation = useNavigation();
 
     /* 判斷週末 */
-    let weekColor = Color.darkColorLight; //預設平日
+    let week_color = Color.darkColorLight; //預設平日
     if (date.format('d') === '0') {
-        weekColor = Color.danger; //星期日
+        week_color = Color.danger; //星期日
     } else if (date.format('d') === '6') {
-        weekColor = Color.primaryColor; //星期六
+        week_color = Color.primaryColor; //星期六
     }
 
     /* 創意新紀錄以這裏的日期 */
@@ -425,12 +443,12 @@ const DataPart = ({data}) => {
 
     return (
         /* 內容包裝 */
-        <View style={[style.dataPart, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
+        <View style={[STYLE.dataPart, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
             <Ripple.Default onPress={press}>
-                <View style={[style.row, style.dataPartHeard]}>
-                    <View style={style.row}>
+                <View style={[STYLE.row, STYLE.dataPartHeard]}>
+                    <View style={STYLE.row}>
                         <Text style={{fontSize: 20, marginRight: 10}}>{date.format('D')}</Text>
-                        <Text style={[style.dataPartWeek, {backgroundColor: weekColor}]}>{date.format('dddd')}</Text>
+                        <Text style={[STYLE.dataPartWeek, {backgroundColor: week_color}]}>{date.format('dddd')}</Text>
                         <Text style={{fontSize: 10}}>{date.format('M.YYYY')}</Text>
                     </View>
                     <View>
@@ -449,7 +467,7 @@ const DataPart = ({data}) => {
                 /* 備忘錄 */
                 data.Mark.length > 0 ? (
                     <Ripple.Default onPress={() => navigation.navigate('Note', {ShowDay: date.toISOString()})}>
-                        <View style={style.dataPartMark}>
+                        <View style={STYLE.dataPartMark}>
                             {data.Mark.map((item, index) => (
                                 <DataPartMark key={index} item={item} />
                             ))}
@@ -475,10 +493,10 @@ const DataPart = ({data}) => {
  * @type {Function}
  */
 const SwipeLeft = (progress, translation) => {
-    const canHaptic = useRef(true); //可否震動
+    const can_haptic = useRef(true); //可否震動
 
     //背景動畫
-    const styleAnimation = useAnimatedStyle(() => {
+    const style_animation = useAnimatedStyle(() => {
         const translateX = interpolate(translation.value, [0, 120], [-20, 20], 'clamp');
         const rotate = interpolate(translation.value, [0, 120], [-70, 0], 'clamp');
 
@@ -492,23 +510,23 @@ const SwipeLeft = (progress, translation) => {
     useAnimatedReaction(
         () => translation.value,
         current => {
-            if (current > 150 && canHaptic.current === true) {
+            if (current > 150 && can_haptic.current === true) {
                 runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
-                canHaptic.current = false;
-            } else if (current < -150 && canHaptic.current === true) {
+                can_haptic.current = false;
+            } else if (current < -150 && can_haptic.current === true) {
                 runOnJS(ReactNativeHapticFeedback.trigger)('effectTick');
-                canHaptic.current = false;
+                can_haptic.current = false;
             } else if (current <= 150 && current >= -150) {
-                canHaptic.current = true;
+                can_haptic.current = true;
             }
         },
-        [canHaptic],
+        [can_haptic],
     );
 
     //背景圖片
     return (
         <Animated.View style={{backgroundColor: 'cornflowerblue', width: '100%', justifyContent: 'center'}}>
-            <Animated.View style={styleAnimation}>
+            <Animated.View style={style_animation}>
                 <FW5Icon name={'edit'} size={40} color={Color.white} />
             </Animated.View>
         </Animated.View>
@@ -523,7 +541,7 @@ const SwipeLeft = (progress, translation) => {
  */
 const SwipeRight = (progress, translation) => {
     //背景動畫
-    const styleAnimation = useAnimatedStyle(() => {
+    const style_animation = useAnimatedStyle(() => {
         const translateX = interpolate(translation.value, [-120, 0], [-20, 20], 'clamp');
         const rotate = interpolate(translation.value, [-120, 0], [0, 70], 'clamp');
 
@@ -536,7 +554,7 @@ const SwipeRight = (progress, translation) => {
     //背景圖片
     return (
         <View style={{backgroundColor: 'indianred', width: '100%', justifyContent: 'center'}}>
-            <Animated.View style={styleAnimation}>
+            <Animated.View style={style_animation}>
                 <FW5Icon name={'trash-alt'} size={40} color={Color.white} />
             </Animated.View>
         </View>
@@ -545,32 +563,32 @@ const SwipeRight = (progress, translation) => {
 
 /* 數據內容 */
 const DataPartBody = ({item, id, dateTime}) => {
-    const isDarkMode = useColorScheme() === 'dark'; //是否黑暗模式
+    const is_dark_mode = useColorScheme() === 'dark'; //是否黑暗模式
     /** @type {NativeStackNavigationProp<RootStackParamList, 'Main'>} **/
     const navigation = useNavigation(); //導航
-    const isRMBShow = useRef(false); //人民幣顯示
-    const [confirmMSG, setConfirmMSG] = useState(false); //確認刪除訊息
-    const [showBigImage, setShowBigImage] = useState(false); //大圖
-    const [isVisible, setIsVisible] = useState(true); //是否顯示
+    const is_rmb_show = useRef(false); //人民幣顯示
+    const [confirm_msg, setConfirmMSG] = useState(false); //確認刪除訊息
+    const [show_big_image, setShowBigImage] = useState(false); //大圖
+    const [is_visible, setIsVisible] = useState(true); //是否顯示
     const ref = useRef(null);
 
     /* 切換人民幣顯示 */
-    const translateY = useSharedValue(0);
+    const translate_y = useSharedValue(0);
     const switchRMBShow = useCallback(() => {
-        if (isRMBShow.current) {
+        if (is_rmb_show.current) {
             //關閉
-            translateY.value = withTiming(0, {duration: 500});
-            isRMBShow.current = false;
+            translate_y.value = withTiming(0, {duration: 500});
+            is_rmb_show.current = false;
         } else {
             //打開
-            translateY.value = withTiming(-21 * PixelRatio.getFontScale(), {duration: 500});
-            isRMBShow.current = true;
+            translate_y.value = withTiming(-21 * PixelRatio.getFontScale(), {duration: 500});
+            is_rmb_show.current = true;
         }
-    }, [translateY]);
+    }, [translate_y]);
 
     /* 移除動畫 */
     const height = useSharedValue(0);
-    const initialHeight = useRef(0);
+    const initial_height = useRef(0);
 
     /* 動畫執行 */
     const hide = useCallback(() => {
@@ -581,7 +599,7 @@ const DataPartBody = ({item, id, dateTime}) => {
     }, [height]);
     const show = useCallback(() => {
         setIsVisible(true);
-        height.value = withTiming(initialHeight.current, {duration: 300});
+        height.value = withTiming(initial_height.current, {duration: 300});
     }, [height]);
 
     /* 初始化 */
@@ -589,18 +607,18 @@ const DataPartBody = ({item, id, dateTime}) => {
         ({nativeEvent}) => {
             if (height.value === 0) {
                 height.value = nativeEvent.layout.height;
-                initialHeight.current = nativeEvent.layout.height;
+                initial_height.current = nativeEvent.layout.height;
             }
         },
         [height],
     );
 
-    const animatedHeightStyle = useAnimatedStyle(() => ({
+    const animated_height_style = useAnimatedStyle(() => ({
         height: height.value === 0 ? 'auto' : height.value,
     }));
 
-    const animatedTranslateYStyle = useAnimatedStyle(() => ({
-        transform: [{translateY: translateY.value}],
+    const animated_translate_y_style = useAnimatedStyle(() => ({
+        transform: [{translateY: translate_y.value}],
     }));
 
     /* 確認動作 */
@@ -641,7 +659,7 @@ const DataPartBody = ({item, id, dateTime}) => {
     }, []);
 
     /* 圖片檢視器列表 */
-    const imagesViewerList = useMemo(() => {
+    const images_viewer_list = useMemo(() => {
         return item.Images.map((assets, index) => ({
             url: 'data:image/jpeg;base64,' + assets.base64,
             width: assets.width,
@@ -705,7 +723,7 @@ const DataPartBody = ({item, id, dateTime}) => {
     ]);
 
     return (
-        <Animated.View style={[animatedHeightStyle, {display: isVisible ? 'flex' : 'none'}]} onLayout={onLayout}>
+        <Animated.View style={[animated_height_style, {display: is_visible ? 'flex' : 'none'}]} onLayout={onLayout}>
             <Swipeable
                 ref={ref}
                 renderRightActions={SwipeRight}
@@ -715,8 +733,8 @@ const DataPartBody = ({item, id, dateTime}) => {
                 renderLeftActions={SwipeLeft}
                 overshootFriction={20}>
                 <Ripple.Default onPress={switchRMBShow} onLongPress={showImages}>
-                    <View style={[style.dataPartBody, {backgroundColor: isDarkMode ? Color.darkBlock : Color.white}]}>
-                        <View style={[style.row, {justifyContent: 'flex-start'}]}>
+                    <View style={[STYLE.dataPartBody, {backgroundColor: is_dark_mode ? Color.darkBlock : Color.white}]}>
+                        <View style={[STYLE.row, {justifyContent: 'flex-start'}]}>
                             <View style={{marginRight: 10}}>
                                 <Text style={{color: Color.textGary}}>{item.OrderNum}</Text>
                                 <Text style={{color: Color.textGary, fontSize: 13}}>{item.Type}</Text>
@@ -746,38 +764,38 @@ const DataPartBody = ({item, id, dateTime}) => {
                             </View>
                         </View>
                         <View>
-                            <Text style={style.dataPartRemark}>{item.Remark === null ? '' : item.Remark}</Text>
+                            <Text style={STYLE.dataPartRemark}>{item.Remark === null ? '' : item.Remark}</Text>
                         </View>
-                        <View style={[style.row, {justifyContent: 'flex-start'}]}>
+                        <View style={[STYLE.row, {justifyContent: 'flex-start'}]}>
                             <View style={{marginRight: 10}}>
                                 <Text style={{color: Color.textGary, fontSize: 12}}>代付</Text>
                             </View>
                             <View style={{flex: 1}}>
                                 <View style={{overflow: 'hidden', height: 22 * PixelRatio.getFontScale()}}>
-                                    <Animated.View style={[{flex: 1}, animatedTranslateYStyle]}>
+                                    <Animated.View style={[{flex: 1}, animated_translate_y_style]}>
                                         <Text>
                                             <SmailText color={Color.textGary}>折算</SmailText>${' '}
-                                            {formatPrice((item.RMB / item.Rate).toFixed(2))}
+                                            {formatPrice(new Decimal(item.RMB).div(item.Rate).toFixed(2))}
                                         </Text>
                                         <Text>
                                             <SmailText color={Color.textGary}>人民幣</SmailText>¥{' '}
-                                            {formatPrice(item.RMB.toFixed(2))}
+                                            {formatPrice(new Decimal(item.RMB).toFixed(2))}
                                         </Text>
                                     </Animated.View>
                                 </View>
                                 <Text>
                                     <SmailText color={Color.textGary}>港幣</SmailText>${' '}
-                                    {formatPrice(item.HKD.toFixed(2))}
+                                    {formatPrice(new Decimal(item.HKD).toFixed(2))}
                                 </Text>
                             </View>
-                            <View style={style.dataPartShipping}>
+                            <View style={STYLE.dataPartShipping}>
                                 <Text>
                                     <SmailText color={Color.textGary}>加收</SmailText>${' '}
-                                    {formatPrice(item.Add.toFixed(2))}
+                                    {formatPrice(new Decimal(item.Add).toFixed(2))}
                                 </Text>
                                 <Text>
                                     <SmailText color={Color.textGary}>運費</SmailText>${' '}
-                                    {formatPrice(item.Shipping.toFixed(2))}
+                                    {formatPrice(new Decimal(item.Shipping).toFixed(2))}
                                 </Text>
                             </View>
                         </View>
@@ -785,7 +803,14 @@ const DataPartBody = ({item, id, dateTime}) => {
                             <Text style={{color: Color.primaryColor, alignSelf: 'flex-end'}}>
                                 <SmailText color={Color.textGary}>合計</SmailText>
                                 HK${' '}
-                                {formatPrice((item.RMB / item.Rate + item.HKD + item.Add + item.Shipping).toFixed(2))}
+                                {formatPrice(
+                                    new Decimal(item.RMB)
+                                        .div(item.Rate)
+                                        .add(item.HKD)
+                                        .add(item.Add)
+                                        .add(item.Shipping)
+                                        .toFixed(2),
+                                )}
                             </Text>
                         </View>
                     </View>
@@ -793,24 +818,24 @@ const DataPartBody = ({item, id, dateTime}) => {
             </Swipeable>
             <Portal>
                 <Modal
-                    visible={showBigImage}
+                    visible={show_big_image}
                     transparent={true}
                     animationType={'fade'}
                     onRequestClose={() => setShowBigImage(false)}>
                     <ImageViewer
                         backgroundColor={'rgba(0,0,0,0.6)'}
-                        imageUrls={imagesViewerList}
+                        imageUrls={images_viewer_list}
                         onCancel={() => setShowBigImage(false)}
                         loadingRender={() => <ActivityIndicator animating={true} />}
                         enableSwipeDown={true}
                         footerContainerStyle={{width: '100%', position: 'absolute', bottom: 20, zIndex: 9999}}
                         renderFooter={() => (
-                            <View style={[style.row, {justifyContent: 'center'}]}>
+                            <View style={[STYLE.row, {justifyContent: 'center'}]}>
                                 <IconButton
                                     icon={'close'}
                                     size={30}
                                     iconColor={Color.white}
-                                    style={style.imageViewerCloseBtn}
+                                    style={STYLE.imageViewerCloseBtn}
                                     onPress={() => setShowBigImage(false)}
                                 />
                             </View>
@@ -818,7 +843,7 @@ const DataPartBody = ({item, id, dateTime}) => {
                     />
                 </Modal>
                 <Snackbar
-                    visible={confirmMSG}
+                    visible={confirm_msg}
                     onDismiss={() => setConfirmMSG(false)}
                     action={{
                         label: '復原',
@@ -902,7 +927,7 @@ const NewFunctionBanner = () => {
 };
 
 /* Home style */
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     imageViewerCloseBtn: {
         borderColor: Color.white,
         borderStyle: 'solid',
@@ -996,4 +1021,4 @@ const style = StyleSheet.create({
     },
 });
 
-export {Home, group_data, DataPart, grouping_note};
+export {Home, groupData, DataPart, groupingNote};

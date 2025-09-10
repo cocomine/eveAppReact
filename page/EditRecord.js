@@ -351,25 +351,24 @@ const EditRecord = ({navigation, route}) => {
                                     add: new Decimal(row.Add || 0),
                                     shipping: new Decimal(row.Shipping || 0),
                                     remark: row.Remark,
-                                    image: JSON.parse(row.Images),
+                                    image: /*JSON.parse(row.Images ?? [])*/ [],
                                 },
                             });
                             setRate(new Decimal(row.Rate || setting.Rate));
+
+                            //成功
+                            console.log('已取得資料');
                         });
                     } catch (e) {
                         console.error('取得資料錯誤: ' + e.message);
                         ToastAndroid.show('取得資料失敗', ToastAndroid.SHORT);
-                        return;
                     }
-
-                    //成功
-                    console.log('已取得資料');
                 };
 
                 extractData().then();
             }
         }
-    }, [navigation, route.params]);
+    }, [navigation, route.params, setting.Rate]);
 
     // 監聽鍵盤顯示隱藏
     useEffect(() => {

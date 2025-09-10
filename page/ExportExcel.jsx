@@ -17,20 +17,20 @@ import {RouteParamsContext} from '../module/RouteParamsContext';
 const ExportExcel = () => {
     const theme = useTheme();
 
-    const [setting, settingForceRefresh] = useSetting();
+    const [setting, setting_force_refresh] = useSetting();
     const [mode, setMode] = useState(1); //匯出模式
-    const [YearOpt, setYearOpt] = useState([]); //年份選項
-    const [okDialogVisible, setOkDialogVisible] = useState(false); //成功動畫
-    /** @type {{settingForceRefreshAlert?: number}} */
-    const routeParamsContext = useContext(RouteParamsContext);
+    const [year_opt, setYearOpt] = useState([]); //年份選項
+    const [ok_dialog_visible, setOkDialogVisible] = useState(false); //成功動畫
+    /** @type {{setting_force_refresh_alert?: number}} */
+    const route_params_context = useContext(RouteParamsContext);
 
     /* 重新整理資料 */
     useEffect(() => {
-        if (routeParamsContext && routeParamsContext.settingForceRefreshAlert) {
+        if (route_params_context && route_params_context.setting_force_refresh_alert) {
             console.log('重新整理資料');
-            settingForceRefresh();
+            setting_force_refresh();
         }
-    }, [routeParamsContext, settingForceRefresh]);
+    }, [route_params_context, setting_force_refresh]);
 
     /* 取得有資料的年份 */
     useFocusEffect(
@@ -83,28 +83,28 @@ const ExportExcel = () => {
                 </Button>
             </View>
             <ExportMonth
-                YearOpt={YearOpt}
+                year_opt={year_opt}
                 theme={theme}
                 setting={setting}
                 visible={mode === 1}
                 onSuccess={isSuccess => setOkDialogVisible(isSuccess)}
             />
             <ExportYear
-                YearOpt={YearOpt}
+                year_opt={year_opt}
                 theme={theme}
                 setting={setting}
                 visible={mode === 0}
                 onSuccess={isSuccess => setOkDialogVisible(isSuccess)}
             />
             <ExportAll
-                YearOpt={YearOpt}
+                year_opt={year_opt}
                 theme={theme}
                 setting={setting}
                 visible={mode === 2}
                 onSuccess={isSuccess => setOkDialogVisible(isSuccess)}
             />
             <Portal>
-                <Dialog visible={okDialogVisible} dismissable={false}>
+                <Dialog visible={ok_dialog_visible} dismissable={false}>
                     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                         <Lottie
                             source={require('../resource/89101-confirmed-tick.json')}
@@ -123,10 +123,10 @@ const ExportExcel = () => {
 };
 
 /* 月 */
-const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
+const ExportMonth = ({year_opt, theme, setting, onSuccess, visible}) => {
     const [year, setYear] = useState(''); //選擇年份
     const [month, setMonth] = useState(''); //選擇月份
-    const [MonthOpt, setMonthOpt] = useState([]); //月份選項
+    const [month_opt, setMonthOpt] = useState([]); //月份選項
 
     /* 取得有資料的月份 */
     const getMonth = useCallback(async year1 => {
@@ -138,7 +138,7 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                 );
 
                 //填充選項
-                setMonthOpt(rs.rows.raw);
+                setMonthOpt(rs.rows.raw());
                 setMonth(rs.rows.item(0).Month);
             });
         } catch (e) {
@@ -156,10 +156,10 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
     }, [year, visible, getMonth]);
 
     /* 更新年份選項 */
-    useEffect(() => setYear(YearOpt.length > 0 ? YearOpt[0].Year : ''), [YearOpt]);
+    useEffect(() => setYear(year_opt.length > 0 ? year_opt[0].Year : ''), [year_opt]);
 
     /* 匯出 */
-    const export_ = useCallback(
+    const doExport = useCallback(
         type => {
             if (month === '' || year === '') {
                 ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
@@ -172,19 +172,19 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                 [month, year],
             )
                 .then(data => {
-                    const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + year + '-' + month;
+                    const file_name = setting['company-name-ZH'].slice(0, 2) + ' ' + year + '-' + month;
 
                     generateExcel(data)
-                        .then(filePath => {
+                        .then(file_path => {
                             onSuccess(true); //成功動畫 start
                             sound.play(); // Play the sound with an onEnd callback
 
                             setTimeout(async () => {
                                 onSuccess(false); //成功動畫 end
 
-                                let savePath = CachesDirectoryPath + '/' + fileName + '.xlsx';
-                                await RNFS.copyFile(filePath, savePath); //先複製度暫存目錄
-                                await RNFS.unlink(filePath); //delete tmp file
+                                let save_path = CachesDirectoryPath + '/' + file_name + '.xlsx';
+                                await RNFS.copyFile(file_path, save_path); //先複製度暫存目錄
+                                await RNFS.unlink(file_path); //delete tmp file
 
                                 if (type === 1) {
                                     //以電郵傳送
@@ -195,7 +195,7 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                             body: `${setting['company-name-ZH']} ${year}/${month} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                             attachments: [
                                                 {
-                                                    path: savePath, // The absolute path of the file from which to read data.
+                                                    path: save_path, // The absolute path of the file from which to read data.
                                                     mimeType:
                                                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
                                                 },
@@ -209,7 +209,7 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                 } else if (type === 2) {
                                     //分享
                                     const res = await Share.open({
-                                        url: 'file://' + savePath,
+                                        url: 'file://' + save_path,
                                         message: `${setting['company-name-ZH']} ${year}/${month} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                         title: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
                                         subject: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
@@ -219,8 +219,8 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                     console.log(res);
                                 } else if (type === 3) {
                                     //預覽
-                                    //await Linking.openURL('file://'+savePath);
-                                    await FileViewer.open(savePath, {
+                                    //await Linking.openURL('file://'+save_path);
+                                    await FileViewer.open(save_path, {
                                         showOpenWithDialog: true,
                                         showAppsSuggestions: true,
                                     });
@@ -248,7 +248,7 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     onValueChange={itemValue => setYear(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇年份'}>
-                    {YearOpt.map((item, index) => (
+                    {year_opt.map((item, index) => (
                         <Picker.Item label={item.Year + '年'} value={item.Year} color={theme.colors.text} key={index} />
                     ))}
                 </Picker>
@@ -258,7 +258,7 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     onValueChange={itemValue => setMonth(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇月份'}>
-                    {MonthOpt.map((item, index) => (
+                    {month_opt.map((item, index) => (
                         <Picker.Item
                             label={item.Month + '月'}
                             value={item.Month}
@@ -268,14 +268,14 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     ))}
                 </Picker>
             </View>
-            <View style={style.buttonGroup}>
-                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+            <View style={STYLE.buttonGroup}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => doExport(1)} style={STYLE.button}>
                     電郵傳送
                 </Button>
-                <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
+                <Button icon={'share'} mode={'outlined'} onPress={() => doExport(2)} style={STYLE.button}>
                     分享
                 </Button>
-                <Button icon={'eye'} mode={'contained'} onPress={() => export_(3)} style={style.button}>
+                <Button icon={'eye'} mode={'contained'} onPress={() => doExport(3)} style={STYLE.button}>
                     預覽
                 </Button>
             </View>
@@ -284,14 +284,14 @@ const ExportMonth = ({YearOpt, theme, setting, onSuccess, visible}) => {
 };
 
 /* 年 */
-const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
+const ExportYear = ({year_opt, theme, setting, onSuccess, visible}) => {
     const [year, setYear] = useState(''); //選擇年份
 
     /* 更新年份選項 */
-    useEffect(() => setYear(YearOpt.length > 0 ? YearOpt[0].Year : ''), [YearOpt]);
+    useEffect(() => setYear(year_opt.length > 0 ? year_opt[0].Year : ''), [year_opt]);
 
     /* 匯出 */
-    const export_ = useCallback(
+    const doExport = useCallback(
         type => {
             if (year === '') {
                 ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
@@ -302,19 +302,19 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                 year,
             ])
                 .then(data => {
-                    const fileName = setting['company-name-ZH'].slice(0, 2) + ' ' + year;
+                    const file_name = setting['company-name-ZH'].slice(0, 2) + ' ' + year;
 
                     generateExcel(data)
-                        .then(filePath => {
+                        .then(file_path => {
                             onSuccess(true); //成功動畫 start
                             sound.play(); // Play the sound with an onEnd callback
 
                             setTimeout(async () => {
                                 onSuccess(false); //成功動畫 end
 
-                                let savePath = CachesDirectoryPath + '/' + fileName + '.xlsx';
-                                await RNFS.copyFile(filePath, savePath); //先複製度暫存目錄
-                                await RNFS.unlink(filePath); //delete tmp file
+                                let save_path = CachesDirectoryPath + '/' + file_name + '.xlsx';
+                                await RNFS.copyFile(file_path, save_path); //先複製度暫存目錄
+                                await RNFS.unlink(file_path); //delete tmp file
 
                                 if (type === 1) {
                                     //以電郵傳送
@@ -325,7 +325,7 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                             body: `${setting['company-name-ZH']} ${year} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                             attachments: [
                                                 {
-                                                    path: savePath, // The absolute path of the file from which to read data.
+                                                    path: save_path, // The absolute path of the file from which to read data.
                                                     mimeType:
                                                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
                                                 },
@@ -339,7 +339,7 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                 } else if (type === 2) {
                                     //分享
                                     const res = await Share.open({
-                                        url: 'file://' + savePath,
+                                        url: 'file://' + save_path,
                                         message: `${setting['company-name-ZH']} ${year} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                         title: setting['company-name-ZH'].slice(0, 2) + ' ' + year,
                                         subject: setting['company-name-ZH'].slice(0, 2) + ' ' + year,
@@ -349,8 +349,8 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                     console.log(res);
                                 } else if (type === 3) {
                                     //預覽
-                                    //await Linking.openURL('file://'+savePath);
-                                    await FileViewer.open(savePath, {
+                                    //await Linking.openURL('file://'+save_path);
+                                    await FileViewer.open(save_path, {
                                         showOpenWithDialog: true,
                                         showAppsSuggestions: true,
                                     });
@@ -378,19 +378,19 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     onValueChange={itemValue => setYear(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇年份'}>
-                    {YearOpt.map((item, index) => (
+                    {year_opt.map((item, index) => (
                         <Picker.Item label={item.Year + '年'} value={item.Year} color={theme.colors.text} key={index} />
                     ))}
                 </Picker>
             </View>
-            <View style={style.buttonGroup}>
-                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+            <View style={STYLE.buttonGroup}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => doExport(1)} style={STYLE.button}>
                     電郵傳送
                 </Button>
-                <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
+                <Button icon={'share'} mode={'outlined'} onPress={() => doExport(2)} style={STYLE.button}>
                     分享
                 </Button>
-                <Button icon={'eye'} mode={'contained'} onPress={() => export_(3)} style={style.button}>
+                <Button icon={'eye'} mode={'contained'} onPress={() => doExport(3)} style={STYLE.button}>
                     預覽
                 </Button>
             </View>
@@ -399,30 +399,30 @@ const ExportYear = ({YearOpt, theme, setting, onSuccess, visible}) => {
 };
 
 /* 全部 */
-const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
+const ExportAll = ({year_opt, theme, setting, onSuccess, visible}) => {
     /* 匯出 */
-    const export_ = useCallback(
+    const doExport = useCallback(
         type => {
-            if (YearOpt.length <= 0) {
+            if (year_opt.length <= 0) {
                 ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
                 return;
             }
 
             getRecordArray(setting.Rate, 'SELECT * FROM Record ORDER BY DateTime', [])
                 .then(data => {
-                    const fileName = setting['company-name-ZH'].slice(0, 2);
+                    const file_name = setting['company-name-ZH'].slice(0, 2);
 
                     generateExcel(data)
-                        .then(filePath => {
+                        .then(file_path => {
                             onSuccess(true); //成功動畫 start
                             sound.play(); // Play the sound with an onEnd callback
 
                             setTimeout(async () => {
                                 onSuccess(false); //成功動畫 end
 
-                                let savePath = CachesDirectoryPath + '/' + fileName + '.xlsx';
-                                await RNFS.copyFile(filePath, savePath); //先複製度暫存目錄
-                                await RNFS.unlink(filePath); //delete tmp file
+                                let save_path = CachesDirectoryPath + '/' + file_name + '.xlsx';
+                                await RNFS.copyFile(file_path, save_path); //先複製度暫存目錄
+                                await RNFS.unlink(file_path); //delete tmp file
 
                                 if (type === 1) {
                                     //以電郵傳送
@@ -433,7 +433,7 @@ const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                             body: `${setting['company-name-ZH']} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                             attachments: [
                                                 {
-                                                    path: savePath, // The absolute path of the file from which to read data.
+                                                    path: save_path, // The absolute path of the file from which to read data.
                                                     mimeType:
                                                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
                                                 },
@@ -447,7 +447,7 @@ const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                 } else if (type === 2) {
                                     //分享
                                     const res = await Share.open({
-                                        url: 'file://' + savePath,
+                                        url: 'file://' + save_path,
                                         message: `${setting['company-name-ZH']} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                         title: setting['company-name-ZH'].slice(0, 2),
                                         subject: setting['company-name-ZH'].slice(0, 2),
@@ -457,8 +457,8 @@ const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
                                     console.log(res);
                                 } else if (type === 3) {
                                     //預覽
-                                    //await Linking.openURL('file://'+savePath);
-                                    await FileViewer.open(savePath, {
+                                    //await Linking.openURL('file://'+save_path);
+                                    await FileViewer.open(save_path, {
                                         showOpenWithDialog: true,
                                         showAppsSuggestions: true,
                                     });
@@ -473,20 +473,20 @@ const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
                     ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
                 });
         },
-        [YearOpt.length, onSuccess, setting],
+        [year_opt.length, onSuccess, setting],
     );
 
     if (!visible) return null;
     return (
         <View>
-            <View style={style.buttonGroup}>
-                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+            <View style={STYLE.buttonGroup}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => doExport(1)} style={STYLE.button}>
                     電郵傳送
                 </Button>
-                <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
+                <Button icon={'share'} mode={'outlined'} onPress={() => doExport(2)} style={STYLE.button}>
                     分享
                 </Button>
-                <Button icon={'eye'} mode={'contained'} onPress={() => export_(3)} style={style.button}>
+                <Button icon={'eye'} mode={'contained'} onPress={() => doExport(3)} style={STYLE.button}>
                     預覽
                 </Button>
             </View>
@@ -494,7 +494,7 @@ const ExportAll = ({YearOpt, theme, setting, onSuccess, visible}) => {
     );
 };
 
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     buttonGroup: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -519,24 +519,24 @@ function getRecordArray(rate, sql, args) {
                     return;
                 }
 
-                const recordArray = [];
-                let lastDate = moment(rs.rows.item(0).DateTime);
+                const record_array = [];
+                let last_date = moment(rs.rows.item(0).DateTime);
                 let tmp = [];
 
                 for (let i = 0; i < rs.rows.length; i++) {
                     const row = rs.rows.item(i);
 
                     // 檢查是否要換月份
-                    const currentDate = moment(row.DateTime);
-                    if (!currentDate.isSame(lastDate, 'month') || i >= rs.rows.length - 1) {
-                        recordArray.push({date: lastDate.format('yyyy-M'), record: tmp});
+                    const current_date = moment(row.DateTime);
+                    if (!current_date.isSame(last_date, 'month') || i >= rs.rows.length - 1) {
+                        record_array.push({date: last_date.format('yyyy-M'), record: tmp});
                         tmp = [];
                     }
-                    lastDate = currentDate;
+                    last_date = current_date;
 
                     //進行計算
-                    let Change = parseFloat((row.RMB / rate).toFixed(2));
-                    let rowTotal = Change + row.HKD + row.Add + row.Shipping;
+                    let change = parseFloat((row.RMB / rate).toFixed(2));
+                    let row_total = change + row.HKD + row.Add + row.Shipping;
 
                     //填充資料
                     tmp.push([
@@ -551,7 +551,7 @@ function getRecordArray(rate, sql, args) {
                             z: '_("CN¥"* #,##0.00_);_("CN¥"* (#,##0.00);_("CN¥"* "-"??_);_(@_)',
                             s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
                         },
-                        {v: Change, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
+                        {v: change, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
                         {
                             v: row.HKD,
                             t: 'n',
@@ -561,7 +561,7 @@ function getRecordArray(rate, sql, args) {
                         {v: row.Add, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
                         {v: row.Shipping, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
                         {
-                            v: rowTotal,
+                            v: row_total,
                             t: 'n',
                             z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
                             f: 'SUM(G' + (i + 3) + ':J' + (i + 3) + ')',
@@ -570,7 +570,7 @@ function getRecordArray(rate, sql, args) {
                     ]);
                 }
 
-                resolve(recordArray);
+                resolve(record_array);
             });
         } catch (e) {
             console.error('傳輸錯誤: ' + e.message);
@@ -584,7 +584,7 @@ function getRecordArray(rate, sql, args) {
 }
 
 /* excel Heard */
-const excelHeard = [
+const EXCEL_HEARD = [
     [
         ...Array.from({length: 12}, (t, i) => {
             if (i === 5)
@@ -627,15 +627,15 @@ const excelHeard = [
 ];
 
 /* 產生excel */
-function generateExcel(recordArray) {
+function generateExcel(record_array) {
     return new Promise((resolve, reject) => {
         try {
             const wb = XLSX.utils.book_new();
 
             // 填充數據
-            recordArray.forEach(item => {
+            record_array.forEach(item => {
                 const record = item.record;
-                record.unshift(...excelHeard);
+                record.unshift(...EXCEL_HEARD);
                 const ws = XLSX.utils.aoa_to_sheet(record);
 
                 // 列寬
@@ -676,11 +676,11 @@ function generateExcel(recordArray) {
             });
 
             // 產生檔案
-            const savePath = CachesDirectoryPath + '/test.xlsx';
+            const save_path = CachesDirectoryPath + '/test.xlsx';
             const wbout = XLSX.write(wb, {type: 'binary', bookType: 'xlsx'});
-            RNFS.writeFile(savePath, wbout, 'ascii')
+            RNFS.writeFile(save_path, wbout, 'ascii')
                 .then(() => {
-                    resolve(savePath);
+                    resolve(save_path);
                 })
                 .catch(error => {
                     console.log('excel寫入錯誤: ' + error);

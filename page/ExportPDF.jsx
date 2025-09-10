@@ -21,29 +21,29 @@ import {RouteParamsContext} from '../module/RouteParamsContext';
 const ExportPDF = () => {
     const theme = useTheme();
 
-    const [setting, settingForceRefresh] = useSetting();
+    const [setting, setting_force_refresh] = useSetting();
     const [remark, setRemark] = useState(false); //是否包含備註
     const [year, setYear] = useState(''); //選擇年份
     const [month, setMonth] = useState(''); //選擇月份
-    const [YearOpt, setYearOpt] = useState([]); //年份選項
-    const [MonthOpt, setMonthOpt] = useState([]); //月份選項
-    const [okDialogVisible, setOkDialogVisible] = useState(false); //成功動畫
-    const choseType = useRef(null); //匯出類型
-    const toCompany = useRef(null);
-    /** @type {{settingForceRefreshAlert?: number}} */
-    const routeParamsContext = useContext(RouteParamsContext);
+    const [year_opt, setYearOpt] = useState([]); //年份選項
+    const [month_opt, setMonthOpt] = useState([]); //月份選項
+    const [ok_dialog_visible, setOkDialogVisible] = useState(false); //成功動畫
+    const chose_type = useRef(null); //匯出類型
+    const to_company = useRef(null);
+    /** @type {{setting_force_refresh_alert?: number}} */
+    const route_params_context = useContext(RouteParamsContext);
 
     /* 重新整理資料 */
     useEffect(() => {
-        if (routeParamsContext && routeParamsContext.settingForceRefreshAlert) {
+        if (route_params_context && route_params_context.setting_force_refresh_alert) {
             console.log('重新整理資料');
-            settingForceRefresh();
+            setting_force_refresh();
         }
-    }, [routeParamsContext, settingForceRefresh]);
+    }, [route_params_context, setting_force_refresh]);
 
     /* 取得 致... 公司名稱 */
     useEffect(() => {
-        const get_toCompanyName = async () => {
+        const getToCompanyName = async () => {
             try {
                 return await AsyncStorage.getItem('toCompanyName');
             } catch (e) {
@@ -51,9 +51,9 @@ const ExportPDF = () => {
             }
         };
 
-        get_toCompanyName().then(toCompanyName => {
-            if (toCompanyName != null) {
-                toCompany.current = toCompanyName;
+        getToCompanyName().then(to_company_name => {
+            if (to_company_name != null) {
+                to_company.current = to_company_name;
             }
         });
     }, []);
@@ -145,7 +145,7 @@ const ExportPDF = () => {
     }, [getMonth, year]);
 
     /* 彈出窗口 */
-    const export_ = useCallback(
+    const doExport = useCallback(
         type => {
             /* 確認匯出 */
             const output = () => {
@@ -155,14 +155,14 @@ const ExportPDF = () => {
                 }
 
                 getRecordHTML(remark, month, year, setting.Rate, (html, total) => {
-                    const fileName =
-                        setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + toCompany.current + ')';
+                    const file_name =
+                        setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月(' + to_company.current + ')';
 
                     /* 生成pdf */
                     const printPDF = async () => {
                         return await HTMLtoPDF.convert({
-                            html: HTMLData(month + '月 ' + year, total, html, toCompany.current, setting),
-                            fileName: fileName,
+                            html: htmlData(month + '月 ' + year, total, html, to_company.current, setting),
+                            fileName: file_name,
                             directory: 'Documents',
                             width: 842,
                             height: 595,
@@ -176,20 +176,20 @@ const ExportPDF = () => {
                         setTimeout(async () => {
                             setOkDialogVisible(false); //成功動畫 end
 
-                            let savePath = CachesDirectoryPath + '/' + fileName + '.pdf';
-                            await RNFS.copyFile(results.filePath, savePath); //先複製度暫存目錄
+                            let save_path = CachesDirectoryPath + '/' + file_name + '.pdf';
+                            await RNFS.copyFile(results.filePath, save_path); //先複製度暫存目錄
                             await RNFS.unlink(results.filePath); //delete tmp file
 
-                            if (choseType.current === 1) {
+                            if (chose_type.current === 1) {
                                 //以電郵傳送
                                 Mailer.mail(
                                     {
                                         subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
                                         recipients: [setting['Email-to']],
-                                        body: `致 ${toCompany.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                        body: `致 ${to_company.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                         attachments: [
                                             {
-                                                path: savePath, // The absolute path of the file from which to read data.
+                                                path: save_path, // The absolute path of the file from which to read data.
                                                 type: 'pdf', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
                                             },
                                         ],
@@ -199,11 +199,11 @@ const ExportPDF = () => {
                                         ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
                                     },
                                 );
-                            } else if (choseType.current === 2) {
+                            } else if (chose_type.current === 2) {
                                 //分享
                                 const res = await Share.open({
-                                    url: 'file://' + savePath,
-                                    message: `致 ${toCompany.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                    url: 'file://' + save_path,
+                                    message: `致 ${to_company.current}:\n\n${setting['company-name-ZH']} ${month}月的月結單, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
                                     title: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
                                     subject: setting['company-name-ZH'].slice(0, 2) + ' ' + month + '月 月結單',
                                     email: setting['Email-to'],
@@ -211,12 +211,12 @@ const ExportPDF = () => {
                                     failOnCancel: false,
                                 }).catch(error => console.log('Share Error: ', error));
                                 console.log(res);
-                            } else if (choseType.current === 3) {
+                            } else if (chose_type.current === 3) {
                                 //打印
-                                await RNPrint.print({filePath: savePath, isLandscape: true});
-                            } else if (choseType.current === 4) {
+                                await RNPrint.print({filePath: save_path, isLandscape: true});
+                            } else if (chose_type.current === 4) {
                                 //預覽
-                                await FileViewer.open(savePath, {
+                                await FileViewer.open(save_path, {
                                     showOpenWithDialog: true,
                                     showAppsSuggestions: true,
                                 });
@@ -229,9 +229,9 @@ const ExportPDF = () => {
             };
 
             /* save toCompanyName */
-            const store_toCompanyName = async text => {
+            const storeToCompanyName = async text => {
                 try {
-                    toCompany.current = text;
+                    to_company.current = text;
                     await AsyncStorage.setItem('toCompanyName', text);
                     output();
                 } catch (e) {
@@ -239,10 +239,10 @@ const ExportPDF = () => {
                 }
             };
 
-            choseType.current = type;
-            prompt('致...', '請輸入收件人名稱', [{text: '取消'}, {text: '確認', onPress: store_toCompanyName}], {
+            chose_type.current = type;
+            prompt('致...', '請輸入收件人名稱', [{text: '取消'}, {text: '確認', onPress: storeToCompanyName}], {
                 cancelable: true,
-                defaultValue: toCompany.current,
+                defaultValue: to_company.current,
             });
         },
         [month, year, remark, setting],
@@ -258,7 +258,7 @@ const ExportPDF = () => {
                     onValueChange={itemValue => setYear(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇年份'}>
-                    {YearOpt}
+                    {year_opt}
                 </Picker>
                 <Picker
                     style={{flex: 1}}
@@ -266,20 +266,20 @@ const ExportPDF = () => {
                     onValueChange={itemValue => setMonth(itemValue)}
                     dropdownIconColor={theme.colors.text}
                     prompt={'選擇月份'}>
-                    {MonthOpt}
+                    {month_opt}
                 </Picker>
             </View>
-            <View style={style.buttonGroup}>
-                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => export_(1)} style={style.button}>
+            <View style={STYLE.buttonGroup}>
+                <Button icon={'email-fast-outline'} mode={'outlined'} onPress={() => doExport(1)} style={STYLE.button}>
                     電郵傳送
                 </Button>
-                <Button icon={'share'} mode={'outlined'} onPress={() => export_(2)} style={style.button}>
+                <Button icon={'share'} mode={'outlined'} onPress={() => doExport(2)} style={STYLE.button}>
                     分享
                 </Button>
-                <Button icon={'printer'} mode={'outlined'} onPress={() => export_(3)} style={style.button}>
+                <Button icon={'printer'} mode={'outlined'} onPress={() => doExport(3)} style={STYLE.button}>
                     打印
                 </Button>
-                <Button icon={'eye'} mode={'contained'} onPress={() => export_(4)} style={style.button}>
+                <Button icon={'eye'} mode={'contained'} onPress={() => doExport(4)} style={STYLE.button}>
                     預覽
                 </Button>
             </View>
@@ -294,7 +294,7 @@ const ExportPDF = () => {
                 <Text>包含備註</Text>
             </View>
             <Portal>
-                <Dialog visible={okDialogVisible} dismissable={false}>
+                <Dialog visible={ok_dialog_visible} dismissable={false}>
                     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                         <Lottie
                             source={require('../resource/89101-confirmed-tick.json')}
@@ -313,7 +313,7 @@ const ExportPDF = () => {
 };
 
 /* 套入html模板 */
-function HTMLData(Date, Total, HTML_body, toCompanyName, setting) {
+function htmlData(date, total, html_body, to_company_name, setting) {
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -368,9 +368,9 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting) {
 <h5>${setting['company-name-EN']}</h5>
 <p></p>
 <div id="head">
-        <div>致 ${toCompanyName}</div>
+        <div>致 ${to_company_name}</div>
         <div style="flex-grow: 1"></div>
-        <div style=" margin-right: 1.2rem">${Date}</div>
+        <div style=" margin-right: 1.2rem">${date}</div>
         <div style=" margin-right: 1.2rem">車牌: ${setting['Driver-license']}</div>
         <div>司機: ${setting['Driver-name']}</div>
 </div>
@@ -396,12 +396,12 @@ function HTMLData(Date, Total, HTML_body, toCompanyName, setting) {
     </tr>
     </thead>
     <tbody>
-    ${HTML_body}
+    ${html_body}
     </tbody>
     <tfoot>
     <tr>
         <td colspan="5">匯率: 100 港幣 = ${(100 * setting.Rate).toFixed(2)} 人民幣</td>
-        <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${Total}</td>
+        <td colspan="6" style="text-align: right; font-size: 1.5em">總計: HK$ ${total}</td>
     </tr>
     </tfoot>
 </table>
@@ -423,26 +423,26 @@ function blankNum(num, sign) {
 }
 
 /* 取得當月紀錄*/
-async function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, rate, output) {
+async function getRecordHTML(is_output_remark, output_date_month, output_date_year, rate, output) {
     try {
         await DB.readTransaction(async function (tr) {
-            console.log('顯示: ', outputDateMonth, outputDateYear);
+            console.log('顯示: ', output_date_month, output_date_year);
             const [, rs] = await tr.executeSql(
                 "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime",
-                [outputDateMonth, outputDateYear],
+                [output_date_month, output_date_year],
             );
 
             if (rs.rows.length <= 0) {
                 throw new Error('沒有資料');
             }
 
-            let Total = {
-                Month: 0.0,
-                RMB: 0.0,
-                HKD: 0.0,
-                ADD: 0.0,
-                Shipping: 0.0,
-                Change: 0.0,
+            let total = {
+                month: 0.0,
+                rmb: 0.0,
+                hkd: 0.0,
+                add: 0.0,
+                shipping: 0.0,
+                change: 0.0,
             };
             let html = '';
 
@@ -461,21 +461,21 @@ async function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, ra
                     ')';
 
                 //進行計算
-                let Change = parseFloat((row.RMB / rate).toFixed(2));
-                let rowTotal = Change + row.HKD + row.Add + row.Shipping;
-                Total.Month += rowTotal;
-                rowTotal = blankNum(rowTotal, '$');
-                Total.RMB += row.RMB;
+                let change = parseFloat((row.RMB / rate).toFixed(2));
+                let row_total = change + row.HKD + row.Add + row.Shipping;
+                total.month += row_total;
+                row_total = blankNum(row_total, '$');
+                total.rmb += row.RMB;
                 row.RMB = blankNum(row.RMB, 'CN¥');
-                Total.Change += Change;
-                Change = blankNum(Change, '$');
-                Total.HKD += row.HKD;
+                total.change += change;
+                change = blankNum(change, '$');
+                total.hkd += row.HKD;
                 row.HKD = blankNum(row.HKD, '$');
-                Total.ADD += row.Add;
+                total.add += row.Add;
                 row.Add = blankNum(row.Add, '$');
-                Total.Shipping += row.Shipping;
+                total.shipping += row.Shipping;
                 row.Shipping = blankNum(row.Shipping, '$');
-                //console.log(Total); //debug
+                //console.log(total); //debug
 
                 //放入html
                 html += `
@@ -485,27 +485,27 @@ async function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, ra
                         <td>${row.CargoNum}</td>
                         <td>${row.Type}</td>
                         <td>${row.Local}<br><span style="color: grey">${
-                            isOutputRemark ? (row.Remark === null ? '' : row.Remark) : ''
+                            is_output_remark ? (row.Remark === null ? '' : row.Remark) : ''
                         }</span></td>
                         <td>${row.RMB}</td>
-                        <td>${Change}</td>
+                        <td>${change}</td>
                         <td>${row.HKD}</td>
                         <td>${row.Add}</td>
                         <td>${row.Shipping}</td>
-                        <td>${rowTotal}</td>
+                        <td>${row_total}</td>
                     </tr>`;
             }
             html += `
                 <tr style="font-size: 1.1em; background-color: lightskyblue">
                     <th scope="row" colspan="5" style="text-align: center">各項總計</th>
-                    <td style="border-left: 1px solid lightgray">CN¥ ${formatPrice(Total.RMB.toFixed(2))}</td>
-                    <td>$ ${formatPrice(Total.Change.toFixed(2))}</td>
-                    <td style="border-right: 1px solid lightgray">$ ${formatPrice(Total.HKD.toFixed(2))}</td>
-                    <td>$ ${formatPrice(Total.ADD.toFixed(2))}</td>
-                    <td style="border-width: 0">$ ${formatPrice(Total.Shipping.toFixed(2))}</td>
+                    <td style="border-left: 1px solid lightgray">CN¥ ${formatPrice(total.rmb.toFixed(2))}</td>
+                    <td>$ ${formatPrice(total.change.toFixed(2))}</td>
+                    <td style="border-right: 1px solid lightgray">$ ${formatPrice(total.hkd.toFixed(2))}</td>
+                    <td>$ ${formatPrice(total.add.toFixed(2))}</td>
+                    <td style="border-width: 0">$ ${formatPrice(total.shipping.toFixed(2))}</td>
                     <td> </td>
                 </tr>`;
-            output(html, Total.Month.toFixed(2));
+            output(html, total.month.toFixed(2));
         });
     } catch (e) {
         console.error('傳輸錯誤: ' + e.message);
@@ -513,7 +513,7 @@ async function getRecordHTML(isOutputRemark, outputDateMonth, outputDateYear, ra
     }
 }
 
-const style = StyleSheet.create({
+const STYLE = StyleSheet.create({
     buttonGroup: {
         flexDirection: 'row',
         justifyContent: 'space-around',
