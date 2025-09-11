@@ -155,7 +155,7 @@ const ExportPDF = () => {
                 return;
             }
 
-            /* save toCompanyName */
+            //開始匯出
             const startExport = async text => {
                 try {
                     to_company.current = text;
@@ -171,12 +171,12 @@ const ExportPDF = () => {
                     await DB.readTransaction(async tr => {
                         const [, rs] = await tr.executeSql(
                             `
-                             SELECT ifnull(Rate, 0) as 'Rate', COUNT('Rate') as 'count'
-                             FROM Record
-                             WHERE STRFTIME('%m', DateTime) = ?
-                               AND STRFTIME('%Y', DateTime) = ?
-                             GROUP BY Rate
-                             ORDER BY count DESC;`,
+                                SELECT ifnull(Rate, 0) as 'Rate', COUNT('Rate') as 'count'
+                                FROM Record
+                                WHERE STRFTIME('%m', DateTime) = ?
+                                  AND STRFTIME('%Y', DateTime) = ?
+                                GROUP BY Rate
+                                ORDER BY count DESC;`,
                             [month, year],
                         );
                         //todo: test

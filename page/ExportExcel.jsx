@@ -1,5 +1,5 @@
 import {StyleSheet, ToastAndroid, View} from 'react-native';
-import {Button, Dialog, Portal, Title, useTheme} from 'react-native-paper';
+import {Button, Dialog, Portal, Text, useTheme} from 'react-native-paper';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import {DB, useSetting} from '../module/SQLite';
@@ -13,6 +13,8 @@ import Share from 'react-native-share';
 import * as XLSX from 'xlsx-js-style';
 import moment from 'moment';
 import {RouteParamsContext} from '../module/RouteParamsContext';
+
+/** @typedef {import('../module/SQLite').SettingType} SettingType */
 
 const ExportExcel = () => {
     const theme = useTheme();
@@ -61,7 +63,7 @@ const ExportExcel = () => {
 
     return (
         <View style={{justifyContent: 'center', alignItems: 'center', flex: 1}}>
-            <Title>選擇匯出範圍</Title>
+            <Text variant={'titleLarge'}>選擇匯出範圍</Text>
             <View style={{flexDirection: 'row', paddingBottom: 10}}>
                 <Button
                     mode={mode === 0 ? 'contained' : 'outlined'}
@@ -122,13 +124,22 @@ const ExportExcel = () => {
     );
 };
 
-/* 月 */
+/**
+ * 月
+ * @param year_opt {Array} 年份選項
+ * @param theme {Theme} 主題
+ * @param setting {SettingType} 設定
+ * @param onSuccess {function} 成功回調
+ * @param visible {boolean} 是否顯示
+ * @return {React.JSX.Element|null}
+ * @constructor
+ */
 const ExportMonth = ({year_opt, theme, setting, onSuccess, visible}) => {
     const [year, setYear] = useState(''); //選擇年份
     const [month, setMonth] = useState(''); //選擇月份
     const [month_opt, setMonthOpt] = useState([]); //月份選項
 
-    /* 取得有資料的月份 */
+    // 取得有資料的月份
     const getMonth = useCallback(async year1 => {
         try {
             await DB.readTransaction(async function (tr) {
@@ -150,90 +161,86 @@ const ExportMonth = ({year_opt, theme, setting, onSuccess, visible}) => {
         console.log('已取得有資料的月份');
     }, []);
 
-    /* 更新月份選項 */
+    // 更新月份選項
     useEffect(() => {
         getMonth(year).then();
     }, [year, visible, getMonth]);
 
-    /* 更新年份選項 */
+    // 更新年份選項
     useEffect(() => setYear(year_opt.length > 0 ? year_opt[0].Year : ''), [year_opt]);
 
-    /* 匯出 */
+    // 匯出
     const doExport = useCallback(
-        type => {
+        async type => {
             if (month === '' || year === '') {
                 ToastAndroid.show('沒有任何資料', ToastAndroid.SHORT);
                 return;
             }
 
-            getRecordArray(
-                setting.Rate,
-                "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime",
-                [month, year],
-            )
-                .then(data => {
-                    const file_name = setting['company-name-ZH'].slice(0, 2) + ' ' + year + '-' + month;
+            try {
+                //取得資料
+                const data = await getRecordArray(
+                    setting.Rate,
+                    "SELECT * FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? ORDER BY DateTime",
+                    [month, year],
+                );
 
-                    generateExcel(data)
-                        .then(file_path => {
-                            onSuccess(true); //成功動畫 start
-                            sound.play(); // Play the sound with an onEnd callback
+                const file_name = setting['company-name-ZH'].slice(0, 2) + ' ' + year + '-' + month;
+                const file_path = await generateExcel(data); //產生Excel
 
-                            setTimeout(async () => {
-                                onSuccess(false); //成功動畫 end
+                onSuccess(true); //成功動畫 start
+                sound.play(); // Play the sound with an onEnd callback
 
-                                let save_path = CachesDirectoryPath + '/' + file_name + '.xlsx';
-                                await RNFS.copyFile(file_path, save_path); //先複製度暫存目錄
-                                await RNFS.unlink(file_path); //delete tmp file
+                setTimeout(async () => {
+                    let save_path = CachesDirectoryPath + '/' + file_name + '.xlsx';
+                    await RNFS.copyFile(file_path, save_path); //先複製度暫存目錄
+                    await RNFS.unlink(file_path); //delete tmp file
 
-                                if (type === 1) {
-                                    //以電郵傳送
-                                    Mailer.mail(
-                                        {
-                                            subject: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
-                                            recipients: [setting['Email-to']],
-                                            body: `${setting['company-name-ZH']} ${year}/${month} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                                            attachments: [
-                                                {
-                                                    path: save_path, // The absolute path of the file from which to read data.
-                                                    mimeType:
-                                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Mime Type: jpg, png, doc, ppt, html, pdf, csv
-                                                },
-                                            ],
-                                        },
-                                        (error, event) => {
-                                            console.log(error, event);
-                                            ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
-                                        },
-                                    );
-                                } else if (type === 2) {
-                                    //分享
-                                    const res = await Share.open({
-                                        url: 'file://' + save_path,
-                                        message: `${setting['company-name-ZH']} ${year}/${month} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
-                                        title: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
-                                        subject: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
-                                        email: setting['Email-to'],
-                                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                    }).catch(error => console.log('Share Error: ', error));
-                                    console.log(res);
-                                } else if (type === 3) {
-                                    //預覽
-                                    //await Linking.openURL('file://'+save_path);
-                                    await FileViewer.open(save_path, {
-                                        showOpenWithDialog: true,
-                                        showAppsSuggestions: true,
-                                    });
-                                }
-                            }, 1000);
-                        })
-                        .catch(error => {
-                            ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
+                    if (type === 1) {
+                        //以電郵傳送
+                        Mailer.mail(
+                            {
+                                subject: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
+                                recipients: [setting['Email-to']],
+                                body: `${setting['company-name-ZH']} ${year}/${month} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                                attachments: [
+                                    {
+                                        path: save_path, // The absolute path of the file from which to read data.
+                                        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                    },
+                                ],
+                            },
+                            (error, event) => {
+                                console.log(error, event);
+                                ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
+                            },
+                        );
+                    } else if (type === 2) {
+                        //分享
+                        const res = await Share.open({
+                            url: 'file://' + save_path,
+                            message: `${setting['company-name-ZH']} ${year}/${month} 的Excel, 已包在附件中。請查收。\n\n${setting['company-name-ZH']}\n${setting['Driver-name']}`,
+                            title: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
+                            subject: setting['company-name-ZH'].slice(0, 2) + ' ' + year + '/' + month,
+                            email: setting['Email-to'],
+                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        }).catch(error => console.log('Share Error: ', error));
+                        console.log(res);
+                    } else if (type === 3) {
+                        //預覽
+                        //await Linking.openURL('file://'+save_path);
+                        await FileViewer.open(save_path, {
+                            showOpenWithDialog: true,
+                            showAppsSuggestions: true,
                         });
-                })
-                .catch(error => {
-                    ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
-                });
+                    }
+
+                    onSuccess(false); //成功動畫 end
+                }, 1000);
+            } catch (error) {
+                ToastAndroid.show('出現錯誤: ' + error, ToastAndroid.SHORT);
+                onSuccess(false); //成功動畫 end
+            }
         },
         [month, year, setting, onSuccess],
     );
@@ -283,7 +290,16 @@ const ExportMonth = ({year_opt, theme, setting, onSuccess, visible}) => {
     );
 };
 
-/* 年 */
+/**
+ * 年
+ * @param year_opt {Array} 年份選項
+ * @param theme {Theme} 主題
+ * @param setting {SettingType} 設定
+ * @param onSuccess {function} 成功回調
+ * @param visible {boolean} 是否顯示
+ * @return {React.JSX.Element|null}
+ * @constructor
+ */
 const ExportYear = ({year_opt, theme, setting, onSuccess, visible}) => {
     const [year, setYear] = useState(''); //選擇年份
 
@@ -398,7 +414,16 @@ const ExportYear = ({year_opt, theme, setting, onSuccess, visible}) => {
     );
 };
 
-/* 全部 */
+/**
+ * 全部
+ * @param year_opt {Array} 年份選項
+ * @param theme {Theme} 主題
+ * @param setting {SettingType} 設定
+ * @param onSuccess {function} 成功回調
+ * @param visible {boolean} 是否顯示
+ * @return {React.JSX.Element|null}
+ * @constructor
+ */
 const ExportAll = ({year_opt, theme, setting, onSuccess, visible}) => {
     /* 匯出 */
     const doExport = useCallback(
@@ -507,7 +532,13 @@ const STYLE = StyleSheet.create({
     },
 });
 
-/* 取得資料 */
+/**
+ * 取得資料
+ * @param rate {number} 匯率
+ * @param sql {string} SQL語句
+ * @param args {Array} SQL參數
+ * @return {Promise<Array>} 回傳資料
+ */
 function getRecordArray(rate, sql, args) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -583,7 +614,7 @@ function getRecordArray(rate, sql, args) {
     });
 }
 
-/* excel Heard */
+// excel Heard
 const EXCEL_HEARD = [
     [
         ...Array.from({length: 12}, (t, i) => {
@@ -626,7 +657,11 @@ const EXCEL_HEARD = [
     ],
 ];
 
-/* 產生excel */
+/**
+ * 產生Excel檔案
+ * @param record_array {Array<{date: string, record: Array}>} 資料陣列
+ * @return {Promise<string>} 回傳檔案路徑
+ */
 function generateExcel(record_array) {
     return new Promise((resolve, reject) => {
         try {
@@ -676,14 +711,15 @@ function generateExcel(record_array) {
             });
 
             // 產生檔案
-            const save_path = CachesDirectoryPath + '/test.xlsx';
-            const wbout = XLSX.write(wb, {type: 'binary', bookType: 'xlsx'});
-            RNFS.writeFile(save_path, wbout, 'ascii')
+            const random_filename = Math.floor(Math.random() * 10000);
+            const save_path = CachesDirectoryPath + '/' + random_filename + '.xlsx';
+            const wbook = XLSX.write(wb, {type: 'binary', bookType: 'xlsx'});
+            RNFS.writeFile(save_path, wbook, 'utf8')
                 .then(() => {
                     resolve(save_path);
                 })
                 .catch(error => {
-                    console.log('excel寫入錯誤: ' + error);
+                    console.error('excel寫入錯誤: ', error);
                     reject(error);
                 });
         } catch (error) {

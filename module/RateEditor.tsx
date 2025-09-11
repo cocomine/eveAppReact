@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Decimal} from 'decimal.js';
-import {Portal, Text, useTheme} from 'react-native-paper';
-import {Keyboard, StyleSheet, TouchableWithoutFeedback, View} from 'react-native';
+import {IconButton, Portal, Text, useTheme} from 'react-native-paper';
+import {Keyboard, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
 import Animated, {FadeIn, FadeOut, SlideInDown, SlideOutDown} from 'react-native-reanimated';
 import {DecimalInput, NumInputRef} from './NumInput';
 import {NumKeyboard, NumKeyboardRef} from './NumKeyboard';
@@ -23,6 +23,7 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
     const [input_rate, setInputRate] = useState<number>(rate.toNumber());
     const [hkd_value, setHkdValue] = useState<number>(new Decimal(amount || 0).div(rate).toDecimalPlaces(2).toNumber());
     const [input_amount, setInputAmount] = useState<Decimal>(amount);
+    const [is_online_rate_loading, setIsOnlineRateLoading] = useState(false);
     const focusing_dec_input = useRef<'hkd' | 'rate' | null>(null); //目前聚焦銀碼輸入框
     const theme = useTheme();
     const insets = useSafeAreaInsets(); // 取得安全區域插入值
@@ -123,6 +124,27 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
         [input_amount, is_visible],
     );
 
+    // 線上更新匯率
+    const onlineRate = useCallback(() => {
+        setIsOnlineRateLoading(true);
+        fetch(
+            'https://exchange-rates.abstractapi.com/v1/live/?api_key=513ff6825b484fa2a9d38df074986a5d&base=HKD&target=CNY',
+        )
+            .then(response => {
+                response.json().then(json => {
+                    console.log(json);
+                    const rates = new Decimal(json.exchange_rates.CNY);
+                    setInputRate(rates.toDP(4).toNumber()); //取小數點後4位
+                    setHkdValue(input_amount.div(rates).toDP(2).toNumber());
+                });
+            })
+            .catch(error => {
+                ToastAndroid.show('獲取匯率失敗 ' + error, ToastAndroid.SHORT);
+                console.error('獲取匯率失敗 ', error);
+            })
+            .finally(() => setIsOnlineRateLoading(false));
+    }, [input_amount]);
+
     // 更新參數
     useEffect(() => {
         setIsVisible(visible);
@@ -167,6 +189,12 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                                     onPressIn={() => Keyboard.dismiss()}
                                     onBlur={decimalInputBlur}
                                 />
+                                <IconButton
+                                    icon={'reload'}
+                                    onPress={onlineRate}
+                                    onPressIn={onlineRate}
+                                    loading={is_online_rate_loading}
+                                />
                             </View>
                             <View style={style.form_group}>
                                 <Text style={{flex: 2 / 5}}>匯率 (毎百HK$)</Text>
@@ -177,8 +205,12 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                                         }}
                                         containerStyle={{flex: 1}}
                                         value={100 * input_rate}
-                                        inputProps={{showSoftInputOnFocus: false, maxLength: 10}}
+                                        inputProps={{
+                                            showSoftInputOnFocus: false,
+                                            maxLength: 10,
+                                        }}
                                         onValueChange={onRateValueChange}
+                                        symbol={'CN¥ '}
                                         onFocus={() => decimalInputFocus('rate')}
                                         onPressIn={() => Keyboard.dismiss()}
                                         onBlur={decimalInputBlur}

@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useReducer, useState} from 'react';
 import {Appbar, Divider, IconButton, List, Provider as PaperProvider, useTheme} from 'react-native-paper';
 import {Color} from '../module/Color';
-import {ActivityIndicator, ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
+import {ScrollView, StyleSheet, ToastAndroid, useColorScheme, View} from 'react-native';
 import {DB, useSetting} from '../module/SQLite';
 import {useNavigation} from '@react-navigation/native';
 import prompt from 'react-native-prompt-android';
@@ -256,9 +256,6 @@ const Setting = ({route}) => {
                     safeAreaInsets={{top: insets.top}}>
                     <Appbar.Content title={route.title} color={Color.white} />
                 </Appbar>
-                {/*<Appbar.Header style={{backgroundColor: route.color}}>
-                    <Appbar.Content title={route.title} color={Color.white} />
-                </Appbar.Header>*/}
                 <ScrollView>
                     <List.Section>
                         <List.Subheader style={STYLE.header}>匯率</List.Subheader>
@@ -268,13 +265,14 @@ const Setting = ({route}) => {
                                 style={STYLE.item}
                                 title={'100 港幣 = ' + (100 * state.Rate).toFixed(2) + ' 人民幣'}
                                 description={'點擊更改'}
-                                right={props =>
-                                    is_online_rate_loading ? (
-                                        <ActivityIndicator animating={true} size={'large'} {...props} />
-                                    ) : (
-                                        <IconButton icon={'reload'} {...props} onPress={onlineRate} />
-                                    )
-                                }
+                                right={props => (
+                                    <IconButton
+                                        icon={'reload'}
+                                        {...props}
+                                        onPress={onlineRate}
+                                        loading={is_online_rate_loading}
+                                    />
+                                )}
                             />
                         </View>
                     </List.Section>
