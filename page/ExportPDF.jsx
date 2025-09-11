@@ -170,11 +170,18 @@ const ExportPDF = () => {
                 try {
                     await DB.readTransaction(async tr => {
                         const [, rs] = await tr.executeSql(
-                            "SELECT Rate, COUNT(Rate) as 'count' FROM Record WHERE STRFTIME('%m', DateTime) = ? AND STRFTIME('%Y', DateTime) = ? GROUP BY Rate ORDER BY count DESC LIMIT 1",
+                            `
+                             SELECT ifnull(Rate, 0) as 'Rate', COUNT('Rate') as 'count'
+                             FROM Record
+                             WHERE STRFTIME('%m', DateTime) = ?
+                               AND STRFTIME('%Y', DateTime) = ?
+                             GROUP BY Rate
+                             ORDER BY count DESC;`,
                             [month, year],
                         );
-
-                        if (rs.rows.length > 0 && rs.rows.item(0).Rate !== null) mouth_rate = rs.rows.item(0).Rate; //使用該月的匯率
+                        //todo: test
+                        const rate = rs.rows.item(0).Rate;
+                        if (rs.rows.length > 0 && rate !== null && rate !== 0) mouth_rate = rs.rows.item(0).Rate; //使用該月的匯率
                     });
                 } catch (e) {
                     console.error('取得匯率錯誤: ', e);
