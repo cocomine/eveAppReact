@@ -95,7 +95,7 @@ function App() {
                                         options={{title: '搜尋', headerShown: false}}
                                     />
                                     <Stack.Screen //備忘錄
-                                        name="Note"
+                                        name="NotePage"
                                         component={Note}
                                         options={{title: '備忘錄', headerShown: false}}
                                     />

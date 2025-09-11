@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {DB, useSetting} from '../module/SQLite';
 import moment from 'moment/moment';
 import {FlatList, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
-import {IconButton, Menu, Text, TextInput, useTheme} from 'react-native-paper';
+import {IconButton, Menu, Text, TextInput} from 'react-native-paper';
 import {Toolbar, ToolBarView} from '../module/Toolbar';
 import {Color} from '../module/Color';
 import formatPrice from '../module/formatPrice';
@@ -10,11 +10,11 @@ import SVGCargo from '../module/SVGCargo';
 import SVGLostCargo from '../module/SVGLostCargo';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
-import {DataPart, group_data} from './Home';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useRoute} from '@react-navigation/native';
+import {DataPart, groupData} from '../module/DataPart';
 
-/* 顯示模式List */
+// 顯示模式List
 const SHOW_MODE_LIST = [
     {label: '全部', value: 0},
     {label: '週', value: 1},
@@ -35,14 +35,13 @@ const Search = () => {
     const insets = useSafeAreaInsets(); //安全區域
     /** @type {RouteProp<RootStackParamList, 'Main'>} **/
     const route = useRoute(); //路由
-    const theme = useTheme();
 
-    /* 更新資料 */
+    // 更新資料
     useEffect(() => {
         let sql_query = '';
         let sql_value = [];
 
-        /* 根據模式安排sql query */
+        // 根據模式安排sql query
         switch (show_mode) {
             case 1:
                 sql_query = "WHERE STRFTIME('%Y-%m-%d', DateTime) BETWEEN ? AND ?";
@@ -73,7 +72,7 @@ const Search = () => {
             sql_value.push(tmp, tmp, tmp, tmp);
         }
 
-        /* 讀取紀錄 */
+        // 讀取紀錄
         const extracted = async () => {
             try {
                 await DB.readTransaction(async tr => {
@@ -81,12 +80,12 @@ const Search = () => {
                     const [, rs] = await tr.executeSql(
                         `SELECT *
                          FROM Record ${sql_query}
-                         ORDER BY DateTime ASC`,
+                         ORDER BY DateTime DESC`,
                         sql_value,
                     );
 
-                    const [package_list, total] = group_data(rs, setting.Rate);
-                    setTotal(total);
+                    const [package_list, total1] = groupData(rs, setting.Rate);
+                    setTotal(total1);
                     setData(package_list);
                 });
             } catch (e) {
@@ -101,7 +100,7 @@ const Search = () => {
         extracted().then();
     }, [show_day, setting, keyword, show_mode, show_day_end]);
 
-    /* 重新整理資料 */
+    // 重新整理資料
     useEffect(() => {
         if (route.params && route.params.settingForceRefreshAlert) {
             console.log('重新整理資料');
@@ -109,7 +108,7 @@ const Search = () => {
         }
     }, [route.params, settingForceRefresh]);
 
-    /* 選擇顯示月份 */
+    // 選擇顯示月份
     const nextMonth = useCallback(() => {
         show_day.add(1, 'M').endOf('month');
         setShowDay(moment(show_day));
@@ -119,7 +118,7 @@ const Search = () => {
         setShowDay(moment(show_day));
     }, [show_day]);
 
-    /* 選擇顯示週 */
+    // 選擇顯示週
     const nextWeek = useCallback(() => {
         show_day.add(1, 'w');
         setShowDay(moment(show_day));
@@ -129,7 +128,7 @@ const Search = () => {
         setShowDay(moment(show_day));
     }, [show_day]);
 
-    /* 選擇顯示年 */
+    // 選擇顯示年
     const nextYear = useCallback(() => {
         show_day.add(1, 'y');
         setShowDay(moment(show_day));
@@ -140,7 +139,7 @@ const Search = () => {
     }, [show_day]);
 
     return (
-        /* 頂部toolbar */
+        // 頂部toolbar
         <View style={{flex: 1}}>
             <View style={{zIndex: 1, elevation: 1}}>
                 <Toolbar
@@ -316,7 +315,7 @@ const Search = () => {
             {/* 內容 */}
             <FlatList
                 data={data}
-                renderItem={({item}) => <DataPart data={item} rate={setting['Rate']} />}
+                renderItem={({item}) => <DataPart data={item} rate={setting.Rate} />}
                 ListFooterComponent={
                     <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
                         <SVGCargo height="60" width="180" />
