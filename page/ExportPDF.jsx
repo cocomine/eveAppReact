@@ -23,7 +23,6 @@ import {Decimal} from 'decimal.js';
 
 const ExportPDF = () => {
     const theme = useTheme();
-
     const [setting, setting_force_refresh] = useSetting();
     const [remark, setRemark] = useState(false); //是否包含備註
     const [year, setYear] = useState(''); //選擇年份
@@ -33,12 +32,11 @@ const ExportPDF = () => {
     const [ok_dialog_visible, setOkDialogVisible] = useState(false); //成功動畫
     const chose_type = useRef(null); //匯出類型
     const to_company = useRef(null);
-    /** @type {{setting_force_refresh_alert?: number}} */
     const route_params_context = useContext(RouteParamsContext);
 
     // 重新整理資料
     useEffect(() => {
-        if (route_params_context && route_params_context.setting_force_refresh_alert) {
+        if (route_params_context && route_params_context.settingForceRefreshAlert) {
             console.log('重新整理資料');
             setting_force_refresh();
         }
@@ -171,7 +169,7 @@ const ExportPDF = () => {
                     await DB.readTransaction(async tr => {
                         const [, rs] = await tr.executeSql(
                             `
-                                SELECT ifnull(Rate, 0) as 'Rate', COUNT('Rate') as 'count'
+                                SELECT Rate, COUNT(*) as 'count'
                                 FROM Record
                                 WHERE STRFTIME('%m', DateTime) = ?
                                   AND STRFTIME('%Y', DateTime) = ?
@@ -181,7 +179,8 @@ const ExportPDF = () => {
                         );
                         //todo: test
                         const rate = rs.rows.item(0).Rate;
-                        if (rs.rows.length > 0 && rate !== null && rate !== 0) mouth_rate = rs.rows.item(0).Rate; //使用該月的匯率
+                        console.log(mouth_rate, rate);
+                        if (rs.rows.length > 0 && rate !== null) mouth_rate = rate; //使用該月的匯率
                     });
                 } catch (e) {
                     console.error('取得匯率錯誤: ', e);

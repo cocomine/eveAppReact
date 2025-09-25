@@ -15,6 +15,7 @@ import moment from 'moment';
 import {RouteParamsContext} from '../module/RouteParamsContext';
 
 /** @typedef {import('../module/SQLite').SettingType} SettingType */
+/** @typedef {import('../module/DataPart').RecordRow} RecordRow */
 
 const ExportExcel = () => {
     const theme = useTheme();
@@ -543,6 +544,7 @@ function getRecordArray(rate, sql, args) {
     return new Promise(async (resolve, reject) => {
         try {
             await DB.readTransaction(async function (tr) {
+                /** @type {RecordRow[]} rs.rows */
                 const [, rs] = await tr.executeSql(sql, args);
 
                 if (rs.rows.length <= 0) {
@@ -582,7 +584,13 @@ function getRecordArray(rate, sql, args) {
                             z: '_("CN¥"* #,##0.00_);_("CN¥"* (#,##0.00);_("CN¥"* "-"??_);_(@_)',
                             s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
                         },
-                        {v: change, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
+                        {v: row.Rate ?? rate, t: 'n'},
+                        {
+                            v: change,
+                            t: 'n',
+                            z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
+                            f: 'F' + (i + 3) + '*G' + (i + 3) + '/100',
+                        },
                         {
                             v: row.HKD,
                             t: 'n',
@@ -595,7 +603,7 @@ function getRecordArray(rate, sql, args) {
                             v: row_total,
                             t: 'n',
                             z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
-                            f: 'SUM(G' + (i + 3) + ':J' + (i + 3) + ')',
+                            f: `SUM(H${i + 3}:K${i + 3})`,
                         },
                         {v: row.Remark || '', t: 's'},
                     ]);
@@ -617,14 +625,14 @@ function getRecordArray(rate, sql, args) {
 // excel Heard
 const EXCEL_HEARD = [
     [
-        ...Array.from({length: 12}, (t, i) => {
+        ...Array.from({length: 13}, (t, i) => {
             if (i === 5)
                 return {
                     v: '代付',
                     t: 's',
                     s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
                 };
-            if (i === 7)
+            if (i === 8)
                 return {
                     v: '',
                     t: 's',
@@ -644,6 +652,7 @@ const EXCEL_HEARD = [
             t: 's',
             s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
         },
+        {v: '匯率(每百港元)', t: 's'},
         {v: '折算', t: 's'},
         {
             v: '港幣',
