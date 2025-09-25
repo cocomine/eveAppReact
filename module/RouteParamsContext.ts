@@ -1,3 +1,7 @@
 import {createContext} from 'react';
 
-export const RouteParamsContext = createContext(null);
+interface RouteParamsContextType {
+    settingForceRefreshAlert?: number;
+}
+
+export const RouteParamsContext = createContext<RouteParamsContextType>(null);

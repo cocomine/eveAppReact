@@ -16,6 +16,7 @@ import Animated, {runOnJS, useAnimatedStyle, useSharedValue, withTiming} from 'r
 import {DB} from './SQLite';
 import TextInput, {InputRef} from '../module/TextInput';
 import ErrorHelperText from '../module/ErrorHelperText';
+import {useHeaderHeight} from '@react-navigation/elements';
 
 interface Props {
     value: string;
@@ -38,7 +39,9 @@ const LocalInput = forwardRef<InputRef, Props>(
         const device_height = useWindowDimensions().height; //
         const [keyboard_height, setKeyboardHeight] = useState(0); //
         const is_focus = useRef(false); //是否聚焦
-        const list_ref = useRef<Animated.View>(null); //列表ref
+        const view_ref = useRef<View>(null); //TextInput 容器
+        const [list_height, setListHeight] = useState(0); //列表高度
+        const header_height = useHeaderHeight();
 
         /* 文字被更改 */
         const onChange = (text: string) => {
@@ -119,24 +122,32 @@ const LocalInput = forwardRef<InputRef, Props>(
 
         /* 判斷空間是否充足 */
         useEffect(() => {
-            if (!is_list_shown) return;
+            if (!is_list_shown || list_height === 0) return;
 
-            const timeout_id = setTimeout(() => {
-                list_ref.current?.measure((fx, fy, w, h, px, py) => {
-                    const tmp = device_height - keyboard_height - py - h - (list_position === 'up' ? h : 0); //如果已處於上方, 則再減高度
-                    // console.log(deviceHeight, keybordHeight, py, h, scrollOffset);
-                    // console.log(tmp, tmp <= 10);
-                    // 如果下方空間不夠側跳往上方
-                    if (tmp <= 10) {
-                        setListPosition('up');
-                    } else {
-                        setListPosition('down');
-                    }
-                });
-            }, 5);
+            // 測量 TextInput 容器的位置
+            view_ref.current?.measure((fx, fy, width, height, px, py) => {
+                // 輸入框頂部y座標 - 標頭高度
+                const space_above = py - header_height;
+                // 裝置高度 - 鍵盤高度 - 輸入框底部y座標
+                const space_below = device_height - keyboard_height - (py + height);
 
-            return () => clearTimeout(timeout_id);
-        }, [is_list_shown, input_text, scrollOffset, device_height, keyboard_height, list_position]);
+                // 如果下方空間不足，且上方空間足夠，則將列表移至上方
+                if (space_below < list_height && space_above > list_height) {
+                    setListPosition('up');
+                } else {
+                    // 預設或當上方空間也不足時，放在下方
+                    setListPosition('down');
+                }
+            });
+            // 當列表顯示或滾動時重新計算
+        }, [is_list_shown, scrollOffset, device_height, keyboard_height, list_height, header_height]);
+
+        /* 當列表內容渲染完成後，取得其高度 */
+        const onListLayout = (event: LayoutChangeEvent) => {
+            const {height} = event.nativeEvent.layout;
+            // 設置實際高度，觸發位置判斷
+            setListHeight(height);
+        };
 
         /* 取得鍵盤高度 */
         useEffect(() => {
@@ -187,40 +198,45 @@ const LocalInput = forwardRef<InputRef, Props>(
 
         return (
             <View style={{position: 'relative', flex: 1}}>
-                <TextInput
-                    onChangeText={onChange}
-                    value={input_text}
-                    autoComplete={'off'}
-                    onSubmitEditing={() => closeAndSave(onSubmitEditing)}
-                    returnKeyType={'next'}
-                    error={error !== null}
-                    onBlur={() => closeAndSave()}
-                    ref={ref}
-                    onFocus={onFocus}
-                />
+                <View ref={view_ref} collapsable={false}>
+                    <TextInput
+                        onChangeText={onChange}
+                        value={input_text}
+                        autoComplete={'off'}
+                        onSubmitEditing={() => closeAndSave(onSubmitEditing)}
+                        returnKeyType={'next'}
+                        error={error !== null}
+                        onBlur={() => closeAndSave()}
+                        ref={ref}
+                        onFocus={onFocus}
+                    />
+                </View>
                 <ErrorHelperText visible={error !== null}>{error}</ErrorHelperText>
-                <Animated.View
-                    ref={list_ref}
-                    style={[
-                        style.auto_complete_view,
-                        {
-                            backgroundColor: is_dark_mode ? Color.darkColor : Color.white,
-                            display: is_list_shown ? undefined : 'none',
-                            top: list_position === 'up' ? null : '100%',
-                            bottom: list_position === 'down' ? null : '100%',
-                        },
-                        animated_style,
-                    ]}>
-                    <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps={'always'}>
-                        {auto_complete_list.map((data, index) => (
-                            <TouchableWithoutFeedback onPress={() => onChange(data)} key={index}>
-                                <View style={{flex: 1, paddingVertical: 8}}>
-                                    <ListText item={data} />
-                                </View>
-                            </TouchableWithoutFeedback>
-                        ))}
-                    </ScrollView>
-                </Animated.View>
+                {is_list_shown && (
+                    <Animated.View
+                        style={[
+                            style.auto_complete_view,
+                            {
+                                backgroundColor: is_dark_mode ? Color.darkColor : Color.white,
+                                top: list_position === 'up' ? null : '100%',
+                                bottom: list_position === 'down' ? null : '100%',
+                            },
+                            animated_style,
+                        ]}>
+                        <ScrollView
+                            nestedScrollEnabled={true}
+                            keyboardShouldPersistTaps={'always'}
+                            onLayout={onListLayout}>
+                            {auto_complete_list.map((data, index) => (
+                                <TouchableWithoutFeedback onPress={() => onChange(data)} key={index}>
+                                    <View style={{flex: 1, paddingVertical: 8}}>
+                                        <ListText item={data} />
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            ))}
+                        </ScrollView>
+                    </Animated.View>
+                )}
             </View>
         );
     },

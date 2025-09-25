@@ -457,8 +457,8 @@ const DataPartBody: React.FC<DataPartBodyProps> = ({item, id, dateTime}) => {
 
     /* 顯示圖片 */
     const showImages = useCallback(() => {
-        setShowBigImage(true);
-    }, []);
+        if (item.Images.length > 0) setShowBigImage(true);
+    }, [item.Images.length]);
 
     /* 圖片檢視器列表 */
     const images_viewer_list: IImageInfo[] = useMemo(() => {
@@ -758,4 +758,4 @@ const STYLE = StyleSheet.create({
 });
 
 export {DataPart, groupData, groupingNote};
-export type {PackageItem, RecordItem, MarkItem, Total};
+export type {PackageItem, RecordItem, MarkItem, Total, RecordRow, NoteRow, DataPartProps, DataPartMarkProps};
