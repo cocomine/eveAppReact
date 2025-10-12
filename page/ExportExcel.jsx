@@ -24,12 +24,11 @@ const ExportExcel = () => {
     const [mode, setMode] = useState(1); //匯出模式
     const [year_opt, setYearOpt] = useState([]); //年份選項
     const [ok_dialog_visible, setOkDialogVisible] = useState(false); //成功動畫
-    /** @type {{setting_force_refresh_alert?: number}} */
     const route_params_context = useContext(RouteParamsContext);
 
     /* 重新整理資料 */
     useEffect(() => {
-        if (route_params_context && route_params_context.setting_force_refresh_alert) {
+        if (route_params_context && route_params_context.settingForceRefreshAlert) {
             console.log('重新整理資料');
             setting_force_refresh();
         }
@@ -561,15 +560,6 @@ function getRecordArray(rate, sql, args) {
 
                     // 檢查是否要換月份
                     const current_date = moment(row.DateTime);
-                    if (!current_date.isSame(last_date, 'month') || i >= rs.rows.length - 1) {
-                        record_array.push({date: last_date.format('yyyy-M'), record: tmp});
-                        tmp = [];
-                    }
-                    last_date = current_date;
-
-                    //進行計算
-                    let change = parseFloat((row.RMB / rate).toFixed(2));
-                    let row_total = change + row.HKD + row.Add + row.Shipping;
 
                     //填充資料
                     tmp.push([
@@ -584,12 +574,12 @@ function getRecordArray(rate, sql, args) {
                             z: '_("CN¥"* #,##0.00_);_("CN¥"* (#,##0.00);_("CN¥"* "-"??_);_(@_)',
                             s: {border: {left: {style: 'thin', color: {rgb: '000000'}}}},
                         },
-                        {v: row.Rate ?? rate, t: 'n'},
+                        {v: (row.Rate ?? rate) * 100, t: 'n'},
                         {
-                            v: change,
+                            //v: change,
                             t: 'n',
                             z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
-                            f: 'F' + (i + 3) + '*G' + (i + 3) + '/100',
+                            f: 'F' + (i + 3) + '/G' + (i + 3) + '*100',
                         },
                         {
                             v: row.HKD,
@@ -600,13 +590,26 @@ function getRecordArray(rate, sql, args) {
                         {v: row.Add, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
                         {v: row.Shipping, t: 'n', z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'},
                         {
-                            v: row_total,
+                            //v: row_total,
                             t: 'n',
                             z: '_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)',
                             f: `SUM(H${i + 3}:K${i + 3})`,
                         },
                         {v: row.Remark || '', t: 's'},
                     ]);
+
+                    // 如果是最後一筆，或下個月的資料，就將 tmp 推入 record_array
+                    if (
+                        i === rs.rows.length - 1 ||
+                        !current_date.isSame(moment(rs.rows.item(i + 1).DateTime), 'month')
+                    ) {
+                        record_array.push({date: last_date.format('YYYY-M'), record: tmp});
+                        tmp = [];
+                        if (i < rs.rows.length - 1) {
+                            last_date = moment(rs.rows.item(i + 1).DateTime);
+                        }
+                    }
+
                 }
 
                 resolve(record_array);
@@ -677,6 +680,7 @@ function generateExcel(record_array) {
             const wb = XLSX.utils.book_new();
 
             // 填充數據
+            console.log(record_array);
             record_array.forEach(item => {
                 const record = item.record;
                 record.unshift(...EXCEL_HEARD);
@@ -684,17 +688,17 @@ function generateExcel(record_array) {
 
                 // 列寬
                 ws['!cols'] = [
-                    ...Array.from({length: 12}, (t, i) => {
-                        if (i === 2) return {wch: 14};
+                    ...Array.from({length: 13}, (t, i) => {
+                        if (i === 2 || i === 6) return {wch: 14};
                         if (i === 3) return {wch: 5};
-                        if (i === 4 || i === 11) return {wch: 40};
+                        if (i === 4 || i === 12) return {wch: 40};
                         return {wch: 11};
                     }),
                 ];
-                ws['!merges'] = [{s: {r: 0, c: 5}, e: {r: 0, c: 7}}]; //合併儲存格
+                ws['!merges'] = [{s: {r: 0, c: 5}, e: {r: 0, c: 8}}]; //合併儲存格
 
                 // 樣式
-                const range = XLSX.utils.decode_range('A1:L2');
+                const range = XLSX.utils.decode_range('A1:M2');
                 for (let R = range.s.r; R <= range.e.r; ++R) {
                     for (let C = range.s.c; C <= range.e.c; ++C) {
                         const cell_address = {c: C, r: R};
@@ -722,8 +726,8 @@ function generateExcel(record_array) {
             // 產生檔案
             const random_filename = Math.floor(Math.random() * 10000);
             const save_path = CachesDirectoryPath + '/' + random_filename + '.xlsx';
-            const wbook = XLSX.write(wb, {type: 'binary', bookType: 'xlsx'});
-            RNFS.writeFile(save_path, wbook, 'utf8')
+            const wbook = XLSX.write(wb, {type: 'base64', bookType: 'xlsx'});
+            RNFS.writeFile(save_path, wbook, 'base64')
                 .then(() => {
                     resolve(save_path);
                 })
