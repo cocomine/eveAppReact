@@ -455,6 +455,7 @@ const getBackupFolderAndLatestDate = async () => {
         q: '(name = "eveApp") and (mimeType = "application/vnd.google-apps.folder") and (trashed = false)',
     });
 
+    // 取得文件夾id
     let folder_id = list.files[0] ? list.files[0].id : null;
     // 不存在創建文件夾
     if (folder_id === null) {
@@ -470,8 +471,11 @@ const getBackupFolderAndLatestDate = async () => {
         folder_id = tmp.id;
     }
 
-    // 設置最新日期
-    const backup_list = await getBackupList(folder_id);
+    // 取得db名稱
+    const db_name = (await AsyncStorage.getItem('openDB')).split('.');
+
+    // 設置最新日期 start at db_name[0]
+    const backup_list = (await getBackupList(folder_id)).filter(item => item.name.startsWith(db_name[0] + '_'));
     let create_time = backup_list[0]
         ? backup_list[0].name.match(
               /([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{4})-([0-9]{1,2}):([0-9]{2}):([0-9]{2})\.([0-9]{3})/g,
@@ -504,7 +508,7 @@ const doBackup = async folder_id => {
     }
 
     //上載檔案
-    const file_name = custom_name + moment(new Date()).format('_D/M/YYYY-H:mm:ss.SSS') + '.db';
+    const file_name = db_name[0] + '_' + custom_name + moment(new Date()).format('_D/M/YYYY-H:mm:ss.SSS') + '.db';
     const uploader = GDRIVE.files.newResumableUploader();
     const uploader_req = await uploader
         .setDataMimeType('application/x-sqlite3')
@@ -541,15 +545,15 @@ const doBackup = async folder_id => {
     }
     await AsyncStorage.setItem('Last_Backup', new Date().toISOString());
 
-    //刪除重複版本
-    const backup_list = await getBackupList(folder_id);
+    //刪除重複版本 start at db_name[0]
+    const backup_list = (await getBackupList(folder_id)).filter(item => item.name.startsWith(db_name[0] + '_'));
     const cleaned_backup_list = [];
     const existing_file_names = [];
     for (const file1 of backup_list) {
-        const file_name = file1.name;
-        if (!existing_file_names.includes(file_name)) {
+        const file_name1 = file1.name;
+        if (!existing_file_names.includes(file_name1)) {
             cleaned_backup_list.push(file1);
-            existing_file_names.push(file_name);
+            existing_file_names.push(file_name1);
         } else {
             await GDRIVE.files.delete(file1.id);
             console.log('刪除重複版本: ' + file1.name);

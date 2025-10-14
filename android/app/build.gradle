@@ -90,16 +90,18 @@ android {
         applicationId "com.cocomine.eveapp2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 229
-        versionName "2.4.0"
+        versionCode 230
+        versionName "2.4.1"
         resConfigs "zh"
     }
     signingConfigs {
         debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            if (localPropertiesFile.getProperty("DEBUG_STORE_FILE")) {
+                storeFile file(localPropertiesFile.getProperty("DEBUG_STORE_FILE"))
+                storePassword localPropertiesFile.getProperty("DEBUG_STORE_PASSWORD")
+                keyAlias localPropertiesFile.getProperty("DEBUG_KEY_ALIAS")
+                keyPassword localPropertiesFile.getProperty("DEBUG_KEY_PASSWORD")
+            }
         }
         release {
             if (localPropertiesFile.getProperty("MYAPP_UPLOAD_STORE_FILE")) {
@@ -112,15 +114,15 @@ android {
     }
     buildTypes {
         debug {
+            applicationIdSuffix ".debug"
             signingConfig signingConfigs.debug
-            resValue "string", "CodePushDeploymentKey", '""'
+            resValue "string", "app_name", "運輸紀錄 Debug"
         }
         releaseStaging{
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             matchingFallbacks = ['release']
-            resValue "string", "CodePushDeploymentKey", '"ptByrlszwXgZQ6_lHScWjjMDBBa1paJzPajkE"'
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
@@ -128,7 +130,6 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            resValue "string", "CodePushDeploymentKey", '"ptByrlszwXgZQ6_lHScWjjMDBBa1paJzPajkE"'
         }
     }
 }
