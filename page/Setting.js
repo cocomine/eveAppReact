@@ -6,6 +6,7 @@ import {DB, useSetting} from '../module/SQLite';
 import {useNavigation} from '@react-navigation/native';
 import prompt from 'react-native-prompt-android';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {buildExchangeRateUrl} from '../module/Config';
 
 const INITIAL_STATE = {
     Rate: '0.836',
@@ -106,6 +107,9 @@ const Setting = ({route}) => {
                         } else if (parseFloat(value) === 0) {
                             ToastAndroid.show('匯率不能為0', ToastAndroid.SHORT);
                             return;
+                        } else if (parseFloat(value) > 10000 || parseFloat(value) < 0) {
+                            ToastAndroid.show('匯率數值超出合理範圍', ToastAndroid.SHORT);
+                            return;
                         } else {
                             //100港元兌人民幣匯率 = 人民幣匯率 / 100
                             value = (value / 100).toFixed(4);
@@ -115,6 +119,9 @@ const Setting = ({route}) => {
                         if (!/^[\u4e00-\u9fa5\s]+$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入中文', ToastAndroid.SHORT);
                             return;
+                        } else if (value.length > 50) {
+                            ToastAndroid.show('公司名稱不能超過50個字符', ToastAndroid.SHORT);
+                            return;
                         } else {
                             value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
@@ -122,6 +129,9 @@ const Setting = ({route}) => {
                     case UPDATE_NAME_EN:
                         if (!/^[a-zA-Z\s]+$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入英文', ToastAndroid.SHORT);
+                            return;
+                        } else if (value.length > 50) {
+                            ToastAndroid.show('公司名稱不能超過50個字符', ToastAndroid.SHORT);
                             return;
                         } else {
                             value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
@@ -131,6 +141,9 @@ const Setting = ({route}) => {
                         if (!/^.+$/g.test(value)) {
                             ToastAndroid.show('司機名稱不能為空', ToastAndroid.SHORT);
                             return;
+                        } else if (value.length > 30) {
+                            ToastAndroid.show('司機名稱不能超過30個字符', ToastAndroid.SHORT);
+                            return;
                         } else {
                             value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
@@ -139,6 +152,9 @@ const Setting = ({route}) => {
                         if (!/^[A-Z0-9\s]+$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入大楷英文和數字', ToastAndroid.SHORT);
                             return;
+                        } else if (value.length > 20) {
+                            ToastAndroid.show('車牌號碼不能超過20個字符', ToastAndroid.SHORT);
+                            return;
                         } else {
                             value = value.replace(/\s+/g, ' ').trim(); //多個空格替換成一個並去除前後空格
                         }
@@ -146,6 +162,9 @@ const Setting = ({route}) => {
                     case UPDATE_EMAIL:
                         if (!/^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/g.test(value)) {
                             ToastAndroid.show('只能夠輸入電郵地址', ToastAndroid.SHORT);
+                            return;
+                        } else if (value.length > 100) {
+                            ToastAndroid.show('電郵地址不能超過100個字符', ToastAndroid.SHORT);
                             return;
                         }
                         break;
@@ -204,9 +223,8 @@ const Setting = ({route}) => {
     /* 線上更新匯率 */
     const onlineRate = useCallback(() => {
         setIsOnlineRateLoading(true);
-        fetch(
-            'https://exchange-rates.abstractapi.com/v1/live/?api_key=513ff6825b484fa2a9d38df074986a5d&base=HKD&target=CNY',
-        )
+        const url = buildExchangeRateUrl('HKD', 'CNY');
+        fetch(url)
             .then(response => {
                 response.json().then(json => {
                     //console.log(json);

@@ -41,6 +41,12 @@ const ChangeSave = () => {
     /* 打開資料庫 */
     const openDB = useCallback(
         async db_number => {
+            // 安全性檢查：驗證 db_number 在有效範圍內
+            if (typeof db_number !== 'number' || db_number < 0 || db_number > 9) {
+                ToastAndroid.show('無效的存檔編號', ToastAndroid.SHORT);
+                return;
+            }
+
             await AsyncStorage.setItem('openDB', 'eveApp' + (db_number === 0 ? '' : db_number) + '.db');
 
             //新存檔
@@ -59,10 +65,18 @@ const ChangeSave = () => {
     const changeName = useCallback(
         db_number => {
             const change = async name => {
+                // 輸入驗證：非空白且長度限制
                 if (!/\S+/g.test(name)) {
                     ToastAndroid.show('輸入格式不正確', ToastAndroid.SHORT);
                     return;
                 }
+                if (name.length > 30) {
+                    ToastAndroid.show('存檔名稱不能超過30個字符', ToastAndroid.SHORT);
+                    return;
+                }
+                // 清理輸入：移除多餘空格
+                name = name.replace(/\s+/g, ' ').trim();
+
                 dbname[db_number] = name;
                 set_dbname([...dbname]);
                 await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
@@ -79,6 +93,12 @@ const ChangeSave = () => {
     /* 刪除 */
     const deleteDB = useCallback(
         async db_number => {
+            // 安全性檢查：驗證 db_number 在有效範圍內
+            if (typeof db_number !== 'number' || db_number < 0 || db_number > 9) {
+                ToastAndroid.show('無效的存檔編號', ToastAndroid.SHORT);
+                return;
+            }
+
             if ((await AsyncStorage.getItem('openDB')) === 'eveApp' + (db_number === 0 ? '' : db_number) + '.db') {
                 ToastAndroid.show('不能刪除已開啟存檔', ToastAndroid.SHORT);
                 return;
@@ -89,13 +109,15 @@ const ChangeSave = () => {
                 dbname[db_number] = null;
                 set_dbname([...dbname]);
                 await AsyncStorage.setItem('DBname', JSON.stringify(dbname));
+
+                //安全地構建文件路徑
+                const dbFileName = 'eveApp' + (db_number === 0 ? '' : db_number) + '.db';
+                const dbFilePath = `${CachesDirectoryPath}/../databases/${dbFileName}`;
+                const dbJournalPath = `${dbFilePath}-journal`;
+
                 //刪除檔案
-                await RNFS.unlink(
-                    CachesDirectoryPath + '/../databases/eveApp' + (db_number === 0 ? '' : db_number) + '.db',
-                ).catch(() => null);
-                await RNFS.unlink(
-                    CachesDirectoryPath + '/../databases/eveApp' + (db_number === 0 ? '' : db_number) + '.db-journal',
-                ).catch(() => null);
+                await RNFS.unlink(dbFilePath).catch(() => null);
+                await RNFS.unlink(dbJournalPath).catch(() => null);
             };
 
             //檔案不存在

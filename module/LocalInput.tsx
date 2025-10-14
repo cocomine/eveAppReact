@@ -170,10 +170,18 @@ const LocalInput = forwardRef<InputRef, Props>(
             //提取數據
             const extractData = async () => {
                 try {
+                    // 輸入長度限制，防止過長查詢
+                    if (input_text.length > 50) {
+                        return;
+                    }
+
+                    // 轉義 LIKE 查詢中的特殊字符，防止 SQL 注入
+                    const escapedText = input_text.replace(/[%_]/g, '\\$&');
+
                     await DB.readTransaction(async function (tr) {
                         const [, rs] = await tr.executeSql(
-                            'SELECT DISTINCT Local FROM Record WHERE Local LIKE ? LIMIT 10',
-                            ['%' + input_text + '%'],
+                            "SELECT DISTINCT Local FROM Record WHERE Local LIKE ? ESCAPE '\\' LIMIT 10",
+                            ['%' + escapedText + '%'],
                         );
 
                         if (rs.rows.length <= 0 || input_text.length <= 0) {
