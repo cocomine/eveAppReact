@@ -9,7 +9,8 @@
     "test": "jest",
     "lint": "eslint .",
     "build_apk": "cd android && ./gradlew assembleRelease",
-    "build_aab": "cd android && ./gradlew bundleRelease"
+    "build_aab": "cd android && ./gradlew bundleRelease",
+    "test:security": "node test-security.js"
   },
   "dependencies": {
     "@cocomine/react-native-print": "^0.11.6",
