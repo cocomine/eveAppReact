@@ -6,7 +6,7 @@ import {DB, useSetting} from '../module/SQLite';
 import {useNavigation} from '@react-navigation/native';
 import prompt from 'react-native-prompt-android';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {buildExchangeRateUrl} from '../module/Config';
+const {buildExchangeRateUrl} = require('../module/Config');
 
 const INITIAL_STATE = {
     Rate: '0.836',

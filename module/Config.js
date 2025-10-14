@@ -11,7 +11,7 @@ const DEFAULT_API_KEY = '513ff6825b484fa2a9d38df074986a5d';
  * 獲取匯率API配置
  * @returns {{apiKey: string, apiUrl: string}}
  */
-export const getExchangeRateConfig = () => {
+const getExchangeRateConfig = () => {
     // 優先使用環境變量（如果使用 react-native-config）
     // const apiKey = Config.EXCHANGE_RATE_API_KEY || DEFAULT_API_KEY;
     // const apiUrl = Config.EXCHANGE_RATE_API_URL || 'https://exchange-rates.abstractapi.com/v1/live/';
@@ -30,7 +30,15 @@ export const getExchangeRateConfig = () => {
  * @param {string} target - 目標貨幣
  * @returns {string} - 完整的API URL
  */
-export const buildExchangeRateUrl = (base = 'HKD', target = 'CNY') => {
+const buildExchangeRateUrl = (base = 'HKD', target = 'CNY') => {
     const {apiKey, apiUrl} = getExchangeRateConfig();
     return `${apiUrl}?api_key=${apiKey}&base=${base}&target=${target}`;
 };
+
+// CommonJS export for Node.js compatibility
+module.exports = {
+    getExchangeRateConfig,
+    buildExchangeRateUrl,
+};
+
+

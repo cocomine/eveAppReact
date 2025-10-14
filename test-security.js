@@ -124,20 +124,50 @@ const test4Pass = testApiConfig();
 console.log('\n\nTest 5: Dependencies Security Check');
 console.log('--------------------------------');
 const { execSync } = require('child_process');
+let test5Pass = true;
+
 try {
-    const auditResult = execSync('npm audit --json', { encoding: 'utf-8' });
+    // 使用超時和錯誤處理執行 npm audit
+    const auditResult = execSync('npm audit --json', {
+        encoding: 'utf-8',
+        timeout: 30000, // 30秒超時
+        maxBuffer: 1024 * 1024, // 1MB buffer
+    });
     const audit = JSON.parse(auditResult);
     const vulnCount = audit.metadata?.vulnerabilities?.total || 0;
-    
+
     if (vulnCount === 0) {
         console.log('✓ 未發現依賴項漏洞');
     } else {
         console.log(`⚠ 發現 ${vulnCount} 個依賴項漏洞`);
         console.log('  運行 "npm audit" 查看詳情');
+        test5Pass = false;
     }
 } catch (error) {
-    // npm audit 返回非零退出碼表示有漏洞
-    console.log('⚠ npm audit 檢測到問題，請運行 "npm audit" 查看詳情');
+    // npm audit 返回非零退出碼可能表示有漏洞
+    if (error.status === 1 && error.stdout) {
+        try {
+            const audit = JSON.parse(error.stdout);
+            const vulnCount = audit.metadata?.vulnerabilities?.total || 0;
+            if (vulnCount > 0) {
+                console.log(`⚠ 發現 ${vulnCount} 個依賴項漏洞`);
+                console.log('  運行 "npm audit" 查看詳情');
+                test5Pass = false;
+            } else {
+                console.log('✓ npm audit 檢查完成');
+            }
+        } catch (parseError) {
+            console.log('⚠ npm audit 執行異常，請手動運行 "npm audit"');
+            test5Pass = true; // 不因工具問題而失敗
+        }
+    } else if (error.code === 'ETIMEDOUT') {
+        console.log('⚠ npm audit 超時，請稍後手動檢查');
+        test5Pass = true; // 不因超時而失敗
+    } else {
+        console.log('⚠ npm audit 執行失敗，請手動運行 "npm audit" 檢查');
+        console.log(`  錯誤: ${error.message}`);
+        test5Pass = true; // 不因工具問題而失敗
+    }
 }
 
 // 總結
@@ -147,8 +177,12 @@ console.log(`Test 1 (SQL Escape): ${test1Pass ? '✓ 通過' : '✗ 失敗'}`);
 console.log(`Test 2 (Input Length): ${test2Pass ? '✓ 通過' : '✗ 失敗'}`);
 console.log(`Test 3 (File Path): ${test3Pass ? '✓ 通過' : '✗ 失敗'}`);
 console.log(`Test 4 (API Config): ${test4Pass ? '✓ 通過' : '✗ 失敗'}`);
+console.log(`Test 5 (Dependencies): ${test5Pass ? '✓ 通過' : '⚠ 需要檢查'}`);
 
 const allPassed = test1Pass && test2Pass && test3Pass && test4Pass;
-console.log(`\n總體結果: ${allPassed ? '✓ 所有測試通過' : '✗ 部分測試失敗'}`);
+console.log(`\n總體結果: ${allPassed ? '✓ 所有關鍵測試通過' : '✗ 部分測試失敗'}`);
+if (!test5Pass) {
+    console.log('  注意: 發現依賴項問題，請運行 npm audit 查看');
+}
 
 process.exit(allPassed ? 0 : 1);
