@@ -1,11 +1,11 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Decimal} from 'decimal.js';
-import {IconButton, Portal, Text, useTheme} from 'react-native-paper';
-import {Keyboard, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View} from 'react-native';
-import Animated, {FadeIn, FadeOut, SlideInDown, SlideOutDown} from 'react-native-reanimated';
-import {DecimalInput, NumInputRef} from './NumInput';
-import {NumKeyboard, NumKeyboardRef} from './NumKeyboard';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { Decimal } from 'decimal.js';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Keyboard, StyleSheet, ToastAndroid, TouchableWithoutFeedback, View } from 'react-native';
+import { IconButton, Portal, Text, useTheme } from 'react-native-paper';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DecimalInput, NumInputRef } from './NumInput';
+import { NumKeyboard, NumKeyboardRef } from './NumKeyboard';
 
 interface RateEditorProps {
     visible: boolean;
@@ -18,7 +18,7 @@ interface RateEditorProps {
 /**
  * 匯率編輯器
  */
-export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate, amount, onChangeRate}) => {
+export const RateEditor: React.FC<RateEditorProps> = ({ visible, onDismiss, rate, amount, onChangeRate }) => {
     const [is_visible, setIsVisible] = useState<boolean>(visible);
     const [input_rate, setInputRate] = useState<number>(rate.toNumber());
     const [hkd_value, setHkdValue] = useState<number>(new Decimal(amount || 0).div(rate).toDecimalPlaces(2).toNumber());
@@ -171,18 +171,19 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                             },
                         ]}
                         entering={SlideInDown}
-                        exiting={SlideOutDown}>
-                        <View style={{padding: 20}}>
+                        exiting={SlideOutDown}
+                    >
+                        <View style={{ padding: 20 }}>
                             <View style={style.form_group}>
-                                <Text style={{flex: 1 / 5}}>港幣</Text>
+                                <Text style={{ flex: 1 / 5 }}>港幣</Text>
                                 <DecimalInput
                                     ref={ref => {
                                         inputs.current.hkd = ref;
                                     }}
-                                    containerStyle={{flex: 1}}
+                                    containerStyle={{ flex: 1 }}
                                     value={hkd_value}
                                     placeholder={'$ --'}
-                                    inputProps={{showSoftInputOnFocus: false}}
+                                    inputProps={{ showSoftInputOnFocus: false }}
                                     onValueChange={onHkdValueChange}
                                     symbol={'$ '}
                                     onFocus={() => decimalInputFocus('hkd')}
@@ -197,13 +198,13 @@ export const RateEditor: React.FC<RateEditorProps> = ({visible, onDismiss, rate,
                                 />
                             </View>
                             <View style={style.form_group}>
-                                <Text style={{flex: 2 / 5}}>匯率 (毎百HK$)</Text>
-                                <View style={{flex: 1}}>
+                                <Text style={{ flex: 2 / 5 }}>匯率 (毎百HK$)</Text>
+                                <View style={{ flex: 1 }}>
                                     <DecimalInput
                                         ref={ref => {
                                             inputs.current.rate = ref;
                                         }}
-                                        containerStyle={{flex: 1}}
+                                        containerStyle={{ flex: 1 }}
                                         value={100 * input_rate}
                                         inputProps={{
                                             showSoftInputOnFocus: false,
@@ -247,4 +248,4 @@ const style = StyleSheet.create({
     },
 });
 
-export type {RateEditorProps};
+export type { RateEditorProps };
