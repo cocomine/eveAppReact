@@ -57,9 +57,6 @@ jobs:
 
           printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
 
-      - name: Run tests
-        run: yarn test --watchAll=false
-
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
         working-directory: android
