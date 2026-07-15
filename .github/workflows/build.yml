@@ -13,7 +13,7 @@ on:
 
 jobs:
   android:
-    name: Android debug build
+    name: Android build artifacts
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -61,6 +61,20 @@ jobs:
         run: chmod +x gradlew
         working-directory: android
 
-      - name: Build Android debug APK
-        run: ./gradlew assembleDebug
+      - name: Build Android debug APK and AAB
+        run: ./gradlew assembleDebug bundleDebug
         working-directory: android
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: error
