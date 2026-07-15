@@ -1,0 +1,69 @@
+name: Build Check
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android debug build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.1.12297006"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Restore google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "Missing GitHub secret: GOOGLE_SERVICES_JSON"
+            exit 1
+          fi
+
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - name: Run tests
+        run: yarn test --watchAll=false
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+        working-directory: android
+
+      - name: Build Android debug APK
+        run: ./gradlew assembleDebug
+        working-directory: android
