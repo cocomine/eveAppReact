@@ -18,7 +18,7 @@ import { DateSelect } from '../module/DateSelect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Decimal from 'decimal.js';
 import { DataPart, groupData, groupingNote } from '../module/DataPart';
-import { Exchange } from './Exchange';
+import { Exchange } from '../module/Exchange';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
@@ -45,6 +45,7 @@ const Home = () => {
     const [setting, settingForceRefresh] = useSetting(); //設定
     const list_ref = useRef(null); //FlatList Ref
     const insets = useSafeAreaInsets(); //安全區域
+    const [exchangeOpen, setExchangeOpen] = useState(false); //匯率轉換是否開啟
 
     /* 選擇顯示月份 */
     const nextMonth = useCallback(() => {
@@ -252,13 +253,9 @@ const Home = () => {
                 >
                     <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
                 </TouchableOpacity>
-                {/*  */}
-                <TouchableOpacity
-                    style={STYLE.exchange}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('Exchange')}
-                >
-                    <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
+                {/* 匯率轉換Button */}
+                <TouchableOpacity style={STYLE.exchange} activeOpacity={0.8} onPress={() => setExchangeOpen(true)}>
+                    <ADIcon name={'transaction'} color={Color.white} size={18} />
                 </TouchableOpacity>
 
                 <View style={{ flex: 1 }}>
@@ -289,6 +286,9 @@ const Home = () => {
                         }
                     />
                 </View>
+
+                {/* 匯率轉換 */}
+                <Exchange open={exchangeOpen} onClose={() => setExchangeOpen(false)} />
             </Portal.Host>
         </View>
     );

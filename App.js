@@ -31,7 +31,6 @@ import { Note } from './page/Note';
 import { AddNote } from './page/AddNote';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLogger } from '@react-navigation/devtools';
-import { Exchange } from './page/Exchange';
 
 const Stack = createNativeStackNavigator();
 
@@ -116,11 +115,6 @@ function App() {
                                     <Stack.Screen //計算機
                                         name="Calculator"
                                         component={Calculator}
-                                        options={{ headerShown: false }}
-                                    />
-                                    <Stack.Screen //匯率轉換
-                                        name="Exchange"
-                                        component={Exchange}
                                         options={{ headerShown: false }}
                                     />
                                 </Stack.Group>

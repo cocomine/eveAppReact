@@ -1,12 +1,12 @@
-import {Button, Checkbox, Dialog, Portal, Text, Title, useTheme} from 'react-native-paper';
-import {DB, useSetting} from '../module/SQLite';
-import React, {useCallback, useContext, useEffect, useRef, useState} from 'react';
+import { Button, Checkbox, Dialog, Portal, Text, Title, useTheme } from 'react-native-paper';
+import { DB, useSetting } from '../module/SQLite';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useFocusEffect} from '@react-navigation/native';
-import {Picker} from '@react-native-picker/picker';
-import {StyleSheet, ToastAndroid, View} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { Picker } from '@react-native-picker/picker';
+import { StyleSheet, ToastAndroid, View } from 'react-native';
 import HTMLtoPDF from 'react-native-html-to-pdf';
-import RNFS, {CachesDirectoryPath} from 'react-native-fs';
+import RNFS, { CachesDirectoryPath } from 'react-native-fs';
 import Mailer from 'react-native-mail';
 import FileViewer from 'react-native-file-viewer';
 import RNPrint from '@cocomine/react-native-print';
@@ -14,10 +14,10 @@ import prompt from 'react-native-prompt-android';
 import Lottie from 'lottie-react-native';
 import formatPrice from '../module/formatPrice';
 import Share from 'react-native-share';
-import {sound} from './Export';
+import { sound } from './Export';
 import moment from 'moment/moment';
-import {RouteParamsContext} from '../module/RouteParamsContext';
-import {Decimal} from 'decimal.js';
+import { RouteParamsContext } from '../module/RouteParamsContext';
+import { Decimal } from 'decimal.js';
 
 /** @type {import('../module/SQLite').SettingType} SettingType */
 
@@ -177,7 +177,6 @@ const ExportPDF = () => {
                                 ORDER BY count DESC;`,
                             [month, year],
                         );
-                        //todo: test
                         const rate = rs.rows.item(0).Rate;
                         console.log(mouth_rate, rate);
                         if (rs.rows.length > 0 && rate !== null) mouth_rate = rate; //使用該月的匯率
