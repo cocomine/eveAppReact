@@ -1,23 +1,24 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {FlatList, StyleSheet, ToastAndroid, TouchableOpacity, TouchableWithoutFeedback, View} from 'react-native';
-import {Color} from '../module/Color';
-import {Toolbar, ToolBarView} from '../module/Toolbar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FlatList, StyleSheet, ToastAndroid, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Color } from '../module/Color';
+import { Toolbar, ToolBarView } from '../module/Toolbar';
 import ADIcon from '@react-native-vector-icons/ant-design';
-import {SmailText} from '../module/SmailText';
+import { SmailText } from '../module/SmailText';
 import moment from 'moment';
 import 'moment/min/locales';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {Banner, IconButton, Portal, Text} from 'react-native-paper';
-import {DB, useSetting} from '../module/SQLite';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Banner, IconButton, Portal, Text } from 'react-native-paper';
+import { DB, useSetting } from '../module/SQLite';
 import formatPrice from '../module/formatPrice';
 import SVGLostCargo from '../module/SVGLostCargo';
 import SVGCargo from '../module/SVGCargo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {DateSelect} from '../module/DateSelect';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { DateSelect } from '../module/DateSelect';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Decimal from 'decimal.js';
-import {DataPart, groupData, groupingNote} from '../module/DataPart';
+import { DataPart, groupData, groupingNote } from '../module/DataPart';
+import { Exchange } from './Exchange';
 /** @typedef {import('@react-navigation/native-stack').NativeStackNavigationProp} NativeStackNavigationProp */
 /** @typedef {import('@react-navigation/native').RouteProp} RouteProp */
 /** @typedef {import('../module/IRootStackParamList').IRootStackParamList} RootStackParamList */
@@ -146,21 +147,21 @@ const Home = () => {
         if (data != null) {
             const index = data.findIndex(item => item.DateTime.getDate() === show_day.getDate());
             if (index > 0) {
-                list_ref.current.scrollToIndex({index: index});
+                list_ref.current.scrollToIndex({ index: index });
             }
         }
     }, [data, show_day]);
 
     return (
-        <View style={{flex: 1}}>
+        <View style={{ flex: 1 }}>
             <Portal.Host>
                 {/* 頂部toolbar */}
-                <View style={{zIndex: 2, elevation: 2}}>
-                    <Toolbar containerStyle={{paddingTop: insets.top}}>
+                <View style={{ zIndex: 2, elevation: 2 }}>
+                    <Toolbar containerStyle={{ paddingTop: insets.top }}>
                         <ToolBarView>
                             <IconButton icon={'chevron-left'} iconColor={Color.white} onPress={lastMonth} />
                             <TouchableWithoutFeedback onPress={() => setMonthSelect(true)}>
-                                <Text style={{color: Color.white}}>{moment(show_day).format('M月 yyyy')}</Text>
+                                <Text style={{ color: Color.white }}>{moment(show_day).format('M月 yyyy')}</Text>
                             </TouchableWithoutFeedback>
                             <IconButton icon={'chevron-right'} iconColor={Color.white} onPress={nextMonth} />
                         </ToolBarView>
@@ -171,7 +172,7 @@ const Home = () => {
                                 onPress={() => navigation.navigate('Search')}
                             />*/}
                             <SmailText color={Color.white}>本月總計</SmailText>
-                            <Text style={{color: Color.white}}>$ {formatPrice(total.Total.toFixed(2))}</Text>
+                            <Text style={{ color: Color.white }}>$ {formatPrice(total.Total.toFixed(2))}</Text>
                         </ToolBarView>
                         <DateSelect
                             visibility={month_select}
@@ -180,44 +181,48 @@ const Home = () => {
                             onDismiss={hideMonthSelect}
                         />
                     </Toolbar>
-                    <Toolbar containerStyle={{zIndex: -1, elevation: -1}}>
-                        <View style={{flex: 1}}>
+                    <Toolbar containerStyle={{ zIndex: -1, elevation: -1 }}>
+                        <View style={{ flex: 1 }}>
                             <Text
                                 style={{
                                     color: Color.white,
                                     fontSize: 12,
                                     textAlign: 'center',
-                                }}>
+                                }}
+                            >
                                 {'人民幣\n¥ ' + formatPrice(total.RMB.toFixed(2))}
                             </Text>
                         </View>
-                        <View style={{flex: 1}}>
+                        <View style={{ flex: 1 }}>
                             <Text
                                 style={{
                                     color: Color.white,
                                     fontSize: 12,
                                     textAlign: 'center',
-                                }}>
+                                }}
+                            >
                                 {'港幣\n$ ' + formatPrice(total.HKD.toFixed(2))}
                             </Text>
                         </View>
-                        <View style={{flex: 1}}>
+                        <View style={{ flex: 1 }}>
                             <Text
                                 style={{
                                     color: Color.white,
                                     fontSize: 12,
                                     textAlign: 'center',
-                                }}>
+                                }}
+                            >
                                 {'加收\n$ ' + formatPrice(total.Add.toFixed(2))}
                             </Text>
                         </View>
-                        <View style={{flex: 1}}>
+                        <View style={{ flex: 1 }}>
                             <Text
                                 style={{
                                     color: Color.white,
                                     fontSize: 12,
                                     textAlign: 'center',
-                                }}>
+                                }}
+                            >
                                 {'運費\n$ ' + formatPrice(total.Shipping.toFixed(2))}
                             </Text>
                         </View>
@@ -233,7 +238,8 @@ const Home = () => {
                 <TouchableOpacity
                     style={STYLE.addRecord}
                     activeOpacity={0.8}
-                    onPress={() => navigation.navigate('AddRecord')}>
+                    onPress={() => navigation.navigate('AddRecord')}
+                >
                     <View>
                         <ADIcon name={'plus'} color={Color.white} size={18} />
                     </View>
@@ -242,11 +248,20 @@ const Home = () => {
                 <TouchableOpacity
                     style={STYLE.addMark}
                     activeOpacity={0.8}
-                    onPress={() => navigation.navigate('NotePage')}>
+                    onPress={() => navigation.navigate('NotePage')}
+                >
+                    <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
+                </TouchableOpacity>
+                {/*  */}
+                <TouchableOpacity
+                    style={STYLE.exchange}
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('Exchange')}
+                >
                     <MaterialCommunityIcons name={'notebook-outline'} color={Color.white} size={18} />
                 </TouchableOpacity>
 
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                     <NewFunctionBanner />
                     {/* 內容 */}
                     <FlatList
@@ -254,20 +269,20 @@ const Home = () => {
                         ref={list_ref}
                         onRefresh={updateData}
                         refreshing={is_refresh}
-                        renderItem={({item}) => <DataPart data={item} />}
+                        renderItem={({ item }) => <DataPart data={item} />}
                         onScrollToIndexFailed={info => {
                             setTimeout(() => {
-                                list_ref.current.scrollToIndex({index: info.index});
+                                list_ref.current.scrollToIndex({ index: info.index });
                             }, 500);
                         }}
                         ListFooterComponent={
-                            <View style={{height: 120, justifyContent: 'center', alignItems: 'center'}}>
+                            <View style={{ height: 120, justifyContent: 'center', alignItems: 'center' }}>
                                 <SVGCargo height="60" width="180" />
                                 <Text>已經到底喇~~ （￣︶￣）↗ </Text>
                             </View>
                         }
                         ListEmptyComponent={
-                            <View style={{justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+                            <View style={{ justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                                 <SVGLostCargo height="100" width="300" />
                                 <Text>沒有資料... Σ(っ °Д °;)っ</Text>
                             </View>
@@ -307,10 +322,11 @@ const NewFunctionBanner = () => {
                     onPress: () => setVisible(false),
                 },
             ]}
-            icon={'new-box'}>
+            icon={'new-box'}
+        >
             <View>
-                <Text style={{fontSize: 18}}>新功能!!</Text>
-                <Text style={{flex: 1}}>現在除了可以匯出pdf亦可以匯出excel囉!!</Text>
+                <Text style={{ fontSize: 18 }}>新功能!!</Text>
+                <Text style={{ flex: 1 }}>現在除了可以匯出pdf亦可以匯出excel囉!!</Text>
             </View>
         </Banner>
     );
@@ -352,6 +368,19 @@ const STYLE = StyleSheet.create({
         elevation: 5,
         zIndex: 5,
     },
+    exchange: {
+        backgroundColor: Color.secondary,
+        position: 'absolute',
+        bottom: 20,
+        right: 140,
+        width: 40,
+        height: 40,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 5,
+        zIndex: 5,
+    },
 });
 
-export {Home, groupingNote};
+export { Home, groupingNote };
