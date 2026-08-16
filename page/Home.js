@@ -286,10 +286,20 @@ const Home = () => {
                         }
                     />
                 </View>
-
-                {/* 匯率轉換 */}
-                <Exchange open={exchangeOpen} onClose={() => setExchangeOpen(false)} />
             </Portal.Host>
+
+            {/* 已記錄匯率 */}
+            <Exchange
+                open={exchangeOpen}
+                onClose={() => setExchangeOpen(false)}
+                showDay={show_day}
+                settingRate={setting.Rate}
+                onRecordPress={dateTime => {
+                    // Updating show_day reuses Home's existing refresh and date-group scrolling lifecycle.
+                    setShowDay(new Date(dateTime));
+                    setExchangeOpen(false);
+                }}
+            />
         </View>
     );
 };
