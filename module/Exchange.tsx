@@ -30,29 +30,47 @@ import { DB } from './SQLite';
 
 type ExchangeRateBase = 'HKD' | 'RMB';
 
-/** Database fields required to identify a record's effective exchange rate and total. */
+/**
+ * Represents the Record projection needed to derive a record's effective exchange rate and HKD total.
+ *
+ * A null persisted Rate identifies a legacy record, so the grouping workflow substitutes the configured rate.
+ */
 interface ExchangeRecordRow {
+    /** Persistent identifier used to keep records with the same date in deterministic order. */
     RecordID: number;
+    /** Stored record timestamp used for monthly filtering and newest-first ordering. */
     DateTime: string;
+    /** User-entered location shown when selecting the record from an exchange-rate card. */
     Local: string;
+    /** RMB amount converted to HKD with the record's effective exchange rate. */
     RMB: number;
+    /** HKD amount included directly in the calculated total. */
     HKD: number;
+    /** Additional HKD charge included directly in the calculated total. */
     Add: number;
+    /** Shipping cost included directly in the calculated total. */
     Shipping: number;
+    /** Persisted exchange rate, or null for a legacy record that uses the configured rate. */
     Rate: number | null;
 }
 
-/** Record summary shown inside an exchange-rate card. */
+/** Normalized record data rendered in an exchange-rate card. */
 interface ExchangeRecordSummary {
+    /** Persistent Record identifier used as the rendered list key and date-order tie-breaker. */
     recordId: number;
+    /** Stored record timestamp used for display and Home-list selection. */
     dateTime: string;
+    /** User-entered location displayed beneath the rate summary. */
     local: string;
+    /** Calculated total in HKD after applying the effective exchange rate. */
     total: Decimal;
 }
 
-/** Records sharing one effective exchange rate, ordered newest first. */
+/** Groups normalized records that share an effective exchange rate. */
 interface ExchangeRateGroup {
+    /** Valid effective rate shared by every record in the group. */
     rate: Decimal;
+    /** Group records ordered newest first for rate usage and detail display. */
     records: ExchangeRecordSummary[];
 }
 
@@ -70,39 +88,49 @@ interface ExchangeProps {
     onRecordPress: (dateTime: string) => void;
 }
 
+/** Configures one exchange-rate card rendered inside the monthly drawer. */
 interface ExchangeRateCardProps {
+    /** Records and effective rate summarized by this card. */
     group: ExchangeRateGroup;
+    /** Currency direction used to present the shared effective rate. */
     rateBase: ExchangeRateBase;
+    /** Whether the card expands to show the records that use its rate. */
     showRecords: boolean;
+    /** Visual depth that distinguishes the primary card from secondary rate cards. */
     elevation: 2 | 3;
+    /** Stable identifier used by drawer interaction tests. */
     testID: string;
     /** Forwards the persisted record date so Home remains the owner of list positioning. */
     onRecordPress: (dateTime: string) => void;
 }
 
+/** Keeps drawer entry and exit transitions synchronized at 260 milliseconds. */
 const ANIMATION_DURATION = 260;
 
 /**
- * Groups monthly records by their effective rate and keeps the most-used, most-recent group first.
+ * Groups one month's persisted records by their effective exchange rate.
  *
- * Keeping this transformation independent from SQLite makes the rate-selection and money rules directly testable.
+ * A stored Rate takes precedence; a null legacy Rate uses settingRate. Each group's HKD totals use
+ * `RMB / rate + HKD + Add + Shipping`, keeping the money and rate-selection rules testable outside SQLite.
  *
  * @param rows - Monthly records returned by the parameterized SQLite query.
- * @param settingRate - User setting applied only when a stored record rate is null.
- * @returns Rate groups ordered by usage count, latest record date, and latest record ID.
- * @throws RangeError when a stored or configured rate cannot produce a valid conversion.
+ * @param settingRate - Configured rate applied only when a record's stored Rate is null.
+ * @returns Rate groups ordered by usage count, then latest record date and RecordID.
+ * @throws Error when Decimal cannot parse a stored or configured exchange rate.
+ * @throws RangeError when a parsed exchange rate is non-finite or not greater than zero.
  */
 function buildExchangeRateGroups(rows: ExchangeRecordRow[], settingRate: string | number): ExchangeRateGroup[] {
     const groupMap = new Map<string, ExchangeRateGroup>();
 
     // Build rate groups
     for (const row of rows) {
+        // check rate
         const rate = new Decimal(row.Rate ?? settingRate);
         if (!rate.isFinite() || rate.lte(0)) {
             throw new RangeError('Exchange rates must be finite and greater than zero.');
         }
 
-        const rateKey = rate.toString();
+        // Calcula total
         const total = new Decimal(row.RMB).div(rate).add(row.HKD).add(row.Add).add(row.Shipping);
         const record = {
             recordId: row.RecordID,
@@ -110,11 +138,14 @@ function buildExchangeRateGroups(rows: ExchangeRecordRow[], settingRate: string 
             local: row.Local,
             total,
         };
-        const existingGroup = groupMap.get(rateKey);
 
+        // check group
+        const rateKey = rate.toString();
+        const existingGroup = groupMap.get(rateKey);
         if (existingGroup) {
-            existingGroup.records.push(record);
+            existingGroup.records.push(record); // if exist
         } else {
+            // if not
             groupMap.set(rateKey, {
                 rate,
                 records: [record],
@@ -231,11 +262,13 @@ export const Exchange: React.FC<ExchangeProps> = ({ open, onClose, showDay, sett
             return;
         }
 
+        // close
         animationProgress.value = withTiming(0, { duration: ANIMATION_DURATION }, finished => {
             if (finished) runOnJS(setIsMounted)(false);
         });
     }, [animationProgress, open]);
 
+    // make sure after mounted
     useEffect(() => {
         if (isMounted && open) {
             animationProgress.value = withTiming(1, { duration: ANIMATION_DURATION });
@@ -268,6 +301,7 @@ export const Exchange: React.FC<ExchangeProps> = ({ open, onClose, showDay, sett
                     }
                 });
 
+                // Groups & show
                 if (!isCurrentRequest) return;
                 setGroups(buildExchangeRateGroups(rows, settingRate));
                 setLoadState('ready');
@@ -292,12 +326,15 @@ export const Exchange: React.FC<ExchangeProps> = ({ open, onClose, showDay, sett
         };
     }, [open, settingRate, showDay]);
 
+    // close Drawer
     const handleClose = useCallback(() => {
         onClose();
     }, [onClose]);
 
+    // is close
     if (!isMounted) return null;
 
+    // is open
     const primaryGroup = groups[0];
     const otherGroups = groups.slice(1);
 
