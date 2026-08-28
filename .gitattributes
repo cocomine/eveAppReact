@@ -1,0 +1,7 @@
+.gitattributes !filter=git-crypt !diff=git-crypt
+
+appcenter-config.json filter=git-crypt diff=git-crypt
+google-services.json filter=git-crypt diff=git-crypt
+local.properties filter=git-crypt diff=git-crypt
+*.jks filter=git-crypt diff=git-crypt
+.env filter=git-crypt diff=git-crypt

@@ -1,0 +1,23 @@
+{
+    "version": 1,
+    "skills": {
+        "migrate-to-static-config": {
+            "source": "react-navigation/skills",
+            "sourceType": "github",
+            "skillPath": "skills/migrate-to-static-config/SKILL.md",
+            "computedHash": "2c6a468dee173fb690c487d5943049a76bad42af39018b67184dd711bbcceaad"
+        },
+        "react-native-reanimated": {
+            "source": "TerminalSkills/skills",
+            "sourceType": "github",
+            "skillPath": "skills/react-native-reanimated/SKILL.md",
+            "computedHash": "524d97702f208fdf796d6ddac26a663d4178a7b1b4c28016e00317254cd185a2"
+        },
+        "upgrade-react-navigation": {
+            "source": "react-navigation/skills",
+            "sourceType": "github",
+            "skillPath": "skills/upgrade-react-navigation/SKILL.md",
+            "computedHash": "df977eea8a5161a5c5501fd38a59b84ff7e41011d2732bbeb4c4367820bce497"
+        }
+    }
+}

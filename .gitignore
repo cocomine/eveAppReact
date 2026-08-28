@@ -27,7 +27,6 @@ DerivedData
 build/
 .idea
 .gradle
-local.properties
 *.iml
 *.hprof
 .kotlin/
@@ -41,9 +40,7 @@ yarn-error.log
 # BUCK
 buck-out/
 \.buckd/
-*.keystore
 !debug.keystore
-*.jks
 
 # fastlane
 #
@@ -74,11 +71,6 @@ buck-out/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
-# 项目排除路径
-/android/app/src/main/assets/appcenter-config.json
-/android/app/google-services.json
-*.db
 
 #Expo
 /.expo
