@@ -35,7 +35,7 @@
         "decimal.js": "^10.6.0",
         "deepmerge": "^4.3.1",
         "lottie-react-native": "^7.2.2",
-        "moment": "^2.29.4",
+        "moment": "^2.31.0",
         "react": "19.1.4",
         "react-native": "0.81.6",
         "react-native-auto-size-text": "^1.1.1",
